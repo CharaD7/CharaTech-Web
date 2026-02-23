@@ -1,0 +1,275 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String         @id @default(uuid())
+  firebaseUid   String         @unique
+  email         String         @unique
+  fullName      String?
+  phoneNumber   String?
+  companyName   String?
+  role          UserRole       @default(CLIENT)
+  emailVerified Boolean        @default(false)
+  phoneVerified Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  notifications Notification[]
+  submissions   Submission[]
+
+  @@index([firebaseUid])
+  @@index([email])
+}
+
+model Submission {
+  id                  String           @id @default(uuid())
+  userId              String
+  projectName         String
+  industry            Industry
+  projectType         ProjectType[]
+  complexity          ComplexityLevel
+  budget              BudgetRange?
+  timeline            String?
+  requirements        Json
+  additionalNotes     String?
+  dialogflowSessionId String?
+  aiConversation      Json?
+  status              SubmissionStatus @default(PENDING)
+  reviewedAt          DateTime?
+  reviewedBy          String?
+  adminNotes          String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  attachments         Attachment[]
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([industry])
+  @@index([createdAt])
+}
+
+model Attachment {
+  id           String     @id @default(uuid())
+  submissionId String
+  fileName     String
+  fileUrl      String
+  fileType     String
+  fileSize     Int
+  createdAt    DateTime   @default(now())
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId])
+}
+
+model Notification {
+  id        String                @id @default(uuid())
+  userId    String
+  type      NotificationType
+  channel   NotificationChannel[]
+  subject   String
+  message   String
+  metadata  Json?
+  sentAt    DateTime?
+  read      Boolean               @default(false)
+  readAt    DateTime?
+  createdAt DateTime              @default(now())
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+model Message {
+  id           String      @id @default(uuid())
+  senderId     String
+  receiverId   String
+  submissionId String?
+  subject      String?
+  content      String
+  read         Boolean     @default(false)
+  readAt       DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([submissionId])
+  @@index([createdAt])
+}
+
+model Invoice {
+  id           String        @id @default(uuid())
+  submissionId String        @unique
+  clientId     String
+  invoiceNumber String       @unique
+  amount       Float
+  currency     String        @default("USD")
+  taxAmount    Float?
+  totalAmount  Float
+  status       InvoiceStatus @default(DRAFT)
+  items        Json
+  notes        String?
+  dueDate      DateTime?
+  paidAt       DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ProjectTimeline {
+  id           String               @id @default(uuid())
+  submissionId String               @unique
+  startDate    DateTime?
+  endDate      DateTime?
+  milestones   ProjectMilestone[]
+  status       TimelineStatus       @default(PLANNING)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([submissionId])
+  @@index([status])
+}
+
+model ProjectMilestone {
+  id               String           @id @default(uuid())
+  timelineId       String
+  title            String
+  description      String?
+  startDate        DateTime
+  endDate          DateTime
+  status           MilestoneStatus  @default(PENDING)
+  completedAt      DateTime?
+  order            Int
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  timeline         ProjectTimeline  @relation(fields: [timelineId], references: [id], onDelete: Cascade)
+
+  @@index([timelineId])
+  @@index([status])
+}
+
+enum UserRole {
+  CLIENT
+  ADMIN
+}
+
+enum Industry {
+  HEALTHCARE
+  FINANCE
+  ECOMMERCE
+  EDUCATION
+  REAL_ESTATE
+  LOGISTICS
+  HOSPITALITY
+  ENTERTAINMENT
+  GOVERNMENT
+  NONPROFIT
+  MANUFACTURING
+  RETAIL
+  TECHNOLOGY
+  LEGAL
+  AGRICULTURE
+  ENERGY
+  TRANSPORTATION
+  TELECOMMUNICATIONS
+  MEDIA
+  CONSULTING
+  OTHER
+}
+
+enum ProjectType {
+  WEB_APPLICATION
+  MOBILE_APPLICATION
+  DESKTOP_APPLICATION
+  API_BACKEND
+  CMS
+  ECOMMERCE_PLATFORM
+  CRM
+  ERP
+  SAAS_PLATFORM
+  DASHBOARD_ANALYTICS
+  BOOKING_SYSTEM
+  PAYMENT_GATEWAY
+  SOCIAL_PLATFORM
+  LEARNING_PLATFORM
+  MARKETPLACE
+  PORTFOLIO_WEBSITE
+  BLOG
+  OTHER
+}
+
+enum ComplexityLevel {
+  BASIC
+  INTERMEDIATE
+  ADVANCED
+  ENTERPRISE
+}
+
+enum BudgetRange {
+  LESS_THAN_5K
+  FROM_5K_TO_10K
+  FROM_10K_TO_25K
+  FROM_25K_TO_50K
+  FROM_50K_TO_100K
+  FROM_100K_TO_250K
+  ABOVE_250K
+  NOT_SURE
+}
+
+enum SubmissionStatus {
+  PENDING
+  REVIEWING
+  QUOTED
+  ACCEPTED
+  REJECTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum NotificationType {
+  SUBMISSION_RECEIVED
+  SUBMISSION_REVIEWED
+  QUOTE_READY
+  STATUS_UPDATE
+  WELCOME
+  REMINDER
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  IN_APP
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum TimelineStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  DELAYED
+  CANCELLED
+}
