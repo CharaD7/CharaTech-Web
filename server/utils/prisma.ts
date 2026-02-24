@@ -1,4 +1,4 @@
-import Prisma from '@prisma/client'
+import * as Prisma from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import pg from 'pg'
 
