@@ -1,4 +1,6 @@
-import { PrismaClient } from '@prisma/client'
+import Prisma from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import pg from 'pg'
 
 const prismaClientSingleton = () => {
   // Create PostgreSQL connection pool
@@ -10,7 +12,7 @@ const prismaClientSingleton = () => {
   const adapter = new PrismaPg(pool)
   
   // Initialize Prisma Client with the adapter
-  return new PrismaClient({ adapter })
+  return new Prisma.PrismaClient({ adapter })
 }
 
 declare global {
