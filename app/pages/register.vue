@@ -278,6 +278,7 @@ const handleRegister = async () => {
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 0.5rem !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
+  z-index: 9999 !important;
 }
 
 .vti__dropdown-item {
