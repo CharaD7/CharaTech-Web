@@ -3,7 +3,6 @@
   "type": "module",
   "private": true,
   "packageManager": "pnpm@8.15.6",
-  "packages": ["app"],
   "scripts": {
     "build": "nuxt build",
     "build:prod": "NODE_ENV=production nuxt build",
