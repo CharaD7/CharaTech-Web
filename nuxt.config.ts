@@ -3,9 +3,6 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   
-  ssr: false, // Disable server-side rendering
-  target: 'static', // For static site generation
-
   modules: [
     '@nuxt/ui',
     '@vueuse/motion/nuxt',
@@ -62,5 +59,9 @@ export default defineNuxtConfig({
     plugins: {
       '@tailwindcss/postcss': {},
     },
+  },
+
+  nitro: {
+    preset: 'netlify'
   }
 })

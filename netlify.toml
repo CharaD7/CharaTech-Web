@@ -2,7 +2,7 @@
 
 [build]
   command = "pnpm build"
-  publish = "dist"
+  publish = ".output/public"
   functions = ".output/server"
 
 [build.environment]
