@@ -2,6 +2,7 @@
   "name": "charatech-web",
   "type": "module",
   "private": true,
+  "packageManager": "pnpm@8.x.x",
   "scripts": {
     "build": "nuxt build",
     "build:prod": "NODE_ENV=production nuxt build",
