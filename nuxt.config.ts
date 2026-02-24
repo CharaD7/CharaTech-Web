@@ -3,6 +3,8 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   
+  ssr: true, // Re-enable SSR, but will be used for SSG prerendering
+  
   modules: [
     '@nuxt/ui',
     '@vueuse/motion/nuxt',
@@ -62,6 +64,11 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    preset: 'netlify'
+    prerender: {
+      routes: ['/']
+    },
+    output: {
+      dir: 'dist'
+    }
   }
 })
