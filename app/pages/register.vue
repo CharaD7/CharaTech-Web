@@ -229,6 +229,7 @@ const handleRegister = async () => {
   border: none !important;
   box-shadow: none !important;
   background: transparent !important;
+  z-index: 9999 !important;
 }
 
 .vue-tel-input:focus-within {
