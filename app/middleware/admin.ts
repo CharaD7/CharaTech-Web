@@ -17,11 +17,11 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   }
   
   // Check if user exists and is admin
-  if (!userStore.currentUser?.value) {
+  if (!userStore.currentUser) {
     return navigateTo('/admin/login')
   }
   
-  if (userStore.currentUser.value.role !== 'ADMIN') {
+  if (userStore.currentUser.role !== 'ADMIN') {
     return navigateTo('/login')
   }
 })
