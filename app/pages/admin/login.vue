@@ -95,7 +95,7 @@ definePageMeta({
   middleware: ['guest']
 })
 
-const { login, user } = useAuth()
+const { login, user, logout } = useAuth()
 const userStore = useUserStore()
 
 const form = reactive({
