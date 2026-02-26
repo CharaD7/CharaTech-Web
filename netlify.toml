@@ -1,11 +1,8 @@
 # Netlify Configuration for CharaTech Web
 
 [build]
-  command = "pnpm build"
-  publish = ".output/public"
-
-[functions]
-  directory = ".output/server"
+  command = "pnpm nuxt build"
+  publish = "dist"
 
 [[headers]]
   for = "/*"
