@@ -1,6 +1,7 @@
 import { H3Event } from 'h3'
 import { getAuth } from 'firebase-admin/auth'
 import { initializeApp, cert, getApps } from 'firebase-admin/app'
+import { readFileSync } from 'node:fs'
 
 let adminInitialized = false
 
@@ -8,9 +9,16 @@ try {
   if (!getApps().length) {
     const config = useRuntimeConfig()
     
-    const credentials = config.dialogflowCredentials 
-      ? JSON.parse(config.dialogflowCredentials as string)
-      : undefined
+    const adminCredentialsPath = config.firebaseAdminSdkCredentials as string | undefined
+    let credentials
+    if (adminCredentialsPath) {
+      try {
+        const credentialsFileContent = readFileSync(adminCredentialsPath, 'utf-8')
+        credentials = JSON.parse(credentialsFileContent)
+      } catch (fileError) {
+        console.error('Failed to read Firebase Admin SDK credentials file:', fileError)
+      }
+    }
 
     if (credentials) {
       initializeApp({

@@ -1,5 +1,6 @@
 import { SessionsClient } from '@google-cloud/dialogflow'
 import { v4 as uuidv4 } from 'uuid'
+import { readFileSync } from 'node:fs'
 
 let sessionClient: SessionsClient | null = null
 
@@ -8,9 +9,16 @@ export const getDialogflowClient = () => {
 
   const config = useRuntimeConfig()
   
-  const credentials = config.dialogflowCredentials 
-    ? JSON.parse(config.dialogflowCredentials as string)
-    : undefined
+  const dialogflowCredentialsPath = config.dialogflowCredentials as string | undefined
+  let credentials
+  if (dialogflowCredentialsPath) {
+    try {
+      const credentialsFileContent = readFileSync(dialogflowCredentialsPath, 'utf-8')
+      credentials = JSON.parse(credentialsFileContent)
+    } catch (fileError) {
+      console.error('Failed to read Dialogflow credentials file:', fileError)
+    }
+  }
 
   sessionClient = new SessionsClient({
     credentials,

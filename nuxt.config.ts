@@ -21,6 +21,7 @@ export default defineNuxtConfig({
     dialogflowProjectId: process.env.DIALOGFLOW_PROJECT_ID,
     dialogflowClientEmail: process.env.DIALOGFLOW_CLIENT_EMAIL,
     dialogflowCredentials: process.env.DIALOGFLOW_CREDENTIALS_JSON,
+    firebaseAdminSdkCredentials: process.env.FIREBASE_ADMIN_SDK_CREDENTIALS,
     
     // Public keys (exposed to client)
     public: {

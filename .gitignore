@@ -59,3 +59,5 @@ Thumbs.db
 *.pem
 *.key
 *.cert
+/server/credentials/firebase-admin-credentials.json
+/server/credentials/dialogflow-credentials.json
