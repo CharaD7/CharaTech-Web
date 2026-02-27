@@ -1,6 +1,6 @@
 import { SessionsClient } from '@google-cloud/dialogflow'
 import { v4 as uuidv4 } from 'uuid'
-import { readFileSync } from 'node:fs'
+// import { readFileSync } from 'node:fs' // Removed as we're now using Base64
 
 let sessionClient: SessionsClient | null = null
 
@@ -9,14 +9,14 @@ export const getDialogflowClient = () => {
 
   const config = useRuntimeConfig()
   
-  const dialogflowCredentialsPath = config.dialogflowCredentials as string | undefined
+  const dialogflowCredentialsBase64 = config.dialogflowCredentialsBase64 as string | undefined
   let credentials
-  if (dialogflowCredentialsPath) {
+  if (dialogflowCredentialsBase64) {
     try {
-      const credentialsFileContent = readFileSync(dialogflowCredentialsPath, 'utf-8')
+      const credentialsFileContent = Buffer.from(dialogflowCredentialsBase64, 'base64').toString('utf-8')
       credentials = JSON.parse(credentialsFileContent)
-    } catch (fileError) {
-      console.error('Failed to read Dialogflow credentials file:', fileError)
+    } catch (decodeError) {
+      console.error('Failed to decode or parse Dialogflow credentials (Base64):', decodeError)
     }
   }
 

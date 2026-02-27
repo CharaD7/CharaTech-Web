@@ -1,7 +1,7 @@
 import { H3Event } from 'h3'
 import { getAuth } from 'firebase-admin/auth'
 import { initializeApp, cert, getApps } from 'firebase-admin/app'
-import { readFileSync } from 'node:fs'
+// import { readFileSync } from 'node:fs' // Removed as we're now using Base64
 
 let adminInitialized = false
 
@@ -9,14 +9,14 @@ try {
   if (!getApps().length) {
     const config = useRuntimeConfig()
     
-    const adminCredentialsPath = config.firebaseAdminSdkCredentials as string | undefined
+    const adminCredentialsBase64 = config.firebaseAdminSdkCredentialsBase64 as string | undefined
     let credentials
-    if (adminCredentialsPath) {
+    if (adminCredentialsBase64) {
       try {
-        const credentialsFileContent = readFileSync(adminCredentialsPath, 'utf-8')
+        const credentialsFileContent = Buffer.from(adminCredentialsBase64, 'base64').toString('utf-8')
         credentials = JSON.parse(credentialsFileContent)
-      } catch (fileError) {
-        console.error('Failed to read Firebase Admin SDK credentials file:', fileError)
+      } catch (decodeError) {
+        console.error('Failed to decode or parse Firebase Admin SDK credentials (Base64):', decodeError)
       }
     }
 
