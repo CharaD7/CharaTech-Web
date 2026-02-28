@@ -1,70 +1,5 @@
 import { H3Event } from 'h3'
-import { getAuth } from 'firebase-admin/auth'
-import { initializeApp, cert, getApps } from 'firebase-admin/app'
-// import { readFileSync } from 'node:fs' // Removed as we're now using Base64
-
-let adminInitialized = false
-
-try {
-  if (!getApps().length) {
-    const config = useRuntimeConfig()
-    
-    const adminCredentialsBase64 = config.firebaseAdminSdkCredentialsBase64 as string | undefined
-    let credentials
-    if (adminCredentialsBase64) {
-      try {
-        const credentialsFileContent = Buffer.from(adminCredentialsBase64, 'base64').toString('utf-8')
-        credentials = JSON.parse(credentialsFileContent)
-      } catch (decodeError) {
-        console.error('Failed to decode or parse Firebase Admin SDK credentials (Base64):', decodeError)
-      }
-    }
-
-    if (credentials) {
-      initializeApp({
-        credential: cert(credentials),
-        projectId: config.public.firebaseProjectId,
-      })
-      adminInitialized = true
-      console.log('Firebase Admin SDK initialized')
-    }
-  } else {
-    adminInitialized = true
-  }
-} catch (error) {
-  console.warn('Firebase Admin SDK initialization failed, will use REST API fallback:', error)
-  adminInitialized = false
-}
-
-/**
- * Verify token using Firebase REST API (fallback method)
- */
-async function verifyTokenWithRestAPI(token: string) {
-  const config = useRuntimeConfig()
-  
-  try {
-    const response = await $fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${config.public.firebaseApiKey}`, {
-      method: 'POST',
-      body: {
-        idToken: token,
-      },
-    })
-    
-    if (response && (response as any).users && (response as any).users.length > 0) {
-      const user = (response as any).users[0]
-      return {
-        uid: user.localId,
-        email: user.email,
-        email_verified: user.emailVerified || false,
-      }
-    }
-    
-    throw new Error('Invalid token')
-  } catch (error: any) {
-    console.error('REST API token verification error:', error.message)
-    throw new Error('Invalid token')
-  }
-}
+import { jwtVerify } from 'jose'
 
 export const verifyToken = async (event: H3Event) => {
   const authHeader = getHeader(event, 'authorization')
@@ -77,22 +12,29 @@ export const verifyToken = async (event: H3Event) => {
   }
 
   const token = authHeader.split('Bearer ')[1]
+  const config = useRuntimeConfig()
 
-  // Try Admin SDK first, fallback to REST API
+  if (!config.supabaseServiceRoleKey) {
+    throw createError({
+      statusCode: 500,
+      message: 'Supabase service role key is not configured.',
+    })
+  }
+
   try {
-    if (adminInitialized) {
-      try {
-        const decodedToken = await getAuth().verifyIdToken(token, true)
-        return decodedToken
-      } catch (adminError: any) {
-        console.warn('Admin SDK verification failed, trying REST API:', adminError.message)
-        return await verifyTokenWithRestAPI(token)
-      }
-    } else {
-      return await verifyTokenWithRestAPI(token)
+    const { payload } = await jwtVerify(
+      token,
+      new TextEncoder().encode(config.supabaseServiceRoleKey)
+    )
+    
+    // Supabase JWTs use 'sub' for user ID and 'email' for email
+    return {
+      uid: payload.sub as string,
+      email: payload.email as string,
+      email_verified: payload.email_verified as boolean || false,
     }
   } catch (error: any) {
-    console.error('Token verification error:', error.message)
+    console.error('JWT verification error:', error.message)
     throw createError({
       statusCode: 401,
       message: 'Invalid token',
@@ -104,7 +46,7 @@ export const requireAuth = async (event: H3Event) => {
   const decodedToken = await verifyToken(event)
   
   const user = await prisma.user.findUnique({
-    where: { firebaseUid: decodedToken.uid },
+    where: { supabaseUid: decodedToken.uid },
   })
 
   if (!user) {
