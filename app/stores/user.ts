@@ -9,10 +9,13 @@ export const useUserStore = defineStore('user', {
 
   actions: {
     async fetchCurrentUser() {
-      const { user: firebaseUser } = useAuth()
+      const { supabase } = useSupabase()
       
-      if (!firebaseUser.value) {
-        console.log('No firebase user')
+      const { data: sessionData } = await supabase.auth.getSession()
+      const session = sessionData?.session
+      
+      if (!session) {
+        console.log('No active session')
         this.currentUser = null
         return
       }
@@ -20,7 +23,7 @@ export const useUserStore = defineStore('user', {
       this.loading = true
       
       try {
-        const token = await firebaseUser.value.getIdToken()
+        const token = session.access_token
         console.log('Fetching user with token...')
         
         const { data, error } = await useFetch('/api/users/me', {
@@ -45,9 +48,12 @@ export const useUserStore = defineStore('user', {
     },
 
     async updateUser(updates: Partial<User>) {
-      const { user: firebaseUser } = useAuth()
+      const { supabase } = useSupabase()
       
-      if (!firebaseUser.value) return
+      const { data: sessionData } = await supabase.auth.getSession()
+      const session = sessionData?.session
+      
+      if (!session) return
 
       this.loading = true
 
@@ -55,7 +61,7 @@ export const useUserStore = defineStore('user', {
         const { data } = await useFetch('/api/users/me', {
           method: 'PATCH',
           headers: {
-            Authorization: `Bearer ${await firebaseUser.value.getIdToken()}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: updates,
         })
