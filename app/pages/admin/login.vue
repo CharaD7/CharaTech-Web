@@ -120,11 +120,16 @@ const handleLogin = async () => {
       return
     }
 
+    console.log('Login successful, fetching user data...')
+    
     // Wait for Firebase auth to update
     await new Promise(resolve => setTimeout(resolve, 500))
     
     // Fetch current user from database
     await userStore.fetchCurrentUser()
+    
+    console.log('Current user:', userStore.currentUser)
+    console.log('Is admin:', userStore.isAdmin)
     
     // Check if admin
     if (userStore.isAdmin) {

@@ -12,6 +12,7 @@ export const useUserStore = defineStore('user', {
       const { user: firebaseUser } = useAuth()
       
       if (!firebaseUser.value) {
+        console.log('No firebase user')
         this.currentUser = null
         return
       }
@@ -19,15 +20,25 @@ export const useUserStore = defineStore('user', {
       this.loading = true
       
       try {
-        const { data } = await useFetch('/api/users/me', {
+        const token = await firebaseUser.value.getIdToken()
+        console.log('Fetching user with token...')
+        
+        const { data, error } = await useFetch('/api/users/me', {
           headers: {
-            Authorization: `Bearer ${await firebaseUser.value.getIdToken()}`,
+            Authorization: `Bearer ${token}`,
           },
         })
 
+        if (error.value) {
+          console.error('Error fetching user:', error.value)
+          throw new Error(error.value.message || 'Failed to fetch user')
+        }
+
+        console.log('Fetched user data:', data.value)
         this.currentUser = data.value as User
       } catch (error) {
         console.error('Failed to fetch user:', error)
+        throw error
       } finally {
         this.loading = false
       }
