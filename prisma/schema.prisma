@@ -8,7 +8,7 @@ datasource db {
 
 model User {
   id            String         @id @default(uuid())
-  supabaseUid   String         @unique
+  firebaseUid   String         @unique
   email         String         @unique
   fullName      String?
   phoneNumber   String?
@@ -21,7 +21,7 @@ model User {
   notifications Notification[]
   submissions   Submission[]
 
-  @@index([supabaseUid])
+  @@index([firebaseUid])
   @@index([email])
 }
 

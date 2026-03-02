@@ -46,7 +46,7 @@ export const requireAuth = async (event: H3Event) => {
   const decodedToken = await verifyToken(event)
   
   const user = await prisma.user.findUnique({
-    where: { supabaseUid: decodedToken.uid },
+    where: { firebaseUid: decodedToken.uid },
   })
 
   if (!user) {
