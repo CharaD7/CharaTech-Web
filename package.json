@@ -41,7 +41,7 @@
     "@supabase/supabase-js": "^2.43.4",
     "@vueuse/motion": "^3.0.3",
     "bcrypt": "^6.0.0",
-    "dataconnect-generated": "link:../../../../AppData/Local/pnpm/global/5/node_modules/src/dataconnect-generated",
+    "dataconnect-generated": "link:./src/dataconnect-generated",
     "dialogflow": "^1.2.0",
     "dotenv": "^17.3.1",
     "jose": "^5.0.0",

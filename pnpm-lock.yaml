@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  dataconnect-generated: link:../../../../AppData/Local/pnpm/global/5/node_modules/src/dataconnect-generated
-
 importers:
 
   .:
@@ -63,8 +60,8 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0
       dataconnect-generated:
-        specifier: link:../../../../AppData/Local/pnpm/global/5/node_modules/src/dataconnect-generated
-        version: link:../../../../AppData/Local/pnpm/global/5/node_modules/src/dataconnect-generated
+        specifier: link:./src/dataconnect-generated
+        version: link:src/dataconnect-generated
       dialogflow:
         specifier: ^1.2.0
         version: 1.2.0
