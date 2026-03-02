@@ -1,7 +1,7 @@
 # Netlify Configuration for CharaTech Web
 
 [build]
-  command = "pnpm nuxt build"
+  command = "pnpm run build"
   publish = "dist"
 
 [[headers]]
