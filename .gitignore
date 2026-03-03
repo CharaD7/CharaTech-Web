@@ -31,7 +31,8 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
-!.env.production
+.env.production
+.env.development
 
 # Database
 /prisma/*.db
