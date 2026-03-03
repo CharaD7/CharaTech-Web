@@ -1,5 +1,6 @@
 import { H3Event } from 'h3'
 import { jwtVerify } from 'jose'
+import prisma from './prisma'
 
 export const verifyToken = async (event: H3Event) => {
   const authHeader = getHeader(event, 'authorization')
@@ -45,9 +46,17 @@ export const verifyToken = async (event: H3Event) => {
 export const requireAuth = async (event: H3Event) => {
   const decodedToken = await verifyToken(event)
   
-  const user = await prisma.user.findUnique({
-    where: { firebaseUid: decodedToken.uid },
+  // Try to find user by supabaseUid first, then fallback to firebaseUid
+  let user = await prisma.user.findUnique({
+    where: { supabaseUid: decodedToken.uid },
   })
+
+  // Fallback to firebaseUid for backward compatibility
+  if (!user) {
+    user = await prisma.user.findUnique({
+      where: { firebaseUid: decodedToken.uid },
+    })
+  }
 
   if (!user) {
     throw createError({
