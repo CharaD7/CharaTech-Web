@@ -27,23 +27,18 @@ export const verifyToken = async (event: H3Event) => {
     console.log('Token starts with:', token.substring(0, 50))
     
     // Decode header to check algorithm
-    const decoded = decodeJwt(token)
     const header = JSON.parse(Buffer.from(token.split('.')[0], 'base64').toString())
     console.log('Token algorithm:', header.alg)
     
     let payload
     
     if (header.alg === 'ES256') {
-      // ES256 uses public key, not secret
-      // For ES256, we need the public key in PEM format
-      // Since Supabase provides the secret, try using it directly first
-      const { payload: verifiedPayload } = await jwtVerify(
-        token,
-        new TextEncoder().encode(config.supabaseJwtSecret)
-      )
+      // ES256 tokens use JWKS endpoint
+      const JWKS = createRemoteJWKSet(new URL(`${config.public.supabaseProjectUrl}/auth/v1/jwks`))
+      const { payload: verifiedPayload } = await jwtVerify(token, JWKS)
       payload = verifiedPayload
     } else {
-      // HS256 or other HMAC algorithms
+      // HS256 or other HMAC algorithms use the JWT secret
       const { payload: verifiedPayload } = await jwtVerify(
         token,
         new TextEncoder().encode(config.supabaseJwtSecret)
