@@ -23,10 +23,16 @@ export const verifyToken = async (event: H3Event) => {
   }
 
   try {
+    console.log('Attempting to verify token...')
+    console.log('Token starts with:', token.substring(0, 50))
+    console.log('JWT Secret length:', config.supabaseJwtSecret?.length)
+    
     const { payload } = await jwtVerify(
       token,
       new TextEncoder().encode(config.supabaseJwtSecret)
     )
+    
+    console.log('Token verified successfully:', { sub: payload.sub, email: payload.email })
     
     // Supabase JWTs use 'sub' for user ID and 'email' for email
     return {
@@ -35,7 +41,11 @@ export const verifyToken = async (event: H3Event) => {
       email_verified: payload.email_verified as boolean || false,
     }
   } catch (error: any) {
-    console.error('JWT verification error:', error.message)
+    console.error('JWT verification error details:', {
+      message: error.message,
+      code: error.code,
+      name: error.name
+    })
     throw createError({
       statusCode: 401,
       message: 'Invalid token',
