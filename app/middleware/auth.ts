@@ -1,19 +1,27 @@
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  const { $user } = useNuxtApp()
+  const userStore = useUserStore()
+  const { supabase } = useSupabase()
 
-  // On server-side, we need to wait for the user to be fetched
-  if (import.meta.server) {
-    const userStore = useUserStore()
-    await userStore.fetchCurrentUser()
-    if (!userStore.currentUser) {
-      if (to.path !== '/login' && to.path !== '/register' && to.path !== '/') {
-        return navigateTo('/login')
-      }
+  // Check if user is authenticated
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (!session) {
+    // Not authenticated, redirect to login for protected routes
+    if (to.path !== '/login' && to.path !== '/register' && to.path !== '/') {
+      return navigateTo('/login')
     }
   } else {
-    // On client-side, we can rely on the $user ref
-    if (!$user.value && to.path !== '/login' && to.path !== '/register' && to.path !== '/') {
-      return navigateTo('/login')
+    // Authenticated, ensure user data is loaded
+    if (!userStore.currentUser) {
+      try {
+        await userStore.fetchCurrentUser()
+      } catch (error) {
+        console.error('Failed to fetch user data:', error)
+        // If we can't fetch user data, redirect to login
+        if (to.path !== '/login') {
+          return navigateTo('/login')
+        }
+      }
     }
   }
 })
