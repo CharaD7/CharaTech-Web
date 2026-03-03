@@ -1,5 +1,5 @@
 import { H3Event } from 'h3'
-import { jwtVerify } from 'jose'
+import { jwtVerify, createRemoteJWKSet, decodeJwt } from 'jose'
 import prisma from './prisma'
 
 export const verifyToken = async (event: H3Event) => {
@@ -25,12 +25,31 @@ export const verifyToken = async (event: H3Event) => {
   try {
     console.log('Attempting to verify token...')
     console.log('Token starts with:', token.substring(0, 50))
-    console.log('JWT Secret length:', config.supabaseJwtSecret?.length)
     
-    const { payload } = await jwtVerify(
-      token,
-      new TextEncoder().encode(config.supabaseJwtSecret)
-    )
+    // Decode header to check algorithm
+    const decoded = decodeJwt(token)
+    const header = JSON.parse(Buffer.from(token.split('.')[0], 'base64').toString())
+    console.log('Token algorithm:', header.alg)
+    
+    let payload
+    
+    if (header.alg === 'ES256') {
+      // ES256 uses public key, not secret
+      // For ES256, we need the public key in PEM format
+      // Since Supabase provides the secret, try using it directly first
+      const { payload: verifiedPayload } = await jwtVerify(
+        token,
+        new TextEncoder().encode(config.supabaseJwtSecret)
+      )
+      payload = verifiedPayload
+    } else {
+      // HS256 or other HMAC algorithms
+      const { payload: verifiedPayload } = await jwtVerify(
+        token,
+        new TextEncoder().encode(config.supabaseJwtSecret)
+      )
+      payload = verifiedPayload
+    }
     
     console.log('Token verified successfully:', { sub: payload.sub, email: payload.email })
     
