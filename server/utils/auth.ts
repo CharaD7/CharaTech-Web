@@ -1,5 +1,5 @@
 import { H3Event } from 'h3'
-import { jwtVerify, createRemoteJWKSet, decodeJwt } from 'jose'
+import { createClient } from '@supabase/supabase-js'
 import prisma from './prisma'
 
 export const verifyToken = async (event: H3Event) => {
@@ -15,44 +15,29 @@ export const verifyToken = async (event: H3Event) => {
   const token = authHeader.split('Bearer ')[1]
   const config = useRuntimeConfig()
 
-  if (!config.supabaseJwtSecret) {
-    throw createError({
-      statusCode: 500,
-      message: 'Supabase JWT secret is not configured.',
-    })
-  }
-
   try {
     console.log('Attempting to verify token...')
     console.log('Token starts with:', token.substring(0, 50))
     
-    // Decode header to check algorithm
-    const header = JSON.parse(Buffer.from(token.split('.')[0], 'base64').toString())
-    console.log('Token algorithm:', header.alg)
+    // Use Supabase client to verify the token (handles ES256 and HS256)
+    const supabase = createClient(
+      config.public.supabaseProjectUrl,
+      config.public.supabaseAnonKey
+    )
     
-    let payload
+    const { data: { user }, error } = await supabase.auth.getUser(token)
     
-    if (header.alg === 'ES256') {
-      // ES256 tokens use JWKS endpoint
-      const JWKS = createRemoteJWKSet(new URL(`${config.public.supabaseProjectUrl}/auth/v1/jwks`))
-      const { payload: verifiedPayload } = await jwtVerify(token, JWKS)
-      payload = verifiedPayload
-    } else {
-      // HS256 or other HMAC algorithms use the JWT secret
-      const { payload: verifiedPayload } = await jwtVerify(
-        token,
-        new TextEncoder().encode(config.supabaseJwtSecret)
-      )
-      payload = verifiedPayload
+    if (error || !user) {
+      console.error('Token verification failed:', error?.message)
+      throw new Error('Invalid token')
     }
     
-    console.log('Token verified successfully:', { sub: payload.sub, email: payload.email })
+    console.log('Token verified successfully:', { id: user.id, email: user.email })
     
-    // Supabase JWTs use 'sub' for user ID and 'email' for email
     return {
-      uid: payload.sub as string,
-      email: payload.email as string,
-      email_verified: payload.email_verified as boolean || false,
+      uid: user.id,
+      email: user.email || '',
+      email_verified: user.email_confirmed_at ? true : false,
     }
   } catch (error: any) {
     console.error('JWT verification error details:', {
