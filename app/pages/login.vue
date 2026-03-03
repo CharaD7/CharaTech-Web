@@ -104,7 +104,7 @@ definePageMeta({
   middleware: ['guest']
 })
 
-const { login } = useAuth()
+const { login, getAccessToken } = useAuth()
 const userStore = useUserStore()
 
 const form = reactive({
@@ -124,17 +124,23 @@ const handleLogin = async () => {
     const result = await login(form.email, form.password)
 
     if (result.success && result.user) {
-      // Wait for Firebase to fully authenticate
+      // Wait for Supabase to fully authenticate
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Get fresh ID token
-      const idToken = await result.user.getIdToken(true)
+      // Get access token
+      const token = await getAccessToken()
+      
+      if (!token) {
+        error.value = 'Failed to get authentication token'
+        loading.value = false
+        return
+      }
 
       // Fetch current user from API with token
       try {
         const response = await $fetch('/api/users/me', {
           headers: {
-            Authorization: `Bearer ${idToken}`,
+            Authorization: `Bearer ${token}`,
           },
         })
 

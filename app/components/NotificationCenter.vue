@@ -66,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-const { user } = useAuth()
+const { user, getAccessToken } = useAuth()
 
 const notifications = ref<any[]>([])
 const showDropdown = ref(false)
@@ -96,7 +96,9 @@ const fetchNotifications = async () => {
   if (!user.value) return
 
   try {
-    const token = await user.value.getIdToken()
+    const token = await getAccessToken()
+    if (!token) return
+    
     const data = await $fetch('/api/notifications', {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -112,7 +114,9 @@ const markAsRead = async (id: string) => {
   if (!user.value) return
 
   try {
-    const token = await user.value.getIdToken()
+    const token = await getAccessToken()
+    if (!token) return
+    
     await $fetch(`/api/notifications/${id}/read`, {
       method: 'PATCH',
       headers: {

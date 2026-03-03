@@ -70,10 +70,16 @@ export const useAuth = () => {
     }
   }
 
+  const getAccessToken = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    return session?.access_token || null
+  }
+
   return {
     user,
     register,
     login,
     logout,
+    getAccessToken,
   }
 }

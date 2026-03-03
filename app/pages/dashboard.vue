@@ -113,7 +113,7 @@ definePageMeta({
 })
 
 const userStore = useUserStore()
-const { user } = useAuth()
+const { user, getAccessToken } = useAuth()
 
 // Redirect admins to admin dashboard
 if (userStore.currentUser?.role === 'ADMIN') {
@@ -127,7 +127,9 @@ const fetchSubmissions = async () => {
   if (!user.value) return
 
   try {
-    const token = await user.value.getIdToken()
+    const token = await getAccessToken()
+    if (!token) return
+    
     const data = await $fetch<Submission[]>('/api/submissions', {
       headers: {
         Authorization: `Bearer ${token}`,

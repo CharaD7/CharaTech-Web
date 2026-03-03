@@ -14,17 +14,17 @@ export const verifyToken = async (event: H3Event) => {
   const token = authHeader.split('Bearer ')[1]
   const config = useRuntimeConfig()
 
-  if (!config.supabaseServiceRoleKey) {
+  if (!config.supabaseJwtSecret) {
     throw createError({
       statusCode: 500,
-      message: 'Supabase service role key is not configured.',
+      message: 'Supabase JWT secret is not configured.',
     })
   }
 
   try {
     const { payload } = await jwtVerify(
       token,
-      new TextEncoder().encode(config.supabaseServiceRoleKey)
+      new TextEncoder().encode(config.supabaseJwtSecret)
     )
     
     // Supabase JWTs use 'sub' for user ID and 'email' for email

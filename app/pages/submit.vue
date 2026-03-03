@@ -294,7 +294,7 @@ definePageMeta({
   middleware: ['auth']
 })
 
-const { user } = useAuth()
+const { user, getAccessToken } = useAuth()
 const router = useRouter()
 
 const currentStep = ref(1)
@@ -365,7 +365,10 @@ const handleSubmit = async () => {
   submitting.value = true
 
   try {
-    const token = await user.value.getIdToken()
+    const token = await getAccessToken()
+    if (!token) {
+      throw new Error('Failed to get authentication token')
+    }
     
     await $fetch('/api/submissions', {
       method: 'POST',
