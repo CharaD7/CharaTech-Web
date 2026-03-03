@@ -65,6 +65,28 @@ export const requireAuth = async (event: H3Event) => {
     user = await prisma.user.findUnique({
       where: { firebaseUid: decodedToken.uid },
     })
+    
+    // If found by firebaseUid, update with supabaseUid
+    if (user && !user.supabaseUid) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { supabaseUid: decodedToken.uid },
+      })
+    }
+  }
+
+  // If still not found, try by email and update
+  if (!user) {
+    user = await prisma.user.findUnique({
+      where: { email: decodedToken.email },
+    })
+    
+    if (user) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { supabaseUid: decodedToken.uid },
+      })
+    }
   }
 
   if (!user) {
