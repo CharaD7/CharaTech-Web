@@ -18,12 +18,22 @@ export const verifyToken = async (event: H3Event) => {
   try {
     console.log('Attempting to verify token...')
     console.log('Token starts with:', token.substring(0, 50))
+    console.log('Supabase URL:', config.public.supabaseProjectUrl)
+    console.log('Has Anon Key:', !!config.public.supabaseAnonKey)
     
     // Use Supabase client to verify the token (handles ES256 and HS256)
-    const supabase = createClient(
-      config.public.supabaseProjectUrl,
-      config.public.supabaseAnonKey
-    )
+    const supabaseUrl = config.public.supabaseProjectUrl || process.env.SUPABASE_PROJECT_URL
+    const supabaseKey = config.public.supabaseAnonKey || process.env.SUPABASE_ANON_KEY
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase credentials:', { 
+        hasUrl: !!supabaseUrl, 
+        hasKey: !!supabaseKey 
+      })
+      throw new Error('Supabase configuration missing')
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey)
     
     const { data: { user }, error } = await supabase.auth.getUser(token)
     
