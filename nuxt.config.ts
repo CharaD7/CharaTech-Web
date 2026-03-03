@@ -17,9 +17,9 @@ export default defineNuxtConfig({
     // Private keys (server-only)
     databaseUrl: process.env.DATABASE_URL,
     jwtSecret: process.env.JWT_SECRET,
+    supabaseJwtSecret: process.env.SUPABASE_JWT_SECRET,
     dialogflowProjectId: process.env.DIALOGFLOW_PROJECT_ID,
     adminSupabaseUid: process.env.ADMIN_SUPABASE_UID,
-    supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     
     // Public keys (exposed to client)
     public: {
