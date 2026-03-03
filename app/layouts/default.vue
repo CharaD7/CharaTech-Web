@@ -69,12 +69,15 @@
 </template>
 
 <script setup lang="ts">
-const { user, logout } = useAuth()
+const auth = useAuth()
+const user = computed(() => auth?.user?.value || null)
 const userStore = useUserStore()
 const router = useRouter()
 
 const handleLogout = async () => {
-  await logout()
+  if (auth?.logout) {
+    await auth.logout()
+  }
   userStore.clearUser()
   router.push('/login')
 }
