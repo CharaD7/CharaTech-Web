@@ -132,10 +132,11 @@
                 </button>
                 <button
                   @click.stop="createInvoice(submission)"
-                  class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition"
-                  title="Create Invoice"
+                  :disabled="generatingInvoice"
+                  class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition disabled:opacity-50"
+                  title="Generate Invoice"
                 >
-                  🧾
+                  {{ generatingInvoice && invoicePreselectedSubmission?.id === submission.id ? '⏳' : '🧾' }}
                 </button>
                 <button
                   @click.stop="manageTimeline(submission)"
@@ -357,7 +358,10 @@
     :show="showInvoiceModal"
     :submissions="submissions"
     :preselected-submission="invoicePreselectedSubmission"
-    @close="showInvoiceModal = false; invoicePreselectedSubmission = null"
+    :pre-generated-items="invoicePreGeneratedItems"
+    :pre-generated-tax-rate="invoicePreGeneratedTaxRate"
+    :pre-generated-notes="invoicePreGeneratedNotes"
+    @close="showInvoiceModal = false; invoicePreselectedSubmission = null; clearGeneratedInvoice()"
     @created="onInvoiceCreated"
   />
 
@@ -411,6 +415,10 @@ const showInvoiceModal = ref(false)
 const showInvoicePreview = ref(false)
 const selectedInvoice = ref<any>(null)
 const invoicePreselectedSubmission = ref<any>(null)
+const invoicePreGeneratedItems = ref<any[] | undefined>(undefined)
+const invoicePreGeneratedTaxRate = ref<number | undefined>(undefined)
+const invoicePreGeneratedNotes = ref<string | undefined>(undefined)
+const generatingInvoice = ref(false)
 
 const filteredSubmissions = computed(() => {
   let result = submissions.value
@@ -473,6 +481,12 @@ const getAuthHeaders = async () => {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
+const clearGeneratedInvoice = () => {
+  invoicePreGeneratedItems.value = undefined
+  invoicePreGeneratedTaxRate.value = undefined
+  invoicePreGeneratedNotes.value = undefined
+}
+
 const fetchInvoices = async () => {
   try {
     const headers = await getAuthHeaders()
@@ -483,10 +497,33 @@ const fetchInvoices = async () => {
   }
 }
 
-const openCreateInvoice = (submission?: any) => {
+const openCreateInvoice = async (submission?: any) => {
   invoicePreselectedSubmission.value = submission || null
+  clearGeneratedInvoice()
   activeTab.value = 'invoices'
   showInvoiceModal.value = true
+
+  // Auto-generate estimate when opening from a submission
+  if (submission?.id) {
+    generatingInvoice.value = true
+    try {
+      const headers = await getAuthHeaders()
+      const result = await $fetch<{ success: boolean; pricing: any }>('/api/admin/invoices/generate', {
+        method: 'POST',
+        headers,
+        body: { submissionId: submission.id, currency: 'USD' },
+      }) as any
+      if (result?.pricing?.items) {
+        invoicePreGeneratedItems.value = result.pricing.items
+        invoicePreGeneratedTaxRate.value = result.pricing.suggestedTaxRate
+        invoicePreGeneratedNotes.value = result.pricing.notes
+      }
+    } catch (err) {
+      console.error('Failed to auto-generate estimate:', err)
+    } finally {
+      generatingInvoice.value = false
+    }
+  }
 }
 
 const viewInvoice = (invoice: any) => {
@@ -528,6 +565,7 @@ const currencySymbol = (currency: string) =>
 const onInvoiceCreated = async () => {
   showInvoiceModal.value = false
   invoicePreselectedSubmission.value = null
+  clearGeneratedInvoice()
   await fetchInvoices()
 }
 
