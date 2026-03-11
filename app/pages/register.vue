@@ -192,7 +192,7 @@ const handleRegister = async () => {
     return
   }
 
-  const result = await register(form.email, form.password)
+  const result = await register(form.email, form.password, form.fullName)
 
   if (result.success && result.user) {
     try {

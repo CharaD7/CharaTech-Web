@@ -14,7 +14,7 @@ export const useAuth = () => {
     })
   }
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string, fullName?: string) => {
     const config = useRuntimeConfig()
     const appUrl = (config.public.appUrl || 'https://charatech-web.netlify.app').replace(/\/$/, '')
     try {
@@ -23,6 +23,10 @@ export const useAuth = () => {
         password,
         options: {
           emailRedirectTo: `${appUrl}/auth/confirm`,
+          data: {
+            full_name: fullName || '',
+            display_name: fullName || '',
+          },
         },
       })
 
