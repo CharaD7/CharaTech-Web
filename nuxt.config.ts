@@ -60,7 +60,8 @@ export default defineNuxtConfig({
 
   nitro: {
     prerender: {
-      routes: ['/']
+      routes: ['/'],
+      failOnError: false
     }
   }
 })

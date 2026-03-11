@@ -15,9 +15,11 @@ export default defineEventHandler(async (event) => {
       clientId,
       amount,
       taxAmount,
+      currency,
       items,
       notes,
-      dueDate
+      dueDate,
+      status: requestedStatus,
     } = body
 
     if (!submissionId || !clientId || !amount || !items) {
@@ -39,9 +41,10 @@ export default defineEventHandler(async (event) => {
         clientId,
         invoiceNumber,
         amount: parseFloat(amount),
+        currency: currency || 'USD',
         taxAmount: taxAmount ? parseFloat(taxAmount) : null,
         totalAmount,
-        status: 'DRAFT',
+        status: requestedStatus || 'DRAFT',
         items: JSON.parse(JSON.stringify(items)),
         notes,
         dueDate: dueDate ? new Date(dueDate) : null

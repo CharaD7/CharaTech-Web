@@ -223,48 +223,71 @@
           <div class="flex justify-between items-center mb-6">
             <h3 class="text-2xl font-bold text-white">Invoices</h3>
             <button
-              @click="showInvoiceModal = true"
-              class="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-700 hover:to-emerald-700 transition"
+              @click="openCreateInvoice()"
+              class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition shadow-[0_0_20px_rgba(168,85,247,0.3)] flex items-center gap-2"
             >
-              + Create Invoice
+              <span>🧾</span> + Create Invoice
             </button>
           </div>
 
-          <div class="overflow-x-auto">
+          <!-- Empty state -->
+          <div v-if="!invoices.length" class="py-16 text-center">
+            <div class="text-5xl mb-4">🧾</div>
+            <p class="text-white/40 text-lg">No invoices yet</p>
+            <p class="text-white/25 text-sm mt-1">Click "+ Create Invoice" to get started</p>
+          </div>
+
+          <div v-else class="overflow-x-auto">
             <table class="w-full">
               <thead class="bg-white/5">
                 <tr>
-                  <th class="px-6 py-3 text-left text-white">Invoice #</th>
-                  <th class="px-6 py-3 text-left text-white">Client</th>
-                  <th class="px-6 py-3 text-left text-white">Amount</th>
-                  <th class="px-6 py-3 text-left text-white">Status</th>
-                  <th class="px-6 py-3 text-left text-white">Due Date</th>
-                  <th class="px-6 py-3 text-left text-white">Actions</th>
+                  <th class="px-6 py-3 text-left text-white/60 text-xs uppercase tracking-wider">Invoice #</th>
+                  <th class="px-6 py-3 text-left text-white/60 text-xs uppercase tracking-wider">Client</th>
+                  <th class="px-6 py-3 text-left text-white/60 text-xs uppercase tracking-wider">Amount</th>
+                  <th class="px-6 py-3 text-left text-white/60 text-xs uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-white/60 text-xs uppercase tracking-wider">Due Date</th>
+                  <th class="px-6 py-3 text-left text-white/60 text-xs uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 <tr
                   v-for="invoice in invoices"
                   :key="invoice.id"
-                  class="border-t border-white/10 hover:bg-white/5 transition"
+                  class="border-t border-white/10 hover:bg-white/5 transition cursor-pointer"
+                  @click="viewInvoice(invoice)"
                 >
-                  <td class="px-6 py-4 text-white">{{ invoice.invoiceNumber }}</td>
-                  <td class="px-6 py-4 text-white">{{ invoice.clientName }}</td>
-                  <td class="px-6 py-4 text-white font-semibold">${{ invoice.totalAmount }}</td>
+                  <td class="px-6 py-4 text-purple-300 font-mono text-sm font-medium">{{ invoice.invoiceNumber }}</td>
                   <td class="px-6 py-4">
-                    <span
-                      :class="[
-                        'px-3 py-1 rounded-full text-xs font-semibold',
-                        getInvoiceStatusClass(invoice.status)
-                      ]"
-                    >
+                    <div class="text-white text-sm">{{ invoice.client?.fullName || invoice.client?.email || '—' }}</div>
+                    <div class="text-white/40 text-xs">{{ invoice.client?.email }}</div>
+                  </td>
+                  <td class="px-6 py-4 text-white font-semibold tabular-nums">
+                    {{ currencySymbol(invoice.currency) }}{{ Number(invoice.totalAmount).toFixed(2) }}
+                    <span class="text-white/30 text-xs ml-1">{{ invoice.currency || 'USD' }}</span>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span :class="['px-3 py-1 rounded-full text-xs font-semibold', getInvoiceStatusClass(invoice.status)]">
                       {{ invoice.status }}
                     </span>
                   </td>
-                  <td class="px-6 py-4 text-white">{{ formatDate(invoice.dueDate) }}</td>
-                  <td class="px-6 py-4">
-                    <button class="text-blue-400 hover:text-blue-300 mr-3">View</button>
-                    <button class="text-green-400 hover:text-green-300">Send</button>
+                  <td class="px-6 py-4 text-white/60 text-sm">{{ invoice.dueDate ? formatDate(invoice.dueDate) : '—' }}</td>
+                  <td class="px-6 py-4" @click.stop>
+                    <div class="flex gap-2">
+                      <button
+                        @click="viewInvoice(invoice)"
+                        class="px-3 py-1.5 text-xs rounded-lg bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 transition border border-purple-500/20"
+                      >View</button>
+                      <button
+                        v-if="invoice.status === 'DRAFT'"
+                        @click="quickSendInvoice(invoice)"
+                        class="px-3 py-1.5 text-xs rounded-lg bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 transition border border-blue-500/20"
+                      >Send</button>
+                      <button
+                        v-if="['SENT','OVERDUE'].includes(invoice.status)"
+                        @click="quickMarkPaid(invoice)"
+                        class="px-3 py-1.5 text-xs rounded-lg bg-green-500/15 text-green-300 hover:bg-green-500/25 transition border border-green-500/20"
+                      >Paid</button>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -328,6 +351,22 @@
       </div>
     </div>
   </div>
+
+  <!-- Modals -->
+  <CreateInvoiceModal
+    :show="showInvoiceModal"
+    :submissions="submissions"
+    :preselected-submission="invoicePreselectedSubmission"
+    @close="showInvoiceModal = false; invoicePreselectedSubmission = null"
+    @created="onInvoiceCreated"
+  />
+
+  <InvoicePreviewModal
+    :show="showInvoicePreview"
+    :invoice="selectedInvoice"
+    @close="showInvoicePreview = false; selectedInvoice = null"
+    @updated="onInvoiceUpdated"
+  />
 </template>
 
 <script setup lang="ts">
@@ -366,9 +405,12 @@ const selectedConversation = ref(null)
 const conversations = ref([])
 const messages = ref([])
 const newMessage = ref('')
-const invoices = ref([])
+const invoices = ref<any[]>([])
 const timelines = ref([])
 const showInvoiceModal = ref(false)
+const showInvoicePreview = ref(false)
+const selectedInvoice = ref<any>(null)
+const invoicePreselectedSubmission = ref<any>(null)
 
 const filteredSubmissions = computed(() => {
   let result = submissions.value
@@ -421,9 +463,83 @@ const openMessenger = (submission: any) => {
 }
 
 const createInvoice = (submission: any) => {
+  openCreateInvoice(submission)
+}
+
+const { getAccessToken } = useAuth()
+
+const getAuthHeaders = async () => {
+  const token = await getAccessToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+const fetchInvoices = async () => {
+  try {
+    const headers = await getAuthHeaders()
+    const data = await $fetch('/api/admin/invoices', { headers }) as any
+    if (data?.invoices) invoices.value = data.invoices
+  } catch (error) {
+    console.error('Failed to fetch invoices:', error)
+  }
+}
+
+const openCreateInvoice = (submission?: any) => {
+  invoicePreselectedSubmission.value = submission || null
   activeTab.value = 'invoices'
   showInvoiceModal.value = true
-  // Pre-fill invoice with submission data
+}
+
+const viewInvoice = (invoice: any) => {
+  selectedInvoice.value = invoice
+  showInvoicePreview.value = true
+}
+
+const quickSendInvoice = async (invoice: any) => {
+  try {
+    const headers = await getAuthHeaders()
+    await $fetch(`/api/admin/invoices/${invoice.id}`, {
+      method: 'PATCH',
+      headers,
+      body: { status: 'SENT' }
+    })
+    await fetchInvoices()
+  } catch (error) {
+    console.error('Failed to send invoice:', error)
+  }
+}
+
+const quickMarkPaid = async (invoice: any) => {
+  try {
+    const headers = await getAuthHeaders()
+    await $fetch(`/api/admin/invoices/${invoice.id}`, {
+      method: 'PATCH',
+      headers,
+      body: { status: 'PAID' }
+    })
+    await fetchInvoices()
+  } catch (error) {
+    console.error('Failed to mark invoice paid:', error)
+  }
+}
+
+const currencySymbol = (currency: string) =>
+  ({ USD: '$', EUR: '€', GBP: '£', GHS: '₵', CAD: 'C$', AUD: 'A$' }[currency] ?? '$')
+
+const onInvoiceCreated = async () => {
+  showInvoiceModal.value = false
+  invoicePreselectedSubmission.value = null
+  await fetchInvoices()
+}
+
+const onInvoiceUpdated = async (updated: any) => {
+  if (updated) {
+    const idx = invoices.value.findIndex(i => i.id === updated.id)
+    if (idx !== -1) invoices.value[idx] = { ...invoices.value[idx], ...updated }
+  } else {
+    await fetchInvoices()
+  }
+  showInvoicePreview.value = false
+  selectedInvoice.value = null
 }
 
 const manageTimeline = (submission: any) => {
@@ -529,6 +645,7 @@ const getTimelineStatusClass = (status: string) => {
 
 onMounted(() => {
   fetchSubmissions()
+  fetchInvoices()
 })
 </script>
 
