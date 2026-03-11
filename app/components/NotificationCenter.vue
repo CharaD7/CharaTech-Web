@@ -23,7 +23,7 @@
     <Transition name="dropdown">
       <div
         v-if="showDropdown"
-        class="absolute right-0 mt-2 w-96 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden"
+        class="fixed left-2 right-2 top-[68px] sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden"
         @click.stop
       >
         <!-- Header -->
@@ -44,7 +44,7 @@
         </div>
 
         <!-- List -->
-        <div class="max-h-[420px] overflow-y-auto divide-y divide-white/5">
+        <div class="max-h-[60vh] sm:max-h-[420px] overflow-y-auto divide-y divide-white/5">
           <!-- Loading skeleton -->
           <template v-if="loading">
             <div v-for="i in 3" :key="i" class="p-4 animate-pulse">
