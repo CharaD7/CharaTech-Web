@@ -6,7 +6,7 @@
  * Real-time via Supabase Realtime Broadcast.
  */
 
-const { user } = useAuth()
+const { user, getAccessToken } = useAuth()
 const { subscribe, broadcast, unsubscribe } = useRealtimeMessages()
 
 const conversations = ref<any[]>([])
@@ -49,7 +49,6 @@ const scrollToBottom = () => {
 
 // ─── Auth headers ───────────────────────────────────────────────────────────
 async function authHeaders() {
-  const { getAccessToken } = useAuth()
   const token = await getAccessToken()
   return token ? { Authorization: `Bearer ${token}` } : {}
 }

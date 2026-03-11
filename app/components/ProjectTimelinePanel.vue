@@ -14,6 +14,9 @@ const emit = defineEmits<{
   updated: [timeline: any]
 }>()
 
+// getAccessToken from setup context — safe to call in any async function below
+const { getAccessToken } = useAuth()
+
 // ─── State ────────────────────────────────────────────────────────────────
 const activeTab = ref<'overview' | 'milestones' | 'activity' | 'codestats'>('overview')
 const githubData = ref<any>(null)
@@ -45,8 +48,6 @@ async function createGitHubProject() {
   createProjectError.value = null
   createProjectSuccess.value = null
   try {
-    const { useAuth } = await import('~/composables/useAuth')
-    const { getAccessToken } = useAuth()
     const token = await getAccessToken()
     const res = await $fetch<any>(`/api/admin/timelines/${props.timeline.id}/github-project`, {
       method: 'POST',
@@ -74,8 +75,6 @@ async function loadGitHubData() {
   loading.value = true
   error.value = null
   try {
-    const { useAuth } = await import('~/composables/useAuth')
-    const { getAccessToken } = useAuth()
     const token = await getAccessToken()
     const data = await $fetch(`/api/admin/timelines/${props.timeline.id}/github`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -93,8 +92,6 @@ async function searchRepos() {
   if (!repoSearch.value.trim()) { repoSearchResults.value = []; return }
   repoSearchLoading.value = true
   try {
-    const { useAuth } = await import('~/composables/useAuth')
-    const { getAccessToken } = useAuth()
     const token = await getAccessToken()
     repoSearchResults.value = await $fetch('/api/admin/github/repos', {
       query: { search: repoSearch.value },
@@ -112,8 +109,6 @@ async function loadAllRepos() {
   repoSearchLoading.value = true
   showRepoDropdown.value = true
   try {
-    const { useAuth } = await import('~/composables/useAuth')
-    const { getAccessToken } = useAuth()
     const token = await getAccessToken()
     repoSearchResults.value = await $fetch('/api/admin/github/repos', {
       headers: { Authorization: `Bearer ${token}` },
@@ -130,8 +125,6 @@ async function linkRepo(repo: any) {
   showRepoDropdown.value = false
   linking.value = false
   try {
-    const { useAuth } = await import('~/composables/useAuth')
-    const { getAccessToken } = useAuth()
     const token = await getAccessToken()
     const result = await $fetch(`/api/admin/timelines/${props.timeline.id}`, {
       method: 'PATCH',
@@ -151,8 +144,6 @@ async function unlinkRepo() {
   if (!confirm('Unlink this GitHub repository from the timeline?')) return
   savingRepo.value = true
   try {
-    const { useAuth } = await import('~/composables/useAuth')
-    const { getAccessToken } = useAuth()
     const token = await getAccessToken()
     const result = await $fetch(`/api/admin/timelines/${props.timeline.id}`, {
       method: 'PATCH',

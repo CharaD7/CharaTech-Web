@@ -5,8 +5,7 @@
  * AI chatbot auto-responds; admin can take over any conversation.
  */
 
-const { user } = useAuth()
-const { supabase } = useSupabase()
+const { user, getAccessToken } = useAuth()
 const { subscribe, broadcast, unsubscribe } = useRealtimeMessages()
 
 const open = ref(false)
@@ -52,11 +51,9 @@ const fetchMessages = async () => {
   if (!user.value) return
   loading.value = true
   try {
-    const { useAuth } = await import('~/composables/useAuth')
-    const { getAccessToken } = useAuth()
     const token = await getAccessToken()
     const data = await $fetch<any>('/api/messages', {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
     messages.value = data.messages || []
     isAiHandled.value = data.isAiHandled ?? true
@@ -72,10 +69,8 @@ const fetchMessages = async () => {
 const markRead = async () => {
   if (!user.value) return
   try {
-    const { useAuth } = await import('~/composables/useAuth')
-    const { getAccessToken } = useAuth()
     const token = await getAccessToken()
-    await $fetch('/api/messages/read', { method: 'PATCH', headers: { Authorization: `Bearer ${token}` } })
+    await $fetch('/api/messages/read', { method: 'PATCH', headers: token ? { Authorization: `Bearer ${token}` } : {} })
   } catch { /* silent */ }
 }
 
@@ -104,13 +99,11 @@ const sendMessage = async () => {
   }
 
   try {
-    const { useAuth } = await import('~/composables/useAuth')
-    const { getAccessToken } = useAuth()
     const token = await getAccessToken()
 
     const data = await $fetch<any>('/api/messages', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: { content },
     })
 
