@@ -40,7 +40,7 @@
         </div>
 
         <!-- Phone Number with Country Picker -->
-        <div>
+        <div class="relative z-20">
           <label for="phone" class="block text-sm font-medium text-white mb-2">
               Phone Number
             </label>
