@@ -94,6 +94,7 @@ model Message {
   submissionId String?
   subject      String?
   content      String
+  isBot        Boolean     @default(false)
   read         Boolean     @default(false)
   readAt       DateTime?
   createdAt    DateTime    @default(now())

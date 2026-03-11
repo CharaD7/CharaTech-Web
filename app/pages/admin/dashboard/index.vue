@@ -152,70 +152,8 @@
       </div>
 
       <!-- Messages Tab -->
-      <div v-if="activeTab === 'messages'" class="grid md:grid-cols-3 gap-6">
-        <!-- Conversations List -->
-        <div class="glass-morphism p-6 rounded-xl border border-white/10">
-          <h3 class="text-xl font-bold mb-4 text-white">Conversations</h3>
-          <div class="space-y-2">
-            <div
-              v-for="conv in conversations"
-              :key="conv.id"
-              @click="selectedConversation = conv"
-              :class="[
-                'p-4 rounded-lg cursor-pointer transition',
-                selectedConversation?.id === conv.id
-                  ? 'bg-purple-600/30 border border-purple-500'
-                  : 'bg-white/5 hover:bg-white/10'
-              ]"
-            >
-              <div class="font-semibold text-white">{{ conv.clientName }}</div>
-              <div class="text-sm text-white/60 truncate">{{ conv.lastMessage }}</div>
-              <div class="text-xs text-white/40 mt-1">{{ conv.time }}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Message Thread -->
-        <div class="md:col-span-2 glass-morphism p-6 rounded-xl border border-white/10">
-          <div v-if="selectedConversation">
-            <h3 class="text-xl font-bold mb-4 text-white">{{ selectedConversation.clientName }}</h3>
-            
-            <div class="h-96 overflow-y-auto mb-4 space-y-3 p-4 bg-black/20 rounded-lg">
-              <div
-                v-for="msg in messages"
-                :key="msg.id"
-                :class="[
-                  'p-3 rounded-lg max-w-md',
-                  msg.sender === 'admin'
-                    ? 'ml-auto bg-purple-600 text-white'
-                    : 'bg-white/10 text-white'
-                ]"
-              >
-                <div class="text-sm">{{ msg.content }}</div>
-                <div class="text-xs opacity-60 mt-1">{{ msg.time }}</div>
-              </div>
-            </div>
-
-            <div class="flex gap-2">
-              <input
-                v-model="newMessage"
-                type="text"
-                placeholder="Type a message..."
-                class="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:ring-2 focus:ring-purple-500 outline-none transition"
-                @keyup.enter="sendMessage"
-              />
-              <button
-                @click="sendMessage"
-                class="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition"
-              >
-                Send
-              </button>
-            </div>
-          </div>
-          <div v-else class="flex items-center justify-center h-full text-white/40">
-            Select a conversation to start messaging
-          </div>
-        </div>
+      <div v-if="activeTab === 'messages'">
+        <AdminMessagesPanel />
       </div>
 
       <!-- Invoices Tab -->

@@ -28,7 +28,47 @@ const repoSearchResults = ref<any[]>([])
 const showRepoDropdown = ref(false)
 const savingRepo = ref(false)
 
-// ─── Load GitHub data ────────────────────────────────────────────────────
+// ─── Create GitHub Project modal ──────────────────────────────────────────
+const showCreateProjectModal = ref(false)
+const creatingProject = ref(false)
+const newProjectTitle = ref('')
+const newProjectDesc = ref('')
+const newProjectVisibility = ref<'PRIVATE' | 'PUBLIC'>('PRIVATE')
+const newMilestoneName = ref('')
+const newMilestoneDue = ref('')
+const createProjectError = ref<string | null>(null)
+const createProjectSuccess = ref<{ projectUrl: string; milestoneUrl?: string } | null>(null)
+
+async function createGitHubProject() {
+  if (!newProjectTitle.value.trim()) { createProjectError.value = 'Project name is required'; return }
+  creatingProject.value = true
+  createProjectError.value = null
+  createProjectSuccess.value = null
+  try {
+    const { useAuth } = await import('~/composables/useAuth')
+    const { getAccessToken } = useAuth()
+    const token = await getAccessToken()
+    const res = await $fetch<any>(`/api/admin/timelines/${props.timeline.id}/github-project`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: {
+        projectTitle: newProjectTitle.value.trim(),
+        description: newProjectDesc.value.trim() || undefined,
+        visibility: newProjectVisibility.value,
+        milestoneName: newMilestoneName.value.trim() || undefined,
+        milestoneDueDate: newMilestoneDue.value || undefined,
+      },
+    })
+    createProjectSuccess.value = { projectUrl: res.project.url, milestoneUrl: res.milestone?.html_url }
+    // Reload GitHub data to show new milestone
+    await loadGitHubData()
+    emit('updated', props.timeline)
+  } catch (e: any) {
+    createProjectError.value = e?.data?.message || e?.message || 'Failed to create GitHub Project'
+  } finally {
+    creatingProject.value = false
+  }
+}
 async function loadGitHubData() {
   if (!props.timeline?.githubRepo) return
   loading.value = true
@@ -311,6 +351,10 @@ watch(() => props.timeline?.id, (id) => {
           <button v-if="adminMode && !linking" @click="linking = true; loadAllRepos()"
             class="text-xs px-3 py-1.5 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 border border-purple-500/30 transition-all">
             {{ timeline.githubRepo ? '🔀 Change Repo' : '🔗 Link GitHub Repo' }}
+          </button>
+          <button v-if="adminMode && timeline.githubRepo" @click="showCreateProjectModal = true; newProjectTitle = timeline.projectName || ''"
+            class="text-xs px-3 py-1.5 rounded-lg bg-green-600/20 hover:bg-green-600/30 text-green-300 border border-green-500/30 transition-all">
+            🚀 Create GitHub Project
           </button>
         </div>
       </div>
@@ -774,4 +818,118 @@ watch(() => props.timeline?.id, (id) => {
       </div>
     </div>
   </div>
+
+  <!-- ─── Create GitHub Project Modal ──────────────────────────────────── -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="showCreateProjectModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style="background: rgba(0,0,0,0.7); backdrop-filter: blur(4px)">
+        <div class="w-full max-w-md rounded-2xl border border-white/10 overflow-hidden shadow-2xl"
+          style="background: rgba(20,10,40,0.95); backdrop-filter: blur(20px)">
+
+          <!-- Modal header -->
+          <div class="bg-gradient-to-r from-purple-800/80 to-violet-800/80 px-6 py-4 flex items-center justify-between border-b border-white/10">
+            <div>
+              <h3 class="text-white font-bold text-lg">🚀 Create GitHub Project</h3>
+              <p class="text-white/50 text-xs mt-0.5">Creates a Projects v2 kanban board + links the repo</p>
+            </div>
+            <button @click="showCreateProjectModal = false; createProjectSuccess = null; createProjectError = null"
+              class="text-white/40 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10 text-lg">✕</button>
+          </div>
+
+          <!-- Success state -->
+          <div v-if="createProjectSuccess" class="p-6 space-y-4">
+            <div class="text-center py-4">
+              <div class="text-4xl mb-3">🎉</div>
+              <div class="text-green-300 font-semibold">GitHub Project created!</div>
+            </div>
+            <a :href="createProjectSuccess.projectUrl" target="_blank"
+              class="flex items-center gap-2 px-4 py-3 bg-purple-600/20 border border-purple-500/30 rounded-xl text-purple-300 hover:text-white hover:bg-purple-600/30 transition-all text-sm">
+              <span>📋</span>
+              <span class="flex-1 truncate">View Project Board</span>
+              <span class="text-white/40">↗</span>
+            </a>
+            <a v-if="createProjectSuccess.milestoneUrl" :href="createProjectSuccess.milestoneUrl" target="_blank"
+              class="flex items-center gap-2 px-4 py-3 bg-green-600/10 border border-green-500/20 rounded-xl text-green-300 hover:text-white hover:bg-green-600/20 transition-all text-sm">
+              <span>🎯</span>
+              <span class="flex-1 truncate">View Milestone</span>
+              <span class="text-white/40">↗</span>
+            </a>
+            <button @click="showCreateProjectModal = false; createProjectSuccess = null"
+              class="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-sm transition-all">
+              Close
+            </button>
+          </div>
+
+          <!-- Form state -->
+          <div v-else class="p-6 space-y-4">
+            <!-- Error -->
+            <div v-if="createProjectError" class="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-sm">
+              ⚠️ {{ createProjectError }}
+            </div>
+
+            <!-- Note about scopes -->
+            <div class="px-3 py-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-200 text-xs">
+              ℹ️ Requires <code class="bg-amber-900/40 px-1 rounded">project</code> scope on your GitHub PAT (in addition to <code class="bg-amber-900/40 px-1 rounded">repo</code>).
+            </div>
+
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs text-white/50 mb-1 block">Project Name *</label>
+                <input v-model="newProjectTitle"
+                  placeholder="My Awesome Project"
+                  class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-500/60 transition-all" />
+              </div>
+
+              <div>
+                <label class="text-xs text-white/50 mb-1 block">Short Description</label>
+                <input v-model="newProjectDesc"
+                  placeholder="Brief project description"
+                  class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-500/60 transition-all" />
+              </div>
+
+              <div>
+                <label class="text-xs text-white/50 mb-1 block">Visibility</label>
+                <div class="flex gap-2">
+                  <button v-for="v in ['PRIVATE', 'PUBLIC']" :key="v"
+                    @click="newProjectVisibility = v as any"
+                    :class="['flex-1 py-2 rounded-lg text-sm border transition-all',
+                      newProjectVisibility === v
+                        ? 'bg-purple-600/30 border-purple-500/50 text-purple-200'
+                        : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/8']">
+                    {{ v === 'PRIVATE' ? '🔒 Private' : '🌍 Public' }}
+                  </button>
+                </div>
+              </div>
+
+              <div class="border-t border-white/10 pt-3">
+                <div class="text-xs font-semibold text-white/40 uppercase tracking-wider mb-2">Initial Milestone (optional)</div>
+                <div class="space-y-2">
+                  <input v-model="newMilestoneName"
+                    placeholder="e.g. v1.0 Launch"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-500/60 transition-all" />
+                  <input v-model="newMilestoneDue"
+                    type="date"
+                    class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500/60 transition-all" />
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+              <button @click="showCreateProjectModal = false"
+                class="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 text-sm transition-all">
+                Cancel
+              </button>
+              <button @click="createGitHubProject" :disabled="creatingProject || !newProjectTitle.trim()"
+                class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-violet-600 text-white text-sm font-semibold hover:from-purple-500 hover:to-violet-500 disabled:opacity-40 transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-900/30">
+                <div v-if="creatingProject" class="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                <span>{{ creatingProject ? 'Creating…' : '🚀 Create Project' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>

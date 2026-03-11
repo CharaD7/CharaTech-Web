@@ -195,6 +195,7 @@ export function findBestMatchingRepo(projectName: string, repos: GitHubRepo[]): 
 
 export interface GitHubRepo {
   id: number
+  node_id: string
   name: string
   full_name: string
   description: string | null
@@ -278,4 +279,114 @@ export interface GitHubContributor {
   author: { login: string; avatar_url: string; html_url: string }
   total: number
   weeks: { w: number; a: number; d: number; c: number }[]
+}
+
+// ─── GitHub GraphQL (Projects v2) ──────────────────────────────────────────
+
+async function githubGraphQL<T>(query: string, variables?: Record<string, any>): Promise<T> {
+  const token = process.env.GITHUB_TOKEN
+  if (!token) throw createError({ statusCode: 400, message: 'GITHUB_TOKEN required for GitHub Projects v2' })
+
+  const res = await fetch('https://api.github.com/graphql', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'CharaTech-Web/1.0',
+    },
+    body: JSON.stringify({ query, variables }),
+  })
+  const json = await res.json() as { data?: T; errors?: { message: string }[] }
+  if (json.errors?.length) {
+    throw createError({ statusCode: 422, message: `GitHub GraphQL: ${json.errors[0].message}` })
+  }
+  return json.data as T
+}
+
+/** Get authenticated user's login + node_id (required to create projects) */
+export async function getAuthenticatedUser() {
+  return ghFetch<{ login: string; node_id: string; id: number }>('/user')
+}
+
+/**
+ * Create a GitHub Projects v2 board.
+ * Requires `project` scope on the PAT (in addition to `repo`).
+ */
+export async function createGitHubProjectV2(
+  ownerId: string,
+  title: string,
+): Promise<{ id: string; number: number; url: string; title: string }> {
+  const data = await githubGraphQL<{
+    createProjectV2: { projectV2: { id: string; number: number; url: string; title: string } }
+  }>(
+    `mutation CreateProject($ownerId: ID!, $title: String!) {
+      createProjectV2(input: { ownerId: $ownerId, title: $title }) {
+        projectV2 { id number url title }
+      }
+    }`,
+    { ownerId, title },
+  )
+  return data.createProjectV2.projectV2
+}
+
+/**
+ * Update a Projects v2 board (description, visibility).
+ * shortDescription max 256 chars.
+ */
+export async function updateGitHubProject(
+  projectId: string,
+  updates: { shortDescription?: string; public?: boolean },
+): Promise<void> {
+  await githubGraphQL(
+    `mutation UpdateProject($projectId: ID!, $shortDescription: String, $public: Boolean) {
+      updateProjectV2(input: { projectId: $projectId, shortDescription: $shortDescription, public: $public }) {
+        projectV2 { id }
+      }
+    }`,
+    { projectId, ...updates },
+  )
+}
+
+/**
+ * Link a repository to a Projects v2 board.
+ * repositoryId is the repo's GraphQL node_id.
+ */
+export async function linkProjectToRepo(
+  projectId: string,
+  repositoryId: string,
+): Promise<void> {
+  await githubGraphQL(
+    `mutation LinkRepo($projectId: ID!, $repositoryId: ID!) {
+      linkProjectV2ToRepository(input: { projectId: $projectId, repositoryId: $repositoryId }) {
+        repository { name }
+      }
+    }`,
+    { projectId, repositoryId },
+  )
+}
+
+/**
+ * Create a GitHub Milestone in a repository (REST).
+ * dueOn: ISO 8601 string, e.g. "2026-06-01T23:59:59Z"
+ */
+export async function createGitHubMilestone(
+  repo: string,
+  title: string,
+  description?: string,
+  dueOn?: string,
+): Promise<{ number: number; html_url: string; title: string }> {
+  const body: Record<string, string> = { title }
+  if (description) body.description = description
+  if (dueOn) body.due_on = dueOn
+
+  const res = await fetch(`${GITHUB_API}/repos/${GITHUB_OWNER}/${repo}/milestones`, {
+    method: 'POST',
+    headers: { ...githubHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText)
+    throw createError({ statusCode: res.status, message: `GitHub Milestone: ${text}` })
+  }
+  return res.json()
 }
