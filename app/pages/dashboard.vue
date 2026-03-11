@@ -203,6 +203,146 @@
         </div>
       </div>
     </div>
+
+    <!-- Timeline Tab -->
+    <div v-if="activeTab === 'timeline'">
+      <div v-if="timelinesLoading" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div v-for="i in 2" :key="i" class="h-48 bg-white/5 rounded-xl animate-pulse" />
+      </div>
+      <div v-else-if="!clientTimelines.length" class="glass-morphism rounded-2xl border border-white/10 p-12 text-center">
+        <div class="text-5xl mb-4">📅</div>
+        <h3 class="text-lg font-bold text-white mb-2">No Active Timelines</h3>
+        <p class="text-white/40 text-sm">Once your project is approved and underway, you'll see live progress, milestones, and activity here.</p>
+      </div>
+      <div v-else>
+        <!-- Project selector (if multiple) -->
+        <div v-if="clientTimelines.length > 1" class="flex gap-2 mb-4 flex-wrap">
+          <button
+            v-for="t in clientTimelines"
+            :key="t.id"
+            @click="selectedClientTimeline = t"
+            :class="['px-4 py-2 rounded-xl text-sm font-semibold border transition-all',
+              (selectedClientTimeline ?? clientTimelines[0]).id === t.id
+                ? 'bg-purple-600/30 border-purple-500/40 text-white'
+                : 'bg-white/5 border-transparent text-white/50 hover:text-white']"
+          >
+            {{ t.projectName }}
+          </button>
+        </div>
+
+        <!-- Timeline detail -->
+        <div v-for="t in [selectedClientTimeline ?? clientTimelines[0]]" :key="t.id" class="space-y-4">
+          <!-- Header card -->
+          <div class="glass-morphism rounded-2xl border border-white/10 p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-xl font-bold text-white">{{ t.projectName }}</h3>
+                <div v-if="t.githubRepo" class="text-sm text-purple-400 mt-0.5">
+                  🔗 <a :href="`https://github.com/${t.githubRepo}`" target="_blank" class="hover:underline">{{ t.githubRepo }}</a>
+                </div>
+              </div>
+              <div :class="['px-3 py-1 rounded-full text-xs font-bold',
+                t.status === 'ACTIVE' ? 'bg-green-500/20 text-green-300' :
+                t.status === 'COMPLETED' ? 'bg-emerald-500/20 text-emerald-300' :
+                t.status === 'ON_HOLD' ? 'bg-orange-500/20 text-orange-300' : 'bg-white/10 text-white/50']">
+                {{ t.status }}
+              </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="mb-3">
+              <div class="flex justify-between text-xs text-white/50 mb-1.5">
+                <span>Overall Progress</span>
+                <span class="font-bold text-purple-400">{{ t.progress }}%</span>
+              </div>
+              <div class="h-3 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-gradient-to-r from-purple-600 to-violet-500 rounded-full transition-all duration-700 relative"
+                  :style="{ width: `${t.progress}%` }"
+                >
+                  <div class="absolute inset-0 bg-white/20 animate-pulse rounded-full" v-if="t.status === 'ACTIVE'" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline dates -->
+            <div v-if="t.startDate || t.endDate" class="flex gap-4 text-xs text-white/40">
+              <span v-if="t.startDate">🚀 Started: {{ new Date(t.startDate).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) }}</span>
+              <span v-if="t.endDate">🏁 Target: {{ new Date(t.endDate).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) }}</span>
+            </div>
+          </div>
+
+          <!-- Milestones -->
+          <div v-if="t.milestones?.length" class="glass-morphism rounded-2xl border border-white/10 p-6">
+            <h4 class="text-sm font-bold text-white mb-4">Project Milestones</h4>
+            <div class="space-y-3">
+              <div v-for="m in t.milestones" :key="m.id"
+                class="flex items-start gap-3 p-3 rounded-xl bg-white/5">
+                <div :class="['w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0',
+                  m.status === 'COMPLETED' ? 'bg-green-500/20' :
+                  m.status === 'IN_PROGRESS' ? 'bg-blue-500/20' :
+                  m.status === 'DELAYED' ? 'bg-orange-500/20' : 'bg-white/10']">
+                  {{ m.status === 'COMPLETED' ? '✅' : m.status === 'IN_PROGRESS' ? '🔧' : m.status === 'DELAYED' ? '⚠️' : '⏳' }}
+                </div>
+                <div class="flex-1">
+                  <div class="text-sm font-semibold text-white">{{ m.title }}</div>
+                  <div v-if="m.description" class="text-xs text-white/40 mt-0.5">{{ m.description }}</div>
+                  <div class="text-xs text-white/30 mt-1">
+                    {{ new Date(m.startDate).toLocaleDateString('en-GB', { day:'numeric', month:'short' }) }}
+                    → {{ new Date(m.endDate).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) }}
+                  </div>
+                </div>
+                <span :class="['text-xs px-2 py-0.5 rounded-full flex-shrink-0',
+                  m.status === 'COMPLETED' ? 'bg-green-500/20 text-green-300' :
+                  m.status === 'IN_PROGRESS' ? 'bg-blue-500/20 text-blue-300' :
+                  m.status === 'DELAYED' ? 'bg-orange-500/20 text-orange-300' : 'bg-white/10 text-white/40']">
+                  {{ m.status.replace('_', ' ') }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- GitHub milestones (if linked) -->
+          <div v-if="t.github?.milestones?.length" class="glass-morphism rounded-2xl border border-white/10 p-6">
+            <h4 class="text-sm font-bold text-white mb-4">GitHub Milestones</h4>
+            <div class="space-y-3">
+              <div v-for="m in t.github.milestones" :key="m.number" class="p-3 rounded-xl bg-white/5">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-semibold text-white">{{ m.title }}</span>
+                  <span :class="['text-xs px-2 py-0.5 rounded-full',
+                    m.state === 'closed' ? 'bg-green-500/20 text-green-300' : 'bg-blue-500/20 text-blue-300']">
+                    {{ m.state === 'closed' ? '✅ Done' : '🔧 Active' }}
+                  </span>
+                </div>
+                <div class="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-purple-600 to-violet-500 rounded-full"
+                    :style="{ width: `${ m.open_issues + m.closed_issues > 0 ? Math.round(m.closed_issues / (m.open_issues + m.closed_issues) * 100) : 0 }%` }" />
+                </div>
+                <div class="text-xs text-white/30 mt-1">{{ m.closed_issues }}/{{ m.open_issues + m.closed_issues }} tasks completed</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent activity (commits) -->
+          <div v-if="t.github?.recentCommits?.length" class="glass-morphism rounded-2xl border border-white/10 p-6">
+            <h4 class="text-sm font-bold text-white mb-4">Recent Development Activity</h4>
+            <div class="space-y-2">
+              <div v-for="c in t.github.recentCommits" :key="c.sha"
+                class="flex items-start gap-3 p-2.5 rounded-lg bg-white/5">
+                <img v-if="c.avatar" :src="c.avatar" :alt="c.author" class="w-6 h-6 rounded-full flex-shrink-0 border border-white/10 mt-0.5" />
+                <div class="w-6 h-6 rounded-full bg-purple-700/40 flex items-center justify-center text-xs flex-shrink-0 mt-0.5" v-else>
+                  {{ c.author?.[0] }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs text-white/70 leading-snug">{{ c.message }}</div>
+                  <div class="text-xs text-white/30 mt-0.5">{{ c.author }} · <a :href="c.url" target="_blank" class="font-mono hover:text-purple-400">{{ c.sha }}</a></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Invoice View Modal -->
@@ -331,6 +471,7 @@ const activeTab = ref('submissions')
 const tabs = [
   { id: 'submissions', label: 'Submissions', icon: '📋' },
   { id: 'invoices', label: 'Invoices', icon: '🧾' },
+  { id: 'timeline', label: 'Timeline', icon: '📅' },
 ]
 
 // ── Submissions ──────────────────────────────────────────────
@@ -386,7 +527,29 @@ const isOverdue = (inv: any) =>
 onMounted(() => {
   fetchSubmissions()
   fetchInvoices()
+  fetchTimelines()
 })
+
+// ── Project Timelines ─────────────────────────────────────────
+const clientTimelines = ref<any[]>([])
+const timelinesLoading = ref(false)
+
+const fetchTimelines = async () => {
+  timelinesLoading.value = true
+  try {
+    const token = await getAccessToken()
+    if (!token) return
+    clientTimelines.value = await $fetch<any[]>('/api/timelines', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch (e) {
+    console.error('Failed to fetch timelines:', e)
+  } finally {
+    timelinesLoading.value = false
+  }
+}
+
+const selectedClientTimeline = ref<any>(null)
 
 // ── Helpers ───────────────────────────────────────────────────
 const currencySymbol = (currency: string) =>

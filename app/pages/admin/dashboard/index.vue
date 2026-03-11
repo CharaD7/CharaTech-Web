@@ -299,53 +299,64 @@
 
       <!-- Timelines Tab -->
       <div v-if="activeTab === 'timelines'">
-        <div class="glass-morphism p-6 rounded-xl border border-white/10">
-          <h3 class="text-2xl font-bold mb-6 text-white">Project Timelines</h3>
-          
-          <div class="space-y-6">
-            <div
-              v-for="timeline in timelines"
-              :key="timeline.id"
-              class="bg-white/5 p-6 rounded-lg"
-            >
-              <div class="flex justify-between items-start mb-4">
-                <div>
-                  <h4 class="text-xl font-bold text-white">{{ timeline.projectName }}</h4>
-                  <p class="text-white/60">{{ timeline.clientName }}</p>
-                </div>
-                <span
-                  :class="[
-                    'px-3 py-1 rounded-full text-xs font-semibold',
-                    getTimelineStatusClass(timeline.status)
-                  ]"
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <!-- Sidebar: list of timelines -->
+          <div class="lg:col-span-1 space-y-2">
+            <div class="glass-morphism rounded-xl border border-white/10 p-4">
+              <h3 class="text-sm font-semibold text-white mb-3">Projects</h3>
+              <div v-if="timelinesLoading" class="space-y-2">
+                <div v-for="i in 3" :key="i" class="h-16 bg-white/5 rounded-lg animate-pulse" />
+              </div>
+              <div v-else-if="!timelines.length" class="text-white/30 text-xs text-center py-4">
+                No timelines yet.<br />Create one from the Submissions tab.
+              </div>
+              <div v-else class="space-y-1.5">
+                <button
+                  v-for="t in timelines"
+                  :key="t.id"
+                  @click="selectedTimeline = t"
+                  :class="['w-full text-left p-3 rounded-lg border transition-all',
+                    selectedTimeline?.id === t.id
+                      ? 'bg-purple-600/20 border-purple-500/40'
+                      : 'bg-white/5 border-transparent hover:border-white/10']"
                 >
-                  {{ timeline.status }}
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-sm font-semibold text-white truncate">{{ t.projectName }}</span>
+                    <span v-if="t.githubRepo" class="flex-shrink-0 ml-1 text-xs text-purple-400" title="GitHub linked">🔗</span>
+                  </div>
+                  <div class="text-xs text-white/40 truncate">{{ t.clientName }}</div>
+                  <div :class="['text-xs mt-1 font-semibold',
+                    t.status === 'ACTIVE' ? 'text-green-400' :
+                    t.status === 'COMPLETED' ? 'text-emerald-400' :
+                    t.status === 'ON_HOLD' ? 'text-orange-400' : 'text-white/40']">
+                    {{ t.status }}
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main panel -->
+          <div class="lg:col-span-3">
+            <div v-if="!selectedTimeline" class="glass-morphism rounded-xl border border-dashed border-white/20 p-16 text-center">
+              <div class="text-4xl mb-3">📅</div>
+              <div class="text-white/50">Select a project timeline from the list</div>
+            </div>
+            <div v-else>
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-xl font-bold text-white">{{ selectedTimeline.projectName }}</h3>
+                  <div class="text-sm text-white/50">{{ selectedTimeline.clientName }}</div>
+                </div>
+                <span :class="['px-3 py-1 rounded-full text-xs font-semibold', getTimelineStatusClass(selectedTimeline.status)]">
+                  {{ selectedTimeline.status }}
                 </span>
               </div>
-
-              <div class="space-y-3">
-                <div
-                  v-for="milestone in timeline.milestones"
-                  :key="milestone.id"
-                  class="flex items-center gap-4 p-4 bg-black/20 rounded-lg"
-                >
-                  <div
-                    :class="[
-                      'w-4 h-4 rounded-full',
-                      milestone.status === 'COMPLETED' ? 'bg-green-500' :
-                      milestone.status === 'IN_PROGRESS' ? 'bg-blue-500' :
-                      'bg-gray-500'
-                    ]"
-                  ></div>
-                  <div class="flex-1">
-                    <div class="font-semibold text-white">{{ milestone.title }}</div>
-                    <div class="text-sm text-white/60">
-                      {{ formatDate(milestone.startDate) }} - {{ formatDate(milestone.endDate) }}
-                    </div>
-                  </div>
-                  <span class="text-sm text-white/70">{{ milestone.status }}</span>
-                </div>
-              </div>
+              <ProjectTimelinePanel
+                :timeline="selectedTimeline"
+                :admin-mode="true"
+                @updated="onTimelineUpdated"
+              />
             </div>
           </div>
         </div>
@@ -410,7 +421,9 @@ const conversations = ref([])
 const messages = ref([])
 const newMessage = ref('')
 const invoices = ref<any[]>([])
-const timelines = ref([])
+const timelines = ref<any[]>([])
+const selectedTimeline = ref<any>(null)
+const timelinesLoading = ref(false)
 const showInvoiceModal = ref(false)
 const showInvoicePreview = ref(false)
 const selectedInvoice = ref<any>(null)
@@ -684,7 +697,33 @@ const getTimelineStatusClass = (status: string) => {
 onMounted(() => {
   fetchSubmissions()
   fetchInvoices()
+  fetchTimelines()
 })
+
+async function fetchTimelines() {
+  timelinesLoading.value = true
+  try {
+    const token = await getAccessToken()
+    timelines.value = await $fetch('/api/admin/timelines', {
+      headers: { Authorization: `Bearer ${token}` },
+    }) as any[]
+    if (timelines.value.length && !selectedTimeline.value) {
+      selectedTimeline.value = timelines.value[0]
+    }
+  } catch (e) {
+    console.error('fetchTimelines error', e)
+  } finally {
+    timelinesLoading.value = false
+  }
+}
+
+function onTimelineUpdated(updatedTimeline: any) {
+  const idx = timelines.value.findIndex(t => t.id === updatedTimeline.id)
+  if (idx >= 0) timelines.value[idx] = { ...timelines.value[idx], ...updatedTimeline }
+  if (selectedTimeline.value?.id === updatedTimeline.id) {
+    selectedTimeline.value = { ...selectedTimeline.value, ...updatedTimeline }
+  }
+}
 </script>
 
 <style scoped>

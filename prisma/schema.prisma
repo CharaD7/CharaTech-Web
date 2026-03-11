@@ -128,32 +128,36 @@ model Invoice {
 }
 
 model ProjectTimeline {
-  id           String               @id @default(uuid())
-  submissionId String               @unique
-  startDate    DateTime?
-  endDate      DateTime?
-  milestones   ProjectMilestone[]
-  status       TimelineStatus       @default(PLANNING)
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+  id            String               @id @default(uuid())
+  submissionId  String               @unique
+  githubRepo    String?              // format: "owner/repo" e.g. "CharaD7/my-project"
+  githubRepoId  Int?                 // GitHub numeric repo ID (used for webhook matching)
+  startDate     DateTime?
+  endDate       DateTime?
+  milestones    ProjectMilestone[]
+  status        TimelineStatus       @default(PLANNING)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
 
   @@index([submissionId])
   @@index([status])
+  @@index([githubRepo])
 }
 
 model ProjectMilestone {
-  id               String           @id @default(uuid())
-  timelineId       String
-  title            String
-  description      String?
-  startDate        DateTime
-  endDate          DateTime
-  status           MilestoneStatus  @default(PENDING)
-  completedAt      DateTime?
-  order            Int
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  timeline         ProjectTimeline  @relation(fields: [timelineId], references: [id], onDelete: Cascade)
+  id                String           @id @default(uuid())
+  timelineId        String
+  title             String
+  description       String?
+  startDate         DateTime
+  endDate           DateTime
+  status            MilestoneStatus  @default(PENDING)
+  completedAt       DateTime?
+  order             Int
+  githubMilestoneId Int?             // GitHub milestone number (links our milestone to GitHub's)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  timeline          ProjectTimeline  @relation(fields: [timelineId], references: [id], onDelete: Cascade)
 
   @@index([timelineId])
   @@index([status])
