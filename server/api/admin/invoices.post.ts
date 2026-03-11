@@ -1,3 +1,5 @@
+import { sendEmail } from '~/server/utils/email'
+
 export default defineEventHandler(async (event) => {
   try {
     const user = await verifyToken(event)
@@ -51,15 +53,35 @@ export default defineEventHandler(async (event) => {
       }
     })
 
-    // Send notification to client
+    // Notify client with email + in-app
+    const client = await prisma.user.findUnique({ where: { id: clientId } })
+    if (client) {
+      await sendEmail(
+        client.email,
+        `Invoice ${invoiceNumber} Created`,
+        `
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
+            <h2>Invoice Created</h2>
+            <p>Hi ${client.fullName || 'there'},</p>
+            <p>A new invoice <strong>${invoiceNumber}</strong> has been created for your project.</p>
+            <p><strong>Total Amount:</strong> ${currency || 'USD'} ${totalAmount.toFixed(2)}</p>
+            ${dueDate ? `<p><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>` : ''}
+            <p>You will receive a separate email when the invoice is formally sent to you.</p>
+          </div>
+        `
+      )
+    }
+
     await prisma.notification.create({
       data: {
         userId: clientId,
-        type: 'QUOTE_READY',
+        type: 'INVOICE_GENERATED',
         channel: ['EMAIL', 'IN_APP'],
         subject: `Invoice ${invoiceNumber} Created`,
-        message: `A new invoice has been created for your project. Total amount: $${totalAmount}`
-      }
+        message: `A new invoice has been created for your project. Total: ${currency || 'USD'} ${totalAmount.toFixed(2)}`,
+        metadata: { invoiceId: invoice.id, invoiceNumber, amount: totalAmount, submissionId },
+        sentAt: new Date(),
+      },
     })
 
     return { success: true, invoice }

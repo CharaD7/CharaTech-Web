@@ -1,163 +1,199 @@
 <template>
-  <div class="relative">
-    <button 
+  <div class="relative" ref="containerRef">
+    <!-- Bell button -->
+    <button
       class="relative p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition"
-      @click="toggleDropdown"
       type="button"
+      @click="toggleDropdown"
     >
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
         <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
       </svg>
-      <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-        {{ unreadCount }}
-      </span>
+      <Transition name="badge">
+        <span
+          v-if="unreadCount > 0"
+          class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center font-bold px-1"
+        >
+          {{ unreadCount > 99 ? '99+' : unreadCount }}
+        </span>
+      </Transition>
     </button>
 
-    <div 
-      v-if="showDropdown"
-      class="absolute right-0 mt-2 w-80 bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-50"
-      @click.stop
-    >
-      <div class="p-3 border-b border-gray-700">
-        <h3 class="font-semibold text-white">Notifications</h3>
-      </div>
-      
-      <div class="max-h-96 overflow-y-auto">
-        <div v-if="notifications.length === 0" class="p-4 text-center text-gray-400 text-sm">
-          No notifications
-        </div>
-        
-        <div 
-          v-for="notification in notifications.slice(0, 5)" 
-          :key="notification.id"
-          class="p-3 border-b border-gray-700 hover:bg-gray-700/50 cursor-pointer transition"
-          @click="markAsRead(notification.id)"
-        >
-          <div class="flex items-start justify-between gap-2">
-            <div class="flex-1 min-w-0">
-              <div class="font-medium text-sm text-white truncate">
-                {{ notification.subject }}
-              </div>
-              <div class="text-xs text-gray-400 mt-1 line-clamp-2">
-                {{ notification.message }}
-              </div>
-              <div class="text-xs text-gray-500 mt-1">
-                {{ formatDate(notification.createdAt) }}
-              </div>
-            </div>
-            <span v-if="!notification.read" class="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded font-medium">
-              New
+    <!-- Dropdown -->
+    <Transition name="dropdown">
+      <div
+        v-if="showDropdown"
+        class="absolute right-0 mt-2 w-96 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden"
+        @click.stop
+      >
+        <!-- Header -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
+          <div class="flex items-center gap-2">
+            <h3 class="font-semibold text-white">Notifications</h3>
+            <span v-if="unreadCount > 0" class="px-2 py-0.5 bg-purple-500/30 text-purple-300 text-xs rounded-full font-semibold">
+              {{ unreadCount }} new
             </span>
           </div>
+          <button
+            v-if="unreadCount > 0"
+            class="text-xs text-purple-400 hover:text-purple-300 font-medium transition"
+            @click="markAllAsRead"
+          >
+            Mark all read
+          </button>
+        </div>
+
+        <!-- List -->
+        <div class="max-h-[420px] overflow-y-auto divide-y divide-white/5">
+          <!-- Loading skeleton -->
+          <template v-if="loading">
+            <div v-for="i in 3" :key="i" class="p-4 animate-pulse">
+              <div class="flex gap-3">
+                <div class="w-8 h-8 bg-white/10 rounded-lg flex-shrink-0" />
+                <div class="flex-1 space-y-2">
+                  <div class="h-3 bg-white/10 rounded w-3/4" />
+                  <div class="h-3 bg-white/10 rounded w-full" />
+                  <div class="h-2 bg-white/10 rounded w-1/4" />
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <div v-else-if="notifications.length === 0" class="py-12 text-center">
+            <div class="text-4xl mb-3">🔔</div>
+            <p class="text-gray-400 text-sm">You're all caught up!</p>
+          </div>
+
+          <button
+            v-for="n in notifications.slice(0, 6)"
+            :key="n.id"
+            class="w-full text-left px-4 py-3 hover:bg-white/5 transition flex items-start gap-3 group"
+            :class="{ 'bg-purple-500/5': !n.read }"
+            @click="openNotification(n)"
+          >
+            <!-- Type icon -->
+            <div
+              class="w-8 h-8 rounded-lg flex items-center justify-center text-base flex-shrink-0 mt-0.5"
+              :class="iconBg(n.type)"
+            >
+              {{ typeIcon(n.type) }}
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-2">
+                <p class="text-sm font-medium text-white truncate leading-tight">{{ n.subject }}</p>
+                <span v-if="!n.read" class="w-2 h-2 rounded-full bg-purple-400 flex-shrink-0 mt-1.5" />
+              </div>
+              <p class="text-xs text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">{{ n.message }}</p>
+              <p class="text-xs text-gray-600 mt-1">{{ formatDate(n.createdAt) }}</p>
+            </div>
+          </button>
+        </div>
+
+        <!-- Footer -->
+        <div class="border-t border-white/10 px-4 py-3 bg-white/5">
+          <NuxtLink
+            to="/notifications"
+            class="block text-center text-sm text-purple-400 hover:text-purple-300 font-medium transition"
+            @click="showDropdown = false"
+          >
+            View all notifications →
+          </NuxtLink>
         </div>
       </div>
-      
-      <div v-if="notifications.length > 0" class="p-3 border-t border-gray-700">
-        <NuxtLink 
-          to="/notifications" 
-          class="block text-center text-sm text-purple-400 hover:text-purple-300 font-medium"
-          @click="showDropdown = false"
-        >
-          View All Notifications
-        </NuxtLink>
-      </div>
-    </div>
+    </Transition>
+
+    <!-- Detail modal -->
+    <NotificationModal
+      v-if="selectedNotification"
+      v-model="showModal"
+      :notification="selectedNotification"
+      @mark-read="markAsRead"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-const { user, getAccessToken } = useAuth()
+import type { AppNotification } from '~/composables/useRealtimeNotifications'
 
-const notifications = ref<any[]>([])
+const { notifications, unreadCount, loading, fetchNotifications, subscribe, unsubscribe, markAsRead, markAllAsRead, formatDate } = useRealtimeNotifications()
+
 const showDropdown = ref(false)
-const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
+const showModal = ref(false)
+const selectedNotification = ref<AppNotification | null>(null)
+const containerRef = ref<HTMLElement | null>(null)
 
 const toggleDropdown = () => {
   showDropdown.value = !showDropdown.value
 }
 
-// Close dropdown when clicking outside
-onMounted(() => {
-  const handleClickOutside = (event: MouseEvent) => {
-    const target = event.target as HTMLElement
-    if (!target.closest('.relative')) {
+const openNotification = (n: AppNotification) => {
+  selectedNotification.value = n
+  showModal.value = true
+  showDropdown.value = false
+  if (!n.read) markAsRead(n.id)
+}
+
+// Click-outside
+onMounted(async () => {
+  await fetchNotifications()
+  subscribe()
+
+  const handler = (e: MouseEvent) => {
+    if (containerRef.value && !containerRef.value.contains(e.target as Node)) {
       showDropdown.value = false
     }
   }
-  
-  document.addEventListener('click', handleClickOutside)
-  
+  document.addEventListener('click', handler)
   onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside)
+    document.removeEventListener('click', handler)
+    unsubscribe()
   })
 })
 
-const fetchNotifications = async () => {
-  if (!user.value) return
-
-  try {
-    const token = await getAccessToken()
-    if (!token) return
-    
-    const data = await $fetch('/api/notifications', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    notifications.value = data
-  } catch (error) {
-    console.error('Failed to fetch notifications:', error)
-  }
+const iconMap: Record<string, string> = {
+  SUBMISSION_RECEIVED: '📋',
+  SUBMISSION_REVIEWED: '🔍',
+  STATUS_UPDATE: '🔄',
+  QUOTE_READY: '💰',
+  MESSAGE_RECEIVED: '💬',
+  INVOICE_GENERATED: '🧾',
+  TIMELINE_CREATED: '📅',
+  WELCOME: '🎉',
+  REMINDER: '⏰',
 }
 
-const markAsRead = async (id: string) => {
-  if (!user.value) return
-
-  try {
-    const token = await getAccessToken()
-    if (!token) return
-    
-    await $fetch(`/api/notifications/${id}/read`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    
-    const notification = notifications.value.find(n => n.id === id)
-    if (notification) {
-      notification.read = true
-    }
-  } catch (error) {
-    console.error('Failed to mark notification as read:', error)
-  }
+const iconBgMap: Record<string, string> = {
+  SUBMISSION_RECEIVED: 'bg-blue-500/20',
+  SUBMISSION_REVIEWED: 'bg-cyan-500/20',
+  STATUS_UPDATE: 'bg-yellow-500/20',
+  QUOTE_READY: 'bg-green-500/20',
+  MESSAGE_RECEIVED: 'bg-purple-500/20',
+  INVOICE_GENERATED: 'bg-orange-500/20',
+  TIMELINE_CREATED: 'bg-indigo-500/20',
+  WELCOME: 'bg-pink-500/20',
+  REMINDER: 'bg-red-500/20',
 }
 
-const formatDate = (date: string | Date) => {
-  const d = new Date(date)
-  const now = new Date()
-  const diff = now.getTime() - d.getTime()
-  
-  const minutes = Math.floor(diff / 60000)
-  if (minutes < 60) return `${minutes}m ago`
-  
-  const hours = Math.floor(diff / 3600000)
-  if (hours < 24) return `${hours}h ago`
-  
-  const days = Math.floor(diff / 86400000)
-  if (days < 7) return `${days}d ago`
-  
-  return d.toLocaleDateString()
-}
-
-onMounted(() => {
-  fetchNotifications()
-  
-  // Refresh notifications every 30 seconds
-  const interval = setInterval(fetchNotifications, 30000)
-  
-  onUnmounted(() => {
-    clearInterval(interval)
-  })
-})
+const typeIcon = (type: string) => iconMap[type] ?? '🔔'
+const iconBg = (type: string) => iconBgMap[type] ?? 'bg-gray-500/20'
 </script>
+
+<style scoped>
+.dropdown-enter-active, .dropdown-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.dropdown-enter-from, .dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+}
+
+.badge-enter-active, .badge-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.badge-enter-from, .badge-leave-to {
+  opacity: 0;
+  transform: scale(0.5);
+}
+</style>
+

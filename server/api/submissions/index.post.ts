@@ -59,10 +59,27 @@ export default defineEventHandler(async (event) => {
       type: 'SUBMISSION_RECEIVED',
       channel: ['EMAIL', 'SMS', 'IN_APP'],
       subject: 'Requirements Submission Received',
-      message: `Your requirements for "${body.projectName}" have been received.`,
+      message: `Your requirements for "${body.projectName}" have been received. Our team will review and get back to you shortly.`,
+      metadata: { submissionId: submission.id, projectName: body.projectName },
       sentAt: new Date(),
     },
   })
+
+  // Notify admin in-app
+  const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } })
+  if (admin) {
+    await prisma.notification.create({
+      data: {
+        userId: admin.id,
+        type: 'SUBMISSION_RECEIVED',
+        channel: ['IN_APP'],
+        subject: 'New Requirements Submission',
+        message: `${user.fullName || user.email} submitted requirements for "${body.projectName}".`,
+        metadata: { submissionId: submission.id, projectName: body.projectName, clientEmail: user.email },
+        sentAt: new Date(),
+      },
+    })
+  }
 
   return submission
 })
