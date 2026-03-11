@@ -207,11 +207,8 @@ const handleRegister = async () => {
         },
       })
 
-      // Wait a bit for the registration to complete
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // Use window.location for a full page reload to ensure proper state
-      window.location.href = '/dashboard'
+      // Redirect to email confirmation page
+      await navigateTo(`/auth/confirm?email=${encodeURIComponent(form.email)}`)
     } catch (err: any) {
       error.value = err.data?.message || err.message || 'Failed to create user profile'
       loading.value = false

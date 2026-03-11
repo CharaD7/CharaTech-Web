@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { useSupabase } from './useSupabase'
 import type { User } from '@supabase/supabase-js'
+import { useRuntimeConfig } from '#app'
 
 export const useAuth = () => {
   const { supabase } = useSupabase()
@@ -14,10 +15,15 @@ export const useAuth = () => {
   }
 
   const register = async (email: string, password: string) => {
+    const config = useRuntimeConfig()
+    const appUrl = config.public.appUrl || 'https://charatech-web.netlify.app'
     try {
       const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${appUrl}/auth/confirm`,
+        },
       })
 
       if (authError) {
