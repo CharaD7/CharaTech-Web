@@ -20,8 +20,17 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
     // Redirect authenticated users away from guest-only pages
     if (userStore.currentUser?.role === 'ADMIN') {
+      // If admin is on admin/login, redirect to admin dashboard
+      if (to.path === '/admin/login') {
+        return navigateTo('/admin/dashboard')
+      }
+      // If admin is on regular login/register, also redirect to admin dashboard
       return navigateTo('/admin/dashboard')
     }
+    // Regular users go to their dashboard
     return navigateTo('/dashboard')
   }
+  
+  // Not authenticated, allow access to login/register pages
+  // This allows the admin/login page to be accessible when not logged in
 })
