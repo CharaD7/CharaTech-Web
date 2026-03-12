@@ -1,4 +1,7 @@
 export default defineNuxtRouteMiddleware(async (to, from) => {
+  // Skip middleware on server-side to prevent SSR redirect issues
+  if (import.meta.server) return
+
   const userStore = useUserStore()
   const { supabase } = useSupabase()
 
