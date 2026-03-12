@@ -80,11 +80,14 @@
             </div>
 
             <div class="flex-1 min-w-0">
-              <div class="flex items-start justify-between gap-2">
-                <p class="text-sm font-medium text-white truncate leading-tight">{{ n.subject }}</p>
-                <span v-if="!n.read" class="w-2 h-2 rounded-full bg-purple-400 flex-shrink-0 mt-1.5" />
+              <div class="flex items-start justify-between gap-2 mb-1">
+                <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full" :class="categoryBg(n.type)">
+                  {{ categoryLabel(n.type) }}
+                </span>
+                <span v-if="!n.read" class="w-2 h-2 rounded-full bg-purple-400 flex-shrink-0 mt-1" />
               </div>
-              <p class="text-xs text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">{{ n.message }}</p>
+              <p class="text-sm font-medium text-white truncate leading-tight mb-0.5">{{ n.subject }}</p>
+              <p class="text-xs text-gray-400 line-clamp-2 leading-relaxed">{{ n.message }}</p>
               <p class="text-xs text-gray-600 mt-1">{{ formatDate(n.createdAt) }}</p>
             </div>
           </button>
@@ -175,8 +178,34 @@ const iconBgMap: Record<string, string> = {
   REMINDER: 'bg-red-500/20',
 }
 
+const categoryBgMap: Record<string, string> = {
+  SUBMISSION_RECEIVED: 'bg-blue-500/20 text-blue-300',
+  SUBMISSION_REVIEWED: 'bg-cyan-500/20 text-cyan-300',
+  STATUS_UPDATE: 'bg-yellow-500/20 text-yellow-300',
+  QUOTE_READY: 'bg-green-500/20 text-green-300',
+  MESSAGE_RECEIVED: 'bg-purple-500/20 text-purple-300',
+  INVOICE_GENERATED: 'bg-orange-500/20 text-orange-300',
+  TIMELINE_CREATED: 'bg-indigo-500/20 text-indigo-300',
+  WELCOME: 'bg-pink-500/20 text-pink-300',
+  REMINDER: 'bg-red-500/20 text-red-300',
+}
+
+const categoryLabelMap: Record<string, string> = {
+  SUBMISSION_RECEIVED: 'Submission',
+  SUBMISSION_REVIEWED: 'Review',
+  STATUS_UPDATE: 'Update',
+  QUOTE_READY: 'Quote',
+  MESSAGE_RECEIVED: 'Message',
+  INVOICE_GENERATED: 'Invoice',
+  TIMELINE_CREATED: 'Timeline',
+  WELCOME: 'Welcome',
+  REMINDER: 'Reminder',
+}
+
 const typeIcon = (type: string) => iconMap[type] ?? '🔔'
 const iconBg = (type: string) => iconBgMap[type] ?? 'bg-gray-500/20'
+const categoryBg = (type: string) => categoryBgMap[type] ?? 'bg-gray-500/20 text-gray-300'
+const categoryLabel = (type: string) => categoryLabelMap[type] ?? type
 </script>
 
 <style scoped>

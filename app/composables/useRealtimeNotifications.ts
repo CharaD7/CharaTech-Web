@@ -8,6 +8,8 @@ export interface AppNotification {
   metadata: Record<string, any> | null
   read: boolean
   readAt: string | null
+  archived: boolean
+  archivedAt: string | null
   createdAt: string
 }
 
@@ -56,11 +58,16 @@ export const useRealtimeNotifications = () => {
         },
         (payload) => {
           const raw = payload.new as any
+          // Only add notification if it has a valid createdAt and not archived
+          if (!raw.createdAt || raw.archived) return
+          
           // Ensure dates are properly formatted
           const newNotification: AppNotification = {
             ...raw,
-            createdAt: raw.createdAt || new Date().toISOString(),
+            createdAt: raw.createdAt,
             readAt: raw.readAt || null,
+            archived: raw.archived || false,
+            archivedAt: raw.archivedAt || null,
           }
           // Prepend so newest is first
           notifications.value = [newNotification, ...notifications.value]
@@ -130,6 +137,57 @@ export const useRealtimeNotifications = () => {
     }
   }
 
+  const bulkMarkAsRead = async (ids: string[]) => {
+    try {
+      const token = await getAccessToken()
+      if (!token) return
+      await $fetch('/api/notifications/bulk-read', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+        body: { ids },
+      })
+      const now = new Date().toISOString()
+      notifications.value = notifications.value.map(n => 
+        ids.includes(n.id) ? { ...n, read: true, readAt: now } : n
+      )
+    } catch (e) {
+      console.error('Failed to bulk mark as read:', e)
+    }
+  }
+
+  const bulkMarkAsUnread = async (ids: string[]) => {
+    try {
+      const token = await getAccessToken()
+      if (!token) return
+      await $fetch('/api/notifications/bulk-unread', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+        body: { ids },
+      })
+      notifications.value = notifications.value.map(n => 
+        ids.includes(n.id) ? { ...n, read: false, readAt: null } : n
+      )
+    } catch (e) {
+      console.error('Failed to bulk mark as unread:', e)
+    }
+  }
+
+  const bulkArchive = async (ids: string[]) => {
+    try {
+      const token = await getAccessToken()
+      if (!token) return
+      await $fetch('/api/notifications/bulk-archive', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+        body: { ids },
+      })
+      // Remove archived notifications from the list
+      notifications.value = notifications.value.filter(n => !ids.includes(n.id))
+    } catch (e) {
+      console.error('Failed to bulk archive:', e)
+    }
+  }
+
   const formatDate = (date: string | Date) => {
     if (!date) return 'Unknown date'
     const d = new Date(date)
@@ -155,6 +213,9 @@ export const useRealtimeNotifications = () => {
     unsubscribe,
     markAsRead,
     markAllAsRead,
+    bulkMarkAsRead,
+    bulkMarkAsUnread,
+    bulkArchive,
     formatDate,
   }
 }
