@@ -3,10 +3,12 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   if (import.meta.server) return
 
   const userStore = useUserStore()
-  const { supabase } = useSupabase()
-
-  // Check if user is authenticated
-  const { data: { session } } = await supabase.auth.getSession()
+  
+  try {
+    const { supabase } = useSupabase()
+    
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession()
   
   if (!session) {
     // Not authenticated, redirect to login for protected routes
@@ -26,6 +28,13 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
           return navigateTo('/login')
         }
       }
+    }
+  }
+  } catch (error) {
+    console.error('Auth middleware error:', error)
+    // If there's an error, allow navigation to continue for login/register/home/admin-login
+    if (to.path !== '/login' && to.path !== '/register' && to.path !== '/' && to.path !== '/admin/login' && !to.path.startsWith('/auth/')) {
+      return navigateTo('/login')
     }
   }
 })

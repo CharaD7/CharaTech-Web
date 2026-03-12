@@ -3,7 +3,15 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   
-  ssr: true, // Re-enable SSR, but will be used for SSG prerendering
+  ssr: true,
+  
+  nitro: {
+    preset: 'netlify',
+    prerender: {
+      routes: ['/'],
+      failOnError: false
+    }
+  },
   
   modules: [
     '@nuxt/ui',
@@ -56,12 +64,5 @@ export default defineNuxtConfig({
     plugins: {
       '@tailwindcss/postcss': {},
     },
-  },
-
-  nitro: {
-    prerender: {
-      routes: ['/'],
-      failOnError: false
-    }
   }
 })
