@@ -1,5 +1,3 @@
-import { sendEmail } from '~/server/utils/email'
-
 export default defineEventHandler(async (event) => {
   try {
     const user = await verifyToken(event)
