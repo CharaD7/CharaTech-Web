@@ -7,7 +7,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   
   if (!session) {
     // Not authenticated, redirect to login for protected routes
-    if (to.path !== '/login' && to.path !== '/register' && to.path !== '/' && !to.path.startsWith('/auth/')) {
+    // Allow access to login, register, homepage, auth callbacks, and admin login
+    if (to.path !== '/login' && to.path !== '/register' && to.path !== '/' && to.path !== '/admin/login' && !to.path.startsWith('/auth/')) {
       return navigateTo('/login')
     }
   } else {
