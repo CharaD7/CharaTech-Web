@@ -7,5 +7,10 @@ export default defineEventHandler(async (event) => {
     take: 50,
   })
 
-  return notifications
+  // Ensure dates are properly serialized as ISO strings
+  return notifications.map(n => ({
+    ...n,
+    createdAt: n.createdAt?.toISOString() || new Date().toISOString(),
+    readAt: n.readAt?.toISOString() || null,
+  }))
 })

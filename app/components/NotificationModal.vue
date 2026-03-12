@@ -103,7 +103,9 @@ const emit = defineEmits<{
 const { formatDate } = useRealtimeNotifications()
 
 const formattedDate = computed(() => {
+  if (!props.notification.createdAt) return 'Unknown date'
   const d = new Date(props.notification.createdAt)
+  if (isNaN(d.getTime())) return 'Unknown date'
   return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 })
 

@@ -55,7 +55,13 @@ export const useRealtimeNotifications = () => {
           filter: `userId=eq.${user.value.id}`,
         },
         (payload) => {
-          const newNotification = payload.new as AppNotification
+          const raw = payload.new as any
+          // Ensure dates are properly formatted
+          const newNotification: AppNotification = {
+            ...raw,
+            createdAt: raw.createdAt || new Date().toISOString(),
+            readAt: raw.readAt || null,
+          }
           // Prepend so newest is first
           notifications.value = [newNotification, ...notifications.value]
           // Show a toast for in-app notifications
@@ -125,7 +131,9 @@ export const useRealtimeNotifications = () => {
   }
 
   const formatDate = (date: string | Date) => {
+    if (!date) return 'Unknown date'
     const d = new Date(date)
+    if (isNaN(d.getTime())) return 'Unknown date'
     const now = new Date()
     const diff = now.getTime() - d.getTime()
     const minutes = Math.floor(diff / 60000)
