@@ -67,19 +67,26 @@ Then fill in your local development credentials. The `.env` file is already conf
 
 #### Production Setup
 
-For production deployment on Netlify:
+For production deployment on Vercel:
 
 1. **Database**: Set up a cloud PostgreSQL database (Railway, Supabase, Neon, or Render)
-2. **Netlify Environment Variables**: 
-   - Go to your Netlify site dashboard
-   - Navigate to **Site settings** → **Environment variables**
+2. **Vercel Environment Variables**:
+   - Go to your Vercel project dashboard
+   - Navigate to **Settings** → **Environment Variables**
    - Add all variables from `.env.production`
    - Update `DATABASE_URL` with your production database URL
-   - Update `NUXT_PUBLIC_APP_URL` with your Netlify URL
+   - Update `NUXT_PUBLIC_APP_URL` with your Vercel URL
+   - Set `NITRO_PRESET=vercel`
    - Generate a secure `JWT_SECRET`:
      ```bash
      node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
      ```
+   - Remove any legacy env vars that force Netlify output, such as `NETLIFY=true` or `NITRO_PRESET=netlify`
+
+3. **Vercel Build Settings**:
+   - Framework preset: `Nuxt.js`
+   - Build command: `pnpm build`
+   - Output directory: leave empty/default
 
 See `tmp/ENVIRONMENT_SETUP.md` for detailed environment configuration guide.
 
@@ -140,7 +147,8 @@ pnpm env:check
 - `.env.development` - Development environment template
 - `.env.production` - Production environment template
 - `.env.example` - Environment variables template
-- `netlify.toml` - Netlify deployment configuration
+- `vercel.json` - Vercel deployment configuration
+- `netlify.toml` - Legacy Netlify deployment configuration
 - `tmp/ENVIRONMENT_SETUP.md` - Detailed environment setup guide
 
 ## 🎯 First Steps

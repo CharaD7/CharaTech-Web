@@ -1,18 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+const productionAppUrl = process.env.NUXT_PUBLIC_APP_URL || 'https://chara-tech-web.vercel.app'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  
+
   ssr: true,
-  
-  nitro: {
-    preset: 'netlify',
-    prerender: {
-      routes: ['/'],
-      failOnError: false
-    }
-  },
-  
   modules: [
     '@nuxt/ui',
     '@vueuse/motion/nuxt',
@@ -34,7 +27,7 @@ export default defineNuxtConfig({
       supabaseProjectUrl: process.env.SUPABASE_PROJECT_URL,
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
       adminEmail: process.env.ADMIN_EMAIL || 'admin@charatech.com',
-      appUrl: process.env.NUXT_PUBLIC_APP_URL || (process.env.NODE_ENV === 'production' ? 'https://your-app.netlify.app' : 'http://localhost:3000')
+      appUrl: process.env.NODE_ENV === 'production' ? productionAppUrl : 'http://localhost:3000'
     }
   },
 
@@ -64,5 +57,13 @@ export default defineNuxtConfig({
     plugins: {
       '@tailwindcss/postcss': {},
     },
+  },
+
+  nitro: {
+    preset: process.env.NITRO_PRESET || 'vercel',
+    prerender: {
+      routes: ['/'],
+      failOnError: false
+    }
   }
 })

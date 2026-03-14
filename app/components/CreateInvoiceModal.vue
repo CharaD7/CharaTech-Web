@@ -443,7 +443,7 @@
                     <p class="text-white/30 text-[10px] uppercase tracking-widest mb-2">From</p>
                     <p class="text-white font-bold text-sm">CharaTech Ltd.</p>
                     <p class="text-white/50 text-xs mt-0.5">info@charatech.com</p>
-                    <p class="text-white/50 text-xs">charatech-web.netlify.app</p>
+                    <p class="text-white/50 text-xs">{{ companySiteHost }}</p>
                   </div>
                   <div class="px-6 py-5">
                     <p class="text-white/30 text-[10px] uppercase tracking-widest mb-2">Bill To</p>
@@ -634,6 +634,12 @@ const emit = defineEmits<{
 }>()
 
 const { getAccessToken } = useAuth()
+const config = useRuntimeConfig()
+const companySiteHost = computed(() =>
+  (config.public.appUrl || 'https://chara-tech-web.vercel.app')
+    .replace(/^https?:\/\//, '')
+    .replace(/\/$/, '')
+)
 
 // ── State ──────────────────────────────────────────────────
 let _keyCounter = 0

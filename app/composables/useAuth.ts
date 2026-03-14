@@ -16,7 +16,7 @@ export const useAuth = () => {
 
   const register = async (email: string, password: string, fullName?: string) => {
     const config = useRuntimeConfig()
-    const appUrl = (config.public.appUrl || 'https://charatech-web.netlify.app').replace(/\/$/, '')
+    const appUrl = (config.public.appUrl || 'https://chara-tech-web.vercel.app').replace(/\/$/, '')
     try {
       const { data, error: authError } = await supabase.auth.signUp({
         email,
