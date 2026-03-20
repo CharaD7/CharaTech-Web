@@ -1,57 +1,73 @@
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
-  
-  const { supabaseUid, email, fullName, phoneNumber, companyName } = body
+  try {
+    const body = await readBody(event)
+    
+    const { supabaseUid, email, fullName, phoneNumber, companyName } = body
 
-  if (!supabaseUid || !email) {
+    if (!supabaseUid || !email) {
+      throw createError({
+        statusCode: 400,
+        message: 'Supabase UID and email are required',
+      })
+    }
+
+    const config = useRuntimeConfig()
+    const isAdmin = supabaseUid === config.adminSupabaseUid
+
+    let user
+    try {
+      user = await prisma.user.upsert({
+        where: { supabaseUid },
+        create: {
+          supabaseUid,
+          email,
+          fullName,
+          phoneNumber,
+          companyName,
+          role: isAdmin ? 'ADMIN' : 'CLIENT',
+        },
+        update: {
+          email,
+        },
+      })
+    } catch (dbError: any) {
+      console.error('Database error during user upsert:', dbError)
+      throw createError({
+        statusCode: 500,
+        message: 'Failed to create user in database. Please try again.',
+      })
+    }
+
+    if (user.role === 'CLIENT') {
+      // Create welcome notification (non-blocking - don't fail registration if this fails)
+      try {
+        await prisma.notification.create({
+          data: {
+            userId: user.id,
+            type: 'WELCOME',
+            channel: ['IN_APP'],
+            subject: 'Welcome to CharaTech!',
+            message: 'Thank you for registering with CharaTech Requirements Platform.',
+            sentAt: new Date(),
+          },
+        })
+      } catch (notifError) {
+        // Log but don't fail - notification is non-critical
+        console.error('Failed to create welcome notification:', notifError)
+      }
+    }
+
+    return user
+  } catch (error: any) {
+    // Re-throw H3 errors as-is
+    if (error.statusCode) {
+      throw error
+    }
+    // Wrap unexpected errors
+    console.error('Registration error:', error)
     throw createError({
-      statusCode: 400,
-      message: 'Supabase UID and email are required',
+      statusCode: 500,
+      message: error.message || 'An unexpected error occurred during registration',
     })
   }
-
-  const config = useRuntimeConfig()
-  const isAdmin = supabaseUid === config.adminSupabaseUid
-
-  const user = await prisma.user.upsert({
-    where: { supabaseUid },
-    create: {
-      supabaseUid,
-      email,
-      fullName,
-      phoneNumber,
-      companyName,
-      role: isAdmin ? 'ADMIN' : 'CLIENT',
-    },
-    update: {
-      email,
-    },
-  })
-
-  if (user.role === 'CLIENT') {
-    // Temporarily commented out to bypass email rate limit during development
-    // await sendEmail(
-    //   user.email,
-    //   'Welcome to CharaTech!',
-    //   `
-    //     <h1>Welcome to CharaTech Requirements Platform!</h1>
-    //     <p>Hi ${user.fullName || 'there'},</p>
-    //     <p>Thank you for registering. You can now submit your software requirements.</p>
-    //     <p>Visit your dashboard: ${config.public.appUrl}/dashboard</p>
-    //   `
-    // )
-
-    await prisma.notification.create({
-      data: {
-        userId: user.id,
-        type: 'WELCOME',
-        channel: ['IN_APP'], // Removed 'EMAIL' channel
-        subject: 'Welcome to CharaTech!',
-        message: 'Thank you for registering with CharaTech Requirements Platform.',
-        sentAt: new Date(),
-      },
-    })
-  }
-
-  return user
 })

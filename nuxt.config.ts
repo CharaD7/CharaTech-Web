@@ -34,7 +34,7 @@ export default defineNuxtConfig({
       supabaseProjectUrl: process.env.SUPABASE_PROJECT_URL,
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
       adminEmail: process.env.ADMIN_EMAIL || 'admin@charatech.com',
-      appUrl: process.env.NUXT_PUBLIC_APP_URL || (process.env.NODE_ENV === 'production' ? 'https://your-app.netlify.app' : 'http://localhost:3000')
+      appUrl: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3000'
     }
   },
 
