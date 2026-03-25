@@ -17,10 +17,14 @@ model User {
   role          UserRole       @default(CLIENT)
   emailVerified Boolean        @default(false)
   phoneVerified Boolean        @default(false)
+  linearUserId  String?
+  linearTeamId  String?
+  calendlyUri   String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   notifications Notification[]
   submissions   Submission[]
+  calendlyBookings CalendlyBooking[]
 
   @@index([firebaseUid])
   @@index([supabaseUid])
@@ -44,15 +48,99 @@ model Submission {
   reviewedAt          DateTime?
   reviewedBy          String?
   adminNotes          String?
+  currentVersion      Int              @default(1)
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
   attachments         Attachment[]
+  versions            SubmissionVersion[]
+  linearIssues        LinearIssue[]
   user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
   @@index([industry])
   @@index([createdAt])
+}
+
+model SubmissionVersion {
+  id           String     @id @default(uuid())
+  submissionId String
+  version      Int
+  data         Json
+  notes        String?
+  createdBy    String
+  createdAt    DateTime  @default(now())
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, version])
+  @@index([submissionId])
+}
+
+model LinearIssue {
+  id             String    @id @default(uuid())
+  submissionId   String
+  linearId       String    @unique
+  linearNumber   Int
+  linearTitle    String
+  linearUrl      String
+  linearState    String
+  linearPriority Int?
+  assignee       String?
+  dueDate        DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  submission     Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId])
+  @@index([linearState])
+}
+
+model CalendlyBooking {
+  id              String    @id @default(uuid())
+  eventUri        String    @unique
+  inviteeUri      String    @unique
+  userId          String
+  eventName       String
+  startTime       DateTime
+  endTime         DateTime
+  status          String
+  cancelUrl       String?
+  rescheduleUrl   String?
+  location        String?
+  cancelReason    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([startTime])
+}
+
+model CollabSession {
+  id           String    @id @default(uuid())
+  submissionId String    @unique
+  isActive    Boolean   @default(true)
+  participants String[]  // Array of user IDs
+  lastActivity DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([submissionId])
+  @@index([isActive])
+}
+
+model CollabCursor {
+  id        String   @id @default(uuid())
+  sessionId String
+  userId    String
+  userName  String
+  field     String   // Which field they're editing
+  position Int      // Cursor position
+  color    String   // User's cursor color
+  updatedAt DateTime @default(now())
+
+  @@unique([sessionId, userId])
+  @@index([sessionId])
 }
 
 model Attachment {
@@ -285,4 +373,19 @@ enum MilestoneStatus {
   COMPLETED
   DELAYED
   CANCELLED
+}
+
+enum LinearIssueState {
+  BACKLOG
+  TRIAGED
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+  CANCELLED
+}
+
+enum CalendlyEventStatus {
+  ACTIVE
+  CANCELLED
+  PAYMENT_PENDING
 }
