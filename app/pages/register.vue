@@ -6,24 +6,33 @@
     </div>
 
     <form @submit.prevent="handleRegister" class="space-y-5">
-      <BaseInput
-        v-model="form.fullName"
-        type="text"
-        label="Full Name"
-        placeholder="John Doe"
-        required
-        autofocus
-        autocomplete="name"
-      />
+      <div>
+        <label for="fullName" class="block text-sm font-medium text-white mb-2">
+          Full Name
+        </label>
+        <input
+          id="fullName"
+          v-model="form.fullName"
+          type="text"
+          required
+          class="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none transition"
+          placeholder="John Doe"
+        />
+      </div>
 
-      <BaseInput
-        v-model="form.email"
-        type="email"
-        label="Email Address"
-        placeholder="you@example.com"
-        required
-        autocomplete="email"
-      />
+      <div>
+        <label for="email" class="block text-sm font-medium text-white mb-2">
+          Email Address
+        </label>
+        <input
+          id="email"
+          v-model="form.email"
+          type="email"
+          required
+          class="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none transition"
+          placeholder="you@example.com"
+        />
+      </div>
 
       <div class="relative z-20">
         <label class="block text-sm font-medium text-white mb-2">
@@ -50,41 +59,67 @@
         </p>
       </div>
 
-      <BaseInput
-        v-model="form.companyName"
-        type="text"
-        label="Company Name"
-        placeholder="Your Company Inc."
-        hint="(Optional)"
-      />
+      <div>
+        <label for="company" class="block text-sm font-medium text-white mb-2">
+          Company Name <span class="text-gray-300">(Optional)</span>
+        </label>
+        <input
+          id="company"
+          v-model="form.companyName"
+          type="text"
+          class="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none transition"
+          placeholder="Your Company Inc."
+        />
+      </div>
 
-      <BaseInput
-        v-model="form.password"
-        type="password"
-        label="Password"
-        placeholder="Minimum 6 characters"
-        required
-        autocomplete="new-password"
-      />
+      <div>
+        <label for="password" class="block text-sm font-medium text-white mb-2">
+          Password
+        </label>
+        <div class="relative">
+          <input
+            id="password"
+            v-model="form.password"
+            :type="showPassword ? 'text' : 'password'"
+            required
+            minlength="6"
+            class="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none transition pr-10"
+            placeholder="Minimum 6 characters"
+          />
+          <button
+            type="button"
+            @click="showPassword = !showPassword"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white transition"
+          >
+            <svg v-if="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
-      <BaseAlert
-        v-model="showError"
-        variant="danger"
-        :message="error"
-        dismissible
-        @update:model-value="showError = $event"
-      />
+      <div v-if="error" class="bg-red-500/20 border border-red-400/50 text-white px-4 py-3 rounded-lg backdrop-blur-sm">
+        {{ error }}
+      </div>
 
-      <BaseButton
+      <button
         type="submit"
-        variant="primary"
-        size="lg"
-        class="w-full"
-        :loading="loading"
-        loading-text="Creating account..."
+        :disabled="loading"
+        class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 focus:ring-offset-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
       >
-        Create Account
-      </BaseButton>
+        <span v-if="!loading">Create Account</span>
+        <span v-else class="flex items-center justify-center gap-2">
+          <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Creating account...
+        </span>
+      </button>
     </form>
 
     <p class="mt-6 text-center text-white">
@@ -106,7 +141,6 @@ definePageMeta({
 })
 
 const { register } = useAuth()
-const router = useRouter()
 
 const form = reactive({
   fullName: '',
@@ -118,7 +152,7 @@ const form = reactive({
 
 const loading = ref(false)
 const error = ref('')
-const showError = ref(false)
+const showPassword = ref(false)
 const phoneValid = ref(true)
 
 const onPhoneValidate = (phoneObject: any) => {
@@ -131,18 +165,15 @@ const onPhoneValidate = (phoneObject: any) => {
 const handleRegister = async () => {
   loading.value = true
   error.value = ''
-  showError.value = false
 
   if (!phoneValid.value && form.phoneNumber) {
     error.value = 'Please enter a valid phone number'
-    showError.value = true
     loading.value = false
     return
   }
 
   if (form.password.length < 6) {
     error.value = 'Password must be at least 6 characters'
-    showError.value = true
     loading.value = false
     return
   }
@@ -165,12 +196,10 @@ const handleRegister = async () => {
       await navigateTo(`/auth/confirm?email=${encodeURIComponent(form.email)}`)
     } catch (err: any) {
       error.value = err.data?.message || err.message || 'Failed to create user profile'
-      showError.value = true
       loading.value = false
     }
   } else {
     error.value = result.error || 'Registration failed. Please try again.'
-    showError.value = true
     loading.value = false
   }
 }

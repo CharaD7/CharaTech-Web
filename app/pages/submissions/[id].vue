@@ -54,6 +54,10 @@
             <pre class="text-xs text-white/80">{{ JSON.stringify(submission.requirements, null, 2) }}</pre>
           </div>
         </div>
+
+        <div class="mt-8">
+          <VersionHistory :submission-id="submission.id" />
+        </div>
       </div>
 
       <div class="mt-8 flex justify-between">

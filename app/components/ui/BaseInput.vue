@@ -4,31 +4,38 @@
       {{ label }}
       <span v-if="required" class="text-red-400">*</span>
     </label>
-    <div class="relative">
-      <input
-        :id="inputId"
-        :type="actualType"
-        :value="modelValue"
-        :placeholder="placeholder"
-        :disabled="disabled"
-        :required="required"
-        :autocomplete="autocomplete"
-        :autofocus="autofocus"
-        :class="[
-          'w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none transition',
-          { 'pr-10': type === 'password' },
-          { 'cursor-not-allowed opacity-50': disabled },
-          inputClass
-        ]"
-        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-        @blur="$emit('blur', $event)"
-        @focus="$emit('focus', $event)"
-      />
+    <div class="relative group">
+      <div class="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg blur opacity-30 group-hover:opacity-50 transition duration-200"></div>
+      <div class="relative">
+        <input
+          :id="inputId"
+          :type="actualType"
+          :value="modelValue"
+          :placeholder="placeholder"
+          :disabled="disabled"
+          :required="required"
+          :autocomplete="autocomplete"
+          :autofocus="autofocus"
+          :class="[
+            'w-full px-4 py-3 bg-gray-900/80 backdrop-blur-md border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none transition-all duration-300',
+            { 'pr-10': type === 'password' },
+            { 'cursor-not-allowed opacity-50': disabled },
+            isFocused ? 'border-purple-400 shadow-lg shadow-purple-500/20 bg-gray-800/90' : 'hover:border-white/30',
+            inputClass
+          ]"
+          @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+          @blur="isFocused = false; $emit('blur', $event)"
+          @focus="isFocused = true; $emit('focus', $event)"
+        />
+        <div v-if="!modelValue && !isFocused" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none transition-opacity duration-200" :class="{ 'opacity-0': isFocused }">
+          {{ placeholder }}
+        </div>
+      </div>
       <button
         v-if="type === 'password'"
         type="button"
         @click="showPassword = !showPassword"
-        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white transition"
+        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-purple-300 transition-colors"
       >
         <svg v-if="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -74,6 +81,7 @@ defineEmits<{
 }>()
 
 const showPassword = ref(false)
+const isFocused = ref(false)
 const inputId = `input-${Math.random().toString(36).slice(2, 9)}`
 
 const actualType = computed(() => {

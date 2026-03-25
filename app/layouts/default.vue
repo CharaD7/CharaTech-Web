@@ -11,6 +11,12 @@
           <ClientOnly>
             <div class="flex items-center gap-4">
               <template v-if="user">
+                <NuxtLink 
+                  to="/book"
+                  class="text-white hover:text-purple-300 transition text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/5 flex items-center gap-2"
+                >
+                  📅 Book Consultation
+                </NuxtLink>
                 <NotificationCenter />
                 <NuxtLink 
                   :to="userStore.isAdmin ? '/admin/dashboard' : '/dashboard'"

@@ -299,6 +299,50 @@
           </div>
         </div>
       </div>
+
+      <!-- Linear Tab -->
+      <div v-if="activeTab === 'linear'">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-1">
+            <div class="glass-morphism p-6 rounded-xl border border-white/10">
+              <h3 class="text-lg font-semibold text-white mb-4">Select Submission</h3>
+              <div v-if="!submissions.length" class="text-white/50 text-sm text-center py-4">
+                No submissions available
+              </div>
+              <div v-else class="space-y-2 max-h-96 overflow-y-auto">
+                <button
+                  v-for="sub in submissions"
+                  :key="sub.id"
+                  @click="selectedLinearSubmission = sub"
+                  :class="[
+                    'w-full text-left p-3 rounded-lg border transition-all',
+                    selectedLinearSubmission?.id === sub.id
+                      ? 'bg-purple-600/20 border-purple-500/40'
+                      : 'bg-white/5 border-transparent hover:border-white/10'
+                  ]"
+                >
+                  <div class="text-sm font-medium text-white truncate">{{ sub.projectName }}</div>
+                  <div class="text-xs text-white/40 truncate">{{ sub.user?.email }}</div>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="lg:col-span-2">
+            <div class="glass-morphism p-6 rounded-xl border border-white/10">
+              <div v-if="!selectedLinearSubmission" class="text-center py-16">
+                <div class="text-4xl mb-3">🔗</div>
+                <div class="text-white/50">Select a submission to view Linear issues</div>
+              </div>
+              <LinearIssuesPanel
+                v-else
+                :key="selectedLinearSubmission.id"
+                :submission-id="selectedLinearSubmission.id"
+                @sync="syncToLinear"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -342,7 +386,8 @@ const tabs = [
   { id: 'submissions', label: 'Submissions', icon: '📋' },
   { id: 'messages', label: 'Messages', icon: '💬' },
   { id: 'invoices', label: 'Invoices', icon: '🧾' },
-  { id: 'timelines', label: 'Timelines', icon: '📅' }
+  { id: 'timelines', label: 'Timelines', icon: '📅' },
+  { id: 'linear', label: 'Linear', icon: '🔗' }
 ]
 
 const stats = ref([
@@ -362,6 +407,7 @@ const invoices = ref<any[]>([])
 const timelines = ref<any[]>([])
 const selectedTimeline = ref<any>(null)
 const timelinesLoading = ref(false)
+const selectedLinearSubmission = ref<any>(null)
 const showInvoiceModal = ref(false)
 const showInvoicePreview = ref(false)
 const selectedInvoice = ref<any>(null)
@@ -660,6 +706,21 @@ function onTimelineUpdated(updatedTimeline: any) {
   if (idx >= 0) timelines.value[idx] = { ...timelines.value[idx], ...updatedTimeline }
   if (selectedTimeline.value?.id === updatedTimeline.id) {
     selectedTimeline.value = { ...selectedTimeline.value, ...updatedTimeline }
+  }
+}
+
+const syncToLinear = async () => {
+  if (!selectedLinearSubmission.value) return
+  
+  try {
+    const headers = await getAuthHeaders()
+    await $fetch('/api/linear/sync', {
+      method: 'POST',
+      headers,
+      body: { submissionId: selectedLinearSubmission.value.id }
+    })
+  } catch (error) {
+    console.error('Failed to sync to Linear:', error)
   }
 }
 </script>
