@@ -58,6 +58,10 @@
         <div class="mt-8">
           <VersionHistory :submission-id="submission.id" />
         </div>
+
+        <div class="mt-8">
+          <CollabEditor :submission-id="submission.id" />
+        </div>
       </div>
 
       <div class="mt-8 flex justify-between">
