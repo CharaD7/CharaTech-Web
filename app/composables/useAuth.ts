@@ -1,15 +1,32 @@
 import { ref } from 'vue'
-import { useRuntimeConfig } from '#app'
 
 export const useAuth = () => {
   const user = useState<any>('firebase-user', () => null)
   const isInitialized = ref(false)
+  const isFirebaseReady = ref(false)
 
-  const initAuth = () => {
-    const { $firebaseAuth, $firebaseOnAuthStateChanged } = useNuxtApp()
+  const waitForFirebase = async () => {
+    if (isFirebaseReady.value) return true
     
-    if ($firebaseAuth && $firebaseOnAuthStateChanged) {
-      $firebaseOnAuthStateChanged($firebaseAuth, (firebaseUser: any) => {
+    const { $initFirebase, $getFirebaseAuth } = useNuxtApp()
+    
+    if ($initFirebase) {
+      await $initFirebase()
+      isFirebaseReady.value = true
+      return true
+    }
+    return false
+  }
+
+  const initAuth = async () => {
+    const { $getFirebaseAuth } = useNuxtApp()
+    const auth = $getFirebaseAuth?.()
+    
+    if (auth) {
+      const firebase = (window as any).firebase
+      
+      // Set up auth state listener
+      auth.onAuthStateChanged((firebaseUser: any) => {
         user.value = firebaseUser
         isInitialized.value = true
       })
@@ -17,18 +34,23 @@ export const useAuth = () => {
   }
 
   if (import.meta.client && !isInitialized.value) {
-    initAuth()
+    waitForFirebase().then(() => {
+      initAuth()
+    })
   }
 
   const register = async (email: string, password: string, fullName?: string) => {
-    const { $firebaseCreateUserWithEmailAndPassword, $firebaseAuth } = useNuxtApp()
+    await waitForFirebase()
     
-    if (!$firebaseAuth || !$firebaseCreateUserWithEmailAndPassword) {
+    const { $getFirebaseAuth } = useNuxtApp()
+    const auth = $getFirebaseAuth?.()
+    
+    if (!auth) {
       return { success: false, error: 'Firebase not initialized' }
     }
 
     try {
-      const { user: firebaseUser, error } = await $firebaseCreateUserWithEmailAndPassword($firebaseAuth, email, password)
+      const { user: firebaseUser, error } = await auth.createUserWithEmailAndPassword(email, password)
       if (error) {
         console.error('Firebase registration error:', error)
         return { success: false, error: error.message }
@@ -42,14 +64,17 @@ export const useAuth = () => {
   }
 
   const login = async (email: string, password: string) => {
-    const { $firebaseSignInWithEmailAndPassword, $firebaseAuth } = useNuxtApp()
+    await waitForFirebase()
     
-    if (!$firebaseAuth || !$firebaseSignInWithEmailAndPassword) {
+    const { $getFirebaseAuth } = useNuxtApp()
+    const auth = $getFirebaseAuth?.()
+    
+    if (!auth) {
       return { success: false, error: 'Firebase not initialized' }
     }
 
     try {
-      const { user: firebaseUser, error } = await $firebaseSignInWithEmailAndPassword($firebaseAuth, email, password)
+      const { user: firebaseUser, error } = await auth.signInWithEmailAndPassword(email, password)
       if (error) {
         console.error('Firebase login error:', error)
         return { success: false, error: error.message }
@@ -63,14 +88,17 @@ export const useAuth = () => {
   }
 
   const logout = async () => {
-    const { $firebaseSignOut } = useNuxtApp()
+    await waitForFirebase()
     
-    if (!$firebaseSignOut) {
+    const { $getFirebaseAuth } = useNuxtApp()
+    const auth = $getFirebaseAuth?.()
+    
+    if (!auth) {
       return { success: false, error: 'Firebase not initialized' }
     }
 
     try {
-      await $firebaseSignOut()
+      await auth.signOut()
       user.value = null
       return { success: true }
     } catch (error: any) {
@@ -80,14 +108,17 @@ export const useAuth = () => {
   }
 
   const getAccessToken = async (): Promise<string | null> => {
-    const { $firebaseAuth } = useNuxtApp()
+    await waitForFirebase()
     
-    if (!$firebaseAuth || !$firebaseAuth.currentUser) {
+    const { $getFirebaseAuth } = useNuxtApp()
+    const auth = $getFirebaseAuth?.()
+    
+    if (!auth?.currentUser) {
       return null
     }
 
     try {
-      const token = await $firebaseAuth.currentUser.getIdToken()
+      const token = await auth.currentUser.getIdToken()
       return token
     } catch (error) {
       console.error('Failed to get Firebase token:', error)

@@ -1,12 +1,10 @@
 export default defineNuxtPlugin({
   name: 'firebase',
   enforce: 'pre',
-  async setup() {
+  setup(nuxtApp) {
     const config = useRuntimeConfig()
     
-    const firebaseApp = await import('firebase/app')
-    const firebaseAuth = await import('firebase/auth')
-    
+    // Load Firebase from CDN
     const firebaseConfig = {
       apiKey: config.public.firebaseApiKey,
       authDomain: config.public.firebaseAuthDomain,
@@ -16,20 +14,36 @@ export default defineNuxtPlugin({
       appId: config.public.firebaseAppId,
     }
 
-    const app = firebaseApp.getApps().length > 0 
-      ? firebaseApp.getApps()[0] 
-      : firebaseApp.initializeApp(firebaseConfig)
-    
-    const auth = firebaseAuth.getAuth(app)
+    // Load Firebase SDK from CDN
+    const loadFirebase = () => {
+      return new Promise<void>((resolve, reject) => {
+        if ((window as any).firebase?.apps?.length) {
+          resolve()
+          return
+        }
+
+        const script = document.createElement('script')
+        script.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js'
+        script.onload = () => {
+          const authScript = document.createElement('script')
+          authScript.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js'
+          authScript.onload = () => {
+            ;(window as any).firebase.initializeApp(firebaseConfig)
+            resolve()
+          }
+          authScript.onerror = reject
+          document.head.appendChild(authScript)
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      })
+    }
 
     return {
       provide: {
-        firebaseApp: app,
-        firebaseAuth: auth,
-        firebaseSignInWithEmailAndPassword: firebaseAuth.signInWithEmailAndPassword,
-        firebaseCreateUserWithEmailAndPassword: firebaseAuth.createUserWithEmailAndPassword,
-        firebaseSignOut: firebaseAuth.signOut,
-        firebaseOnAuthStateChanged: firebaseAuth.onAuthStateChanged,
+        initFirebase: loadFirebase,
+        getFirebaseAuth: () => (window as any).firebase?.auth(),
+        getFirebaseApp: () => (window as any).firebase,
       }
     }
   }
