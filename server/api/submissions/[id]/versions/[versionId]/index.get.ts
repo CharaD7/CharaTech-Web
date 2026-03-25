@@ -1,9 +1,5 @@
-import { defineEventHandler, getRouterParam } from 'h3'
-import { prisma } from '~/server/utils/prisma'
-import { verifyAuth } from '~/server/utils/auth'
-
 export default defineEventHandler(async (event) => {
-  const user = await verifyAuth(event)
+  const user = await requireAuth(event)
   const submissionId = getRouterParam(event, 'id')
   const versionId = getRouterParam(event, 'versionId')
   

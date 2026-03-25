@@ -1,6 +1,4 @@
-import { defineEventHandler, readBody, getHeader } from 'h3'
-import { prisma } from '~/server/utils/prisma'
-import { verifyCalendlyWebhook, parseCalendlyWebhook } from '~/server/utils/calendly'
+import { verifyCalendlyWebhook, parseCalendlyWebhook } from '../../utils/calendly'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)

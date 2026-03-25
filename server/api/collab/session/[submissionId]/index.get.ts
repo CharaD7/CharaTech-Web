@@ -1,9 +1,5 @@
-import { defineEventHandler, getRouterParam } from 'h3'
-import { prisma } from '~/server/utils/prisma'
-import { verifyAuth } from '~/server/utils/auth'
-
 export default defineEventHandler(async (event) => {
-  const user = await verifyAuth(event)
+  const user = await requireAuth(event)
   const submissionId = getRouterParam(event, 'submissionId')
   
   if (!submissionId) {
@@ -14,10 +10,7 @@ export default defineEventHandler(async (event) => {
   }
   
   const session = await prisma.collabSession.findUnique({
-    where: { submissionId },
-    include: {
-      participants: true
-    }
+    where: { submissionId }
   })
   
   if (!session) {

@@ -1,10 +1,7 @@
-import { defineEventHandler, readBody } from 'h3'
-import { prisma } from '~/server/utils/prisma'
-import { verifyAuth } from '~/server/utils/auth'
-import { syncSubmissionToLinear } from '~/server/utils/linear'
+import { syncSubmissionToLinear } from '../../utils/linear'
 
 export default defineEventHandler(async (event) => {
-  const user = await verifyAuth(event)
+  const user = await requireAuth(event)
   const body = await readBody(event)
   
   const { submissionId, teamId } = body
@@ -41,7 +38,7 @@ export default defineEventHandler(async (event) => {
   }, teamId)
   
   const savedIssues = await Promise.all(
-    linearIssues.map(issue => 
+    linearIssues.map((issue: any) => 
       prisma.linearIssue.create({
         data: {
           submissionId,

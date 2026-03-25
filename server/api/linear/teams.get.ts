@@ -1,6 +1,3 @@
-import { defineEventHandler } from 'h3'
-import { getLinearTeams } from '~/server/utils/linear'
-
 export default defineEventHandler(async () => {
   try {
     const teams = await getLinearTeams()

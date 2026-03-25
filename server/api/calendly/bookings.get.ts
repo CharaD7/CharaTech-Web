@@ -1,11 +1,7 @@
-import { defineEventHandler, getQuery } from 'h3'
-import { prisma } from '~/server/utils/prisma'
-import { verifyAuth } from '~/server/utils/auth'
-import { getCalendlyScheduledEvents } from '~/server/utils/calendly'
+import { getCalendlyScheduledEvents } from '../../utils/calendly'
 
 export default defineEventHandler(async (event) => {
-  const user = await verifyAuth(event)
-  const query = getQuery(event)
+  const user = await requireAuth(event)
   
   const localBookings = await prisma.calendlyBooking.findMany({
     where: { userId: user.id },
@@ -14,10 +10,10 @@ export default defineEventHandler(async (event) => {
   })
   
   let externalEvents: any[] = []
-  if (user.calendlyUri) {
+  if ((user as any).calendlyUri) {
     try {
-      const events = await getCalendlyScheduledEvents({ user: user.calendlyUri })
-      externalEvents = events.map(e => ({
+      const events = await getCalendlyScheduledEvents({ user: (user as any).calendlyUri })
+      externalEvents = events.map((e: any) => ({
         eventUri: e.uri,
         eventName: e.name,
         startTime: e.start_time,

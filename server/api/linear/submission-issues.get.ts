@@ -1,9 +1,5 @@
-import { defineEventHandler, getQuery } from 'h3'
-import { prisma } from '~/server/utils/prisma'
-import { verifyAuth } from '~/server/utils/auth'
-
 export default defineEventHandler(async (event) => {
-  const user = await verifyAuth(event)
+  const user = await requireAuth(event)
   
   const query = getQuery(event)
   const submissionId = query.submissionId as string

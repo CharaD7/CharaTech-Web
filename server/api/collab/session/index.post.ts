@@ -1,9 +1,5 @@
-import { defineEventHandler, readBody } from 'h3'
-import { prisma } from '~/server/utils/prisma'
-import { verifyAuth } from '~/server/utils/auth'
-
 export default defineEventHandler(async (event) => {
-  const user = await verifyAuth(event)
+  const user = await requireAuth(event)
   const body = await readBody(event)
   
   const { submissionId, action } = body
@@ -46,13 +42,11 @@ export default defineEventHandler(async (event) => {
   }
   
   if (action === 'leave') {
+    const existing = await prisma.collabSession.findUnique({ where: { submissionId } })
     const session = await prisma.collabSession.update({
       where: { submissionId },
       data: {
-        participants: {
-          set: (await prisma.collabSession.findUnique({ where: { submissionId } }))!
-            .participants.filter(p => p !== user.id)
-        },
+        participants: existing?.participants.filter((p: string) => p !== user.id) || [],
         lastActivity: new Date()
       }
     })

@@ -1,5 +1,4 @@
-import { defineEventHandler } from 'h3'
-import { getCalendlyEventTypes } from '~/server/utils/calendly'
+import { getCalendlyEventTypes } from '../../utils/calendly'
 
 export default defineEventHandler(async () => {
   try {

@@ -1,9 +1,5 @@
-import { defineEventHandler, readBody, getRouterParam } from 'h3'
-import { prisma } from '~/server/utils/prisma'
-import { verifyAuth } from '~/server/utils/auth'
-
 export default defineEventHandler(async (event) => {
-  const user = await verifyAuth(event)
+  const user = await requireAuth(event)
   const submissionId = getRouterParam(event, 'submissionId')
   const body = await readBody(event)
   
@@ -33,7 +29,7 @@ export default defineEventHandler(async (event) => {
   }
   
   const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8']
-  const userColor = colors[Math.abs(user.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % colors.length]
+  const userColor = colors[Math.abs(user.id.split('').reduce((a: number, c: string) => a + c.charCodeAt(0), 0)) % colors.length]
   
   const cursor = await prisma.collabCursor.upsert({
     where: {
@@ -50,7 +46,7 @@ export default defineEventHandler(async (event) => {
     create: {
       sessionId: session.id,
       userId: user.id,
-      userName: user.fullName || user.email,
+      userName: (user.fullName || user.email) as string,
       field: body.field,
       position: body.position,
       color: userColor

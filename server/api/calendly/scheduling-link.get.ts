@@ -1,9 +1,7 @@
-import { defineEventHandler, getQuery } from 'h3'
-import { verifyAuth } from '~/server/utils/auth'
-import { createCalendlySchedulingLink } from '~/server/utils/calendly'
+import { createCalendlySchedulingLink } from '../../utils/calendly'
 
 export default defineEventHandler(async (event) => {
-  const user = await verifyAuth(event)
+  const user = await requireAuth(event)
   const query = getQuery(event)
   
   const eventTypeUri = query.eventTypeUri as string

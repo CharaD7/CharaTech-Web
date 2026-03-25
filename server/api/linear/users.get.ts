@@ -1,5 +1,4 @@
-import { defineEventHandler, getQuery } from 'h3'
-import { getLinearUsers } from '~/server/utils/linear'
+import { getLinearUsers } from '../../utils/linear'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
