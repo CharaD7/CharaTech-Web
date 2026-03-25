@@ -185,7 +185,7 @@ const handleRegister = async () => {
       await $fetch('/api/auth/register', {
         method: 'POST',
         body: {
-          supabaseUid: result.user.id,
+          firebaseUid: result.user.id,
           email: form.email,
           fullName: form.fullName,
           phoneNumber: form.phoneNumber,

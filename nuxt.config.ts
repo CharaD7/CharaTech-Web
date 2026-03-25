@@ -29,6 +29,7 @@ export default defineNuxtConfig({
     dialogflowProjectId: process.env.DIALOGFLOW_PROJECT_ID,
     openaiApiKey: process.env.OPENAI_API_KEY,
     adminSupabaseUid: process.env.ADMIN_SUPABASE_UID,
+    adminFirebaseUid: process.env.ADMIN_FIREBASE_UID,
     
     // Public keys (exposed to client)
     public: {

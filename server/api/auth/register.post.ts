@@ -2,24 +2,24 @@ export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
     
-    const { supabaseUid, email, fullName, phoneNumber, companyName } = body
+    const { firebaseUid, email, fullName, phoneNumber, companyName } = body
 
-    if (!supabaseUid || !email) {
+    if (!firebaseUid || !email) {
       throw createError({
         statusCode: 400,
-        message: 'Supabase UID and email are required',
+        message: 'Firebase UID and email are required',
       })
     }
 
     const config = useRuntimeConfig()
-    const isAdmin = supabaseUid === config.adminSupabaseUid
+    const isAdmin = firebaseUid === config.adminFirebaseUid
 
     let user
     try {
       user = await prisma.user.upsert({
-        where: { supabaseUid },
+        where: { firebaseUid },
         create: {
-          supabaseUid,
+          firebaseUid,
           email,
           fullName,
           phoneNumber,
