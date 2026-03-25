@@ -1,60 +1,34 @@
 import { ref } from 'vue'
 import { useRuntimeConfig } from '#app'
 
-let firebaseApp: any = null
-let firebaseAuth: any = null
-
-const initFirebase = async () => {
-  if (firebaseApp && firebaseAuth) return { firebaseApp, firebaseAuth }
-
-  if (typeof window !== 'undefined' && !firebaseApp) {
-    const config = useRuntimeConfig()
-    
-    const firebaseConfig = {
-      apiKey: config.public.firebaseApiKey,
-      authDomain: config.public.firebaseAuthDomain,
-      projectId: config.public.firebaseProjectId,
-      storageBucket: config.public.firebaseStorageBucket,
-      messagingSenderId: config.public.firebaseMessagingSenderId,
-      appId: config.public.firebaseAppId,
-    }
-
-    const { initializeApp, getApps, getAuth } = await import('firebase/app')
-    const { getAuth: authGet } = await import('firebase/auth')
-    
-    const existingApps = getApps()
-    firebaseApp = existingApps.length > 0 ? existingApps[0] : initializeApp(firebaseConfig)
-    firebaseAuth = getAuth(firebaseApp)
-  }
-
-  return { firebaseApp, firebaseAuth: firebaseAuth! }
-}
-
 export const useAuth = () => {
   const user = useState<any>('firebase-user', () => null)
   const isInitialized = ref(false)
 
+  const initAuth = () => {
+    const { $firebaseAuth, $firebaseOnAuthStateChanged } = useNuxtApp()
+    
+    if ($firebaseAuth && $firebaseOnAuthStateChanged) {
+      $firebaseOnAuthStateChanged($firebaseAuth, (firebaseUser: any) => {
+        user.value = firebaseUser
+        isInitialized.value = true
+      })
+    }
+  }
+
   if (import.meta.client && !isInitialized.value) {
-    initFirebase().then(({ firebaseAuth: auth }) => {
-      if (auth) {
-        const { onAuthStateChanged } = require('firebase/auth')
-        onAuthStateChanged(auth, (firebaseUser: any) => {
-          user.value = firebaseUser
-          isInitialized.value = true
-        })
-      }
-    })
+    initAuth()
   }
 
   const register = async (email: string, password: string, fullName?: string) => {
-    const { firebaseAuth: auth } = await initFirebase()
-    if (!auth) {
+    const { $firebaseCreateUserWithEmailAndPassword, $firebaseAuth } = useNuxtApp()
+    
+    if (!$firebaseAuth || !$firebaseCreateUserWithEmailAndPassword) {
       return { success: false, error: 'Firebase not initialized' }
     }
 
     try {
-      const { createUserWithEmailAndPassword } = await import('firebase/auth')
-      const { user: firebaseUser, error } = await createUserWithEmailAndPassword(auth, email, password)
+      const { user: firebaseUser, error } = await $firebaseCreateUserWithEmailAndPassword($firebaseAuth, email, password)
       if (error) {
         console.error('Firebase registration error:', error)
         return { success: false, error: error.message }
@@ -68,14 +42,14 @@ export const useAuth = () => {
   }
 
   const login = async (email: string, password: string) => {
-    const { firebaseAuth: auth } = await initFirebase()
-    if (!auth) {
+    const { $firebaseSignInWithEmailAndPassword, $firebaseAuth } = useNuxtApp()
+    
+    if (!$firebaseAuth || !$firebaseSignInWithEmailAndPassword) {
       return { success: false, error: 'Firebase not initialized' }
     }
 
     try {
-      const { signInWithEmailAndPassword } = await import('firebase/auth')
-      const { user: firebaseUser, error } = await signInWithEmailAndPassword(auth, email, password)
+      const { user: firebaseUser, error } = await $firebaseSignInWithEmailAndPassword($firebaseAuth, email, password)
       if (error) {
         console.error('Firebase login error:', error)
         return { success: false, error: error.message }
@@ -89,14 +63,14 @@ export const useAuth = () => {
   }
 
   const logout = async () => {
-    const { firebaseAuth: auth } = await initFirebase()
-    if (!auth) {
+    const { $firebaseSignOut } = useNuxtApp()
+    
+    if (!$firebaseSignOut) {
       return { success: false, error: 'Firebase not initialized' }
     }
 
     try {
-      const { signOut } = await import('firebase/auth')
-      await signOut(auth)
+      await $firebaseSignOut()
       user.value = null
       return { success: true }
     } catch (error: any) {
@@ -106,13 +80,14 @@ export const useAuth = () => {
   }
 
   const getAccessToken = async (): Promise<string | null> => {
-    const { firebaseAuth: auth } = await initFirebase()
-    if (!auth || !auth.currentUser) {
+    const { $firebaseAuth } = useNuxtApp()
+    
+    if (!$firebaseAuth || !$firebaseAuth.currentUser) {
       return null
     }
 
     try {
-      const token = await auth.currentUser.getIdToken()
+      const token = await $firebaseAuth.currentUser.getIdToken()
       return token
     } catch (error) {
       console.error('Failed to get Firebase token:', error)
