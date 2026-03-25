@@ -2,6 +2,7 @@ export default defineNuxtPlugin({
   name: 'firebase',
   enforce: 'pre',
   setup(nuxtApp) {
+    console.log('Firebase plugin setup started')
     const config = useRuntimeConfig()
     
     const firebaseConfig = {
@@ -72,12 +73,17 @@ export default defineNuxtPlugin({
 
     // Method to get Firebase auth with proper typing
     const getFirebaseAuth = () => {
-      // Return the auth instance directly (or null if not available)
-      if ((window as any).firebase && typeof (window as any).firebase.auth === 'function') {
-        return (window as any).firebase.auth()
+      // Return a function that returns the auth instance when called
+      // This matches how it's used in useAuth composable
+      return () => {
+        if ((window as any).firebase && typeof (window as any).firebase.auth === 'function') {
+          return (window as any).firebase.auth()
+        }
+        return null
       }
-      return null
     }
+
+    console.log('Firebase plugin loaded, getFirebaseAuth:', typeof getFirebaseAuth, 'firebase available:', !!((window as any).firebase))
 
     return {
       provide: {

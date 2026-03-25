@@ -8,13 +8,19 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   }
 
   const userStore = useUserStore()
+  let nuxtApp: any = null
   
   try {
     // Wait for Firebase to be initialized
-    const nuxtApp = useNuxtApp()
+    nuxtApp = useNuxtApp()
     const $initFirebase = nuxtApp.$initFirebase
     await $initFirebase()
-
+  } catch (e) {
+    console.error('Failed to initialize Firebase:', e)
+    return navigateTo('/login')
+  }
+  
+  try {
     // Check if user is authenticated using Firebase (same pattern as in useAuth)
     const { getFirebaseAuth } = nuxtApp
     
