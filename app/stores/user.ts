@@ -9,13 +9,22 @@ export const useUserStore = defineStore('user', {
 
   actions: {
     async fetchCurrentUser() {
-      const { supabase } = useSupabase()
+      // Only run on client-side
+      if (import.meta.server) {
+        return
+      }
+
+      // Wait for Firebase to be initialized
+      const nuxtApp = useNuxtApp()
+      const $initFirebase = nuxtApp.$initFirebase
+      await $initFirebase()
+
+      // Get Firebase ID token
+      const { getAccessToken } = useAuth()
+      const token = await getAccessToken()
       
-      const { data: sessionData } = await supabase.auth.getSession()
-      const session = sessionData?.session
-      
-      if (!session) {
-        console.log('No active session')
+      if (!token) {
+        console.log('No Firebase token available')
         this.currentUser = null
         return
       }
@@ -23,8 +32,7 @@ export const useUserStore = defineStore('user', {
       this.loading = true
       
       try {
-        const token = session.access_token
-        console.log('Fetching user with token...')
+        console.log('Fetching user with Firebase token...')
         
         const response = await useFetch('/api/users/me', {
           headers: {
@@ -48,12 +56,24 @@ export const useUserStore = defineStore('user', {
     },
 
     async updateUser(updates: Partial<User>) {
-      const { supabase } = useSupabase()
+      // Only run on client-side
+      if (import.meta.server) {
+        return
+      }
+
+      // Wait for Firebase to be initialized
+      const nuxtApp = useNuxtApp()
+      const $initFirebase = nuxtApp.$initFirebase
+      await $initFirebase()
+
+      // Get Firebase ID token
+      const { getAccessToken } = useAuth()
+      const token = await getAccessToken()
       
-      const { data: sessionData } = await supabase.auth.getSession()
-      const session = sessionData?.session
-      
-      if (!session) return
+      if (!token) {
+        console.log('No Firebase token available for update')
+        return
+      }
 
       this.loading = true
 
@@ -61,7 +81,7 @@ export const useUserStore = defineStore('user', {
         const response = await useFetch('/api/users/me', {
           method: 'PATCH',
           headers: {
-            Authorization: `Bearer ${session.access_token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: updates,
         })
