@@ -22,11 +22,9 @@ export const useAuth = () => {
   const initAuth = async () => {
     const nuxtApp = useNuxtApp()
     const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
-    const auth = $getFirebaseAuth?.()
+    const auth = $getFirebaseAuth()
     
     if (auth) {
-      const firebase = (window as any).firebase
-      
       // Set up auth state listener
       auth.onAuthStateChanged((firebaseUser: any) => {
         user.value = firebaseUser
@@ -46,7 +44,7 @@ export const useAuth = () => {
     
     const nuxtApp = useNuxtApp()
     const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
-    const auth = $getFirebaseAuth?.()
+    const auth = $getFirebaseAuth()
     
     if (!auth) {
       return { success: false, error: 'Firebase not initialized' }
@@ -71,7 +69,7 @@ export const useAuth = () => {
     
     const nuxtApp = useNuxtApp()
     const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
-    const auth = $getFirebaseAuth?.()
+    const auth = $getFirebaseAuth()
     
     if (!auth) {
       return { success: false, error: 'Firebase not initialized' }
@@ -96,7 +94,7 @@ export const useAuth = () => {
     
     const nuxtApp = useNuxtApp()
     const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
-    const auth = $getFirebaseAuth?.()
+    const auth = $getFirebaseAuth()
     
     if (!auth) {
       return { success: false, error: 'Firebase not initialized' }
@@ -117,7 +115,7 @@ export const useAuth = () => {
     
     const nuxtApp = useNuxtApp()
     const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
-    const auth = $getFirebaseAuth?.()
+    const auth = $getFirebaseAuth()
     
     if (!auth?.currentUser) {
       return null

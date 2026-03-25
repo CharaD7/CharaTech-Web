@@ -72,13 +72,11 @@ export default defineNuxtPlugin({
 
     // Method to get Firebase auth with proper typing
     const getFirebaseAuth = () => {
-      // Return a function that, when called, returns the auth instance
-      return () => {
-        if ((window as any).firebase && typeof (window as any).firebase.auth === 'function') {
-          return (window as any).firebase.auth()
-        }
-        return null
+      // Return the auth instance directly (or null if not available)
+      if ((window as any).firebase && typeof (window as any).firebase.auth === 'function') {
+        return (window as any).firebase.auth()
       }
+      return null
     }
 
     return {

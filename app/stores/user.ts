@@ -8,20 +8,20 @@ export const useUserStore = defineStore('user', {
   }),
 
   actions: {
-    async fetchCurrentUser() {
-      // Only run on client-side
-      if (import.meta.server) {
-        return
-      }
-
-      // Wait for Firebase to be initialized
-      const nuxtApp = useNuxtApp()
-      const $initFirebase = nuxtApp.$initFirebase
-      await $initFirebase()
-
-      // Get Firebase ID token
-      const { getAccessToken } = useAuth()
-      const token = await getAccessToken()
+     async fetchCurrentUser() {
+       // Only run on client-side
+       if (import.meta.server) {
+         return
+       }
+ 
+       // Wait for Firebase to be initialized
+       const nuxtApp = useNuxtApp()
+       const $initFirebase = nuxtApp.$initFirebase
+       await $initFirebase()
+ 
+       // Get Firebase ID token
+       const { getAccessToken: getAccessTokenFn } = useAuth()
+       const token = await getAccessTokenFn()
       
       if (!token) {
         console.log('No Firebase token available')
@@ -61,14 +61,14 @@ export const useUserStore = defineStore('user', {
         return
       }
 
-      // Wait for Firebase to be initialized
-      const nuxtApp = useNuxtApp()
-      const $initFirebase = nuxtApp.$initFirebase
-      await $initFirebase()
+       // Wait for Firebase to be initialized
+       const nuxtApp = useNuxtApp()
+       const $initFirebase = nuxtApp.$initFirebase
+       await $initFirebase()
 
-      // Get Firebase ID token
-      const { getAccessToken } = useAuth()
-      const token = await getAccessToken()
+       // Get Firebase ID token
+       const { getAccessToken: getAccessTokenFn } = useAuth()
+       const token = await getAccessTokenFn()
       
       if (!token) {
         console.log('No Firebase token available for update')
