@@ -178,30 +178,30 @@ const handleRegister = async () => {
     return
   }
 
-  const result = await register(form.email, form.password, form.fullName)
+   const result = await register(form.email, form.password, form.fullName)
 
-  if (result.success && result.user) {
-    try {
-      await $fetch('/api/auth/register', {
-        method: 'POST',
-        body: {
-          firebaseUid: result.user.id,
-          email: form.email,
-          fullName: form.fullName,
-          phoneNumber: form.phoneNumber,
-          companyName: form.companyName,
-        },
-      })
+   if (result.success && result.user) {
+     try {
+       await $fetch('/api/auth/register', {
+         method: 'POST',
+         body: {
+           firebaseUid: result.user.uid,
+           email: form.email,
+           fullName: form.fullName,
+           phoneNumber: form.phoneNumber,
+           companyName: form.companyName,
+         },
+       })
 
-      await navigateTo(`/auth/confirm?email=${encodeURIComponent(form.email)}`)
-    } catch (err: any) {
-      error.value = err.data?.message || err.message || 'Failed to create user profile'
-      loading.value = false
-    }
-  } else {
-    error.value = result.error || 'Registration failed. Please try again.'
-    loading.value = false
-  }
+       await navigateTo(`/auth/confirm?email=${encodeURIComponent(form.email)}`)
+     } catch (err: any) {
+       error.value = err.data?.message || err.message || 'Failed to create user profile'
+       loading.value = false
+     }
+   } else {
+     error.value = result.error || 'Registration failed. Please try again.'
+     loading.value = false
+   }
 }
 </script>
 

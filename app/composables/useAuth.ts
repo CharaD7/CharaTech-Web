@@ -8,7 +8,8 @@ export const useAuth = () => {
   const waitForFirebase = async () => {
     if (isFirebaseReady.value) return true
     
-    const { $initFirebase, $getFirebaseAuth } = useNuxtApp()
+    const nuxtApp = useNuxtApp()
+    const $initFirebase = nuxtApp.$initFirebase
     
     if ($initFirebase) {
       await $initFirebase()
@@ -19,7 +20,8 @@ export const useAuth = () => {
   }
 
   const initAuth = async () => {
-    const { $getFirebaseAuth } = useNuxtApp()
+    const nuxtApp = useNuxtApp()
+    const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
     const auth = $getFirebaseAuth?.()
     
     if (auth) {
@@ -42,7 +44,8 @@ export const useAuth = () => {
   const register = async (email: string, password: string, fullName?: string) => {
     await waitForFirebase()
     
-    const { $getFirebaseAuth } = useNuxtApp()
+    const nuxtApp = useNuxtApp()
+    const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
     const auth = $getFirebaseAuth?.()
     
     if (!auth) {
@@ -66,7 +69,8 @@ export const useAuth = () => {
   const login = async (email: string, password: string) => {
     await waitForFirebase()
     
-    const { $getFirebaseAuth } = useNuxtApp()
+    const nuxtApp = useNuxtApp()
+    const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
     const auth = $getFirebaseAuth?.()
     
     if (!auth) {
@@ -90,7 +94,8 @@ export const useAuth = () => {
   const logout = async () => {
     await waitForFirebase()
     
-    const { $getFirebaseAuth } = useNuxtApp()
+    const nuxtApp = useNuxtApp()
+    const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
     const auth = $getFirebaseAuth?.()
     
     if (!auth) {
@@ -110,7 +115,8 @@ export const useAuth = () => {
   const getAccessToken = async (): Promise<string | null> => {
     await waitForFirebase()
     
-    const { $getFirebaseAuth } = useNuxtApp()
+    const nuxtApp = useNuxtApp()
+    const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
     const auth = $getFirebaseAuth?.()
     
     if (!auth?.currentUser) {

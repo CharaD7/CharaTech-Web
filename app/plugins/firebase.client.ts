@@ -4,7 +4,6 @@ export default defineNuxtPlugin({
   setup(nuxtApp) {
     const config = useRuntimeConfig()
     
-    // Load Firebase from CDN
     const firebaseConfig = {
       apiKey: config.public.firebaseApiKey,
       authDomain: config.public.firebaseAuthDomain,
@@ -14,10 +13,19 @@ export default defineNuxtPlugin({
       appId: config.public.firebaseAppId,
     }
 
-    // Load Firebase SDK from CDN
+    let firebasePromise: Promise<void> | null = null;
+
     const loadFirebase = () => {
-      return new Promise<void>((resolve, reject) => {
-        if ((window as any).firebase?.apps?.length) {
+      if (firebasePromise) {
+        return firebasePromise;
+      }
+
+      firebasePromise = new Promise<void>((resolve, reject) => {
+        // If Firebase is already loaded, we just need to initialize the app if not done
+        if ((window as any).firebase) {
+          if (!(window as any).firebase.apps?.length) {
+            ;(window as any).firebase.initializeApp(firebaseConfig)
+          }
           resolve()
           return
         }
@@ -37,6 +45,8 @@ export default defineNuxtPlugin({
         script.onerror = reject
         document.head.appendChild(script)
       })
+
+      return firebasePromise
     }
 
     return {

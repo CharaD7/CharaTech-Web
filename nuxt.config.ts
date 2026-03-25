@@ -75,13 +75,13 @@ export default defineNuxtConfig({
     },
   },
 
-  build: {
-    transpile: ['firebase/app', 'firebase/auth']
-  },
+   build: {
+     transpile: []
+   },
 
-  vite: {
-    optimizeDeps: {
-      include: ['firebase/app', 'firebase/auth']
-    }
-  }
+   vite: {
+     optimizeDeps: {
+       include: []
+     }
+   }
 })
