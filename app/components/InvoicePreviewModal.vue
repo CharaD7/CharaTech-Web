@@ -101,7 +101,7 @@
                   <p class="text-white/30 text-[10px] uppercase tracking-widest mb-2">From</p>
                   <p class="text-white font-bold">CharaTech Ltd.</p>
                   <p class="text-white/50 text-sm mt-0.5">info@charatech.com</p>
-                  <p class="text-white/50 text-sm">charatech-web.netlify.app</p>
+                  <p class="text-white/50 text-sm">chara-tech-web.vercel.app</p>
                 </div>
                 <div class="px-6 py-5">
                   <p class="text-white/30 text-[10px] uppercase tracking-widest mb-2">Bill To</p>

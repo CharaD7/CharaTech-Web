@@ -67,15 +67,15 @@ Then fill in your local development credentials. The `.env` file is already conf
 
 #### Production Setup
 
-For production deployment on Netlify:
+For production deployment on Vercel:
 
 1. **Database**: Set up a cloud PostgreSQL database (Railway, Supabase, Neon, or Render)
-2. **Netlify Environment Variables**: 
-   - Go to your Netlify site dashboard
-   - Navigate to **Site settings** → **Environment variables**
+2. **Vercel Environment Variables**: 
+   - Go to your Vercel project dashboard
+   - Navigate to **Settings** → **Environment Variables**
    - Add all variables from `.env.production`
    - Update `DATABASE_URL` with your production database URL
-   - Update `NUXT_PUBLIC_APP_URL` with your Netlify URL
+   - Update `NUXT_PUBLIC_APP_URL` with your Vercel URL (e.g., `https://chara-tech-web.vercel.app`)
    - Generate a secure `JWT_SECRET`:
      ```bash
      node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
@@ -140,7 +140,6 @@ pnpm env:check
 - `.env.development` - Development environment template
 - `.env.production` - Production environment template
 - `.env.example` - Environment variables template
-- `netlify.toml` - Netlify deployment configuration
 - `tmp/ENVIRONMENT_SETUP.md` - Detailed environment setup guide
 
 ## 🎯 First Steps
@@ -148,7 +147,7 @@ pnpm env:check
 1. Set up your `.env` file with all required credentials
 2. Create Firebase project and get credentials
 3. Set up PostgreSQL database
-4. Configure Dialogflow for AI features
+4. Configure OpenAI for AI features
 5. Run database migrations
 6. Start development server
 7. Register the admin account:
