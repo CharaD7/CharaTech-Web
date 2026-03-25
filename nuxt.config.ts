@@ -27,6 +27,7 @@ export default defineNuxtConfig({
     jwtSecret: process.env.JWT_SECRET,
     supabaseJwtSecret: process.env.SUPABASE_JWT_SECRET,
     dialogflowProjectId: process.env.DIALOGFLOW_PROJECT_ID,
+    openaiApiKey: process.env.OPENAI_API_KEY,
     adminSupabaseUid: process.env.ADMIN_SUPABASE_UID,
     
     // Public keys (exposed to client)

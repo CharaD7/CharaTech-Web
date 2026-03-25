@@ -1,9 +1,11 @@
 /** POST /api/messages
  * Client sends a message to admin.
- * If admin has never replied (AI mode), auto-responds via Dialogflow with a fallback.
+ * If admin has never replied (AI mode), auto-responds via OpenAI with a fallback.
  */
+import { chatWithAI } from '../../../server/utils/openai'
+
 export default defineEventHandler(async (event) => {
-  const user = await verifyToken(event)
+  const user = await requireAuth(event)
   const { content } = await readBody(event)
 
   if (!content?.trim()) throw createError({ statusCode: 400, message: 'Message content required' })
@@ -31,23 +33,22 @@ export default defineEventHandler(async (event) => {
 
   let botReply: any = null
   if (!adminHasReplied) {
-    // AI mode — try Dialogflow, fall back to a canned response
+    // AI mode — try OpenAI, fall back to a canned response
     let botContent =
-      "Thanks for reaching out to CharaTech! 🚀 Our team will review your message shortly. In the meantime, feel free to browse your submissions or invoice status in the dashboard."
+      "Thanks for reaching out to CharaTech! I'm Chara, your AI assistant. How can I help you today? Feel free to tell me about your software project requirements."
 
     try {
       const config = useRuntimeConfig()
-      const projectId = config.dialogflowProjectId as string | undefined
-      if (projectId) {
-        // Attempt Dialogflow; detectIntent & createDialogflowSession are auto-imported from server/utils
-        const sessionId = `client-${user.id.slice(0, 8)}`
-        const result = await detectIntent(createDialogflowSession(), content.trim())
-        if (result.success && result.response?.fulfillmentText) {
-          botContent = result.response.fulfillmentText
+      const openaiApiKey = config.openaiApiKey as string | undefined
+      if (openaiApiKey) {
+        // Attempt OpenAI
+        const result = await chatWithAI(content.trim())
+        if (result.success && result.response) {
+          botContent = result.response
         }
       }
     } catch {
-      // Dialogflow unavailable — use default canned response
+      // OpenAI unavailable — use default canned response
     }
 
     botReply = await prisma.message.create({

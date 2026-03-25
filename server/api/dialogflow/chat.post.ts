@@ -1,6 +1,9 @@
+import { chatWithAI } from '~~/server/utils/openai'
+import type { ChatMessage } from '~~/server/utils/openai'
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
-  const { message, sessionId } = body
+  const { message, conversationHistory } = body
 
   if (!message) {
     throw createError({
@@ -9,19 +12,17 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const result = await detectIntent(sessionId || createDialogflowSession(), message)
+  const history: ChatMessage[] = conversationHistory || []
+  const result = await chatWithAI(message, history)
 
   if (!result.success) {
     throw createError({
       statusCode: 500,
-      message: 'Dialogflow error',
+      message: result.error || 'OpenAI error',
     })
   }
 
   return {
-    response: result.response?.fulfillmentText || '',
-    intent: result.response?.intent?.displayName,
-    parameters: result.response?.parameters,
-    sessionId,
+    response: result.response || '',
   }
 })
