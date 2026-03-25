@@ -24,6 +24,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       return navigateTo('/login')
     }
     
+    // Call getFirebaseAuth to get the auth instance (same as in useAuth)
     const auth = getFirebaseAuth()
     
     if (!auth) {

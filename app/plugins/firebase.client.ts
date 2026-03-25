@@ -14,30 +14,51 @@ export default defineNuxtPlugin({
     }
 
     let firebasePromise: Promise<void> | null = null;
+    let firebaseInitialized = false;
 
-    const loadFirebase = () => {
+    const loadFirebase = async () => {
       if (firebasePromise) {
         return firebasePromise;
       }
 
       firebasePromise = new Promise<void>((resolve, reject) => {
-        // If Firebase is already loaded, we just need to initialize the app if not done
-        if ((window as any).firebase) {
-          if (!(window as any).firebase.apps?.length) {
-            ;(window as any).firebase.initializeApp(firebaseConfig)
-          }
+        // If Firebase is already loaded and initialized, just resolve
+        if ((window as any).firebase && firebaseInitialized) {
           resolve()
           return
         }
 
+        // If Firebase is loaded but not initialized, initialize it
+        if ((window as any).firebase && !firebaseInitialized) {
+          if (!(window as any).firebase.apps?.length) {
+            try {
+              ;(window as any).firebase.initializeApp(firebaseConfig)
+              firebaseInitialized = true
+              resolve()
+            } catch (e) {
+              reject(e)
+            }
+          } else {
+            firebaseInitialized = true
+            resolve()
+          }
+          return
+        }
+
+        // Need to load Firebase from CDN
         const script = document.createElement('script')
         script.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js'
         script.onload = () => {
           const authScript = document.createElement('script')
           authScript.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js'
           authScript.onload = () => {
-            ;(window as any).firebase.initializeApp(firebaseConfig)
-            resolve()
+            try {
+              ;(window as any).firebase.initializeApp(firebaseConfig)
+              firebaseInitialized = true
+              resolve()
+            } catch (e) {
+              reject(e)
+            }
           }
           authScript.onerror = reject
           document.head.appendChild(authScript)
@@ -49,10 +70,21 @@ export default defineNuxtPlugin({
       return firebasePromise
     }
 
+    // Method to get Firebase auth with proper typing
+    const getFirebaseAuth = () => {
+      // Return a function that, when called, returns the auth instance
+      return () => {
+        if ((window as any).firebase && typeof (window as any).firebase.auth === 'function') {
+          return (window as any).firebase.auth()
+        }
+        return null
+      }
+    }
+
     return {
       provide: {
         initFirebase: loadFirebase,
-        getFirebaseAuth: () => (window as any).firebase?.auth(),
+        getFirebaseAuth: getFirebaseAuth,
         getFirebaseApp: () => (window as any).firebase,
       }
     }

@@ -3,17 +3,17 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     
     const { firebaseUid, email, fullName, phoneNumber, companyName } = body
-
+    
     if (!firebaseUid || !email) {
       throw createError({
         statusCode: 400,
         message: 'Firebase UID and email are required',
       })
     }
-
+    
     const config = useRuntimeConfig()
     const isAdmin = firebaseUid === config.adminFirebaseUid
-
+    
     let user
     try {
       user = await prisma.user.upsert({
@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
         message: 'Failed to create user in database. Please try again.',
       })
     }
-
+    
     if (user.role === 'CLIENT') {
       // Create welcome notification (non-blocking - don't fail registration if this fails)
       try {
@@ -56,15 +56,18 @@ export default defineEventHandler(async (event) => {
         console.error('Failed to create welcome notification:', notifError)
       }
     }
-
+    
     return user
   } catch (error: any) {
+    // Log the full error for debugging
+    console.error('Registration error:', error)
+    console.error('Registration error stack:', error.stack)
+    
     // Re-throw H3 errors as-is
     if (error.statusCode) {
       throw error
     }
     // Wrap unexpected errors
-    console.error('Registration error:', error)
     throw createError({
       statusCode: 500,
       message: error.message || 'An unexpected error occurred during registration',
