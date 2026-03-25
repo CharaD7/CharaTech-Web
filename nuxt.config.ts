@@ -72,5 +72,15 @@ export default defineNuxtConfig({
     plugins: {
       '@tailwindcss/postcss': {},
     },
+  },
+
+  build: {
+    transpile: ['firebase/app', 'firebase/auth']
+  },
+
+  vite: {
+    optimizeDeps: {
+      include: ['firebase/app', 'firebase/auth']
+    }
   }
 })
