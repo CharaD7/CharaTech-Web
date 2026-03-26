@@ -73,14 +73,10 @@ export default defineNuxtPlugin({
 
     // Method to get Firebase auth with proper typing
     const getFirebaseAuth = () => {
-      // Return a function that returns the auth instance when called
-      // This matches how it's used in useAuth composable
-      return () => {
-        if ((window as any).firebase && typeof (window as any).firebase.auth === 'function') {
-          return (window as any).firebase.auth()
-        }
-        return null
+      if ((window as any).firebase && typeof (window as any).firebase.auth === 'function') {
+        return (window as any).firebase.auth()
       }
+      return null
     }
 
     console.log('Firebase plugin loaded, getFirebaseAuth:', typeof getFirebaseAuth, 'firebase available:', !!((window as any).firebase))
