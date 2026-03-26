@@ -72,10 +72,15 @@ export default defineNuxtPlugin({
     }
 
     // Method to get Firebase auth with proper typing
-    const getFirebaseAuth = () => {
+    const getFirebaseAuth = async () => {
+      if (!firebaseInitialized) {
+        console.log('Waiting for Firebase to initialize...')
+        await loadFirebase()
+      }
       if ((window as any).firebase && typeof (window as any).firebase.auth === 'function') {
         return (window as any).firebase.auth()
       }
+      console.error('Firebase auth not available')
       return null
     }
 
