@@ -94,6 +94,13 @@
       </button>
 
       <p class="text-center text-gray-400 text-sm mt-6">
+        Already have an account?
+        <NuxtLink to="/login" class="text-purple-400 hover:text-purple-300 font-medium transition">
+          Login
+        </NuxtLink>
+      </p>
+
+      <p class="text-center text-gray-400 text-sm mt-4">
         Wrong email?
         <NuxtLink to="/register" class="text-purple-400 hover:text-purple-300 font-medium transition">
           Sign up again
