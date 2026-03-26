@@ -225,7 +225,6 @@ const formData = reactive({
   timeline: '',
   requirements: {} as Record<string, any>,
   additionalNotes: '',
-  dialogflowSessionId: '',
 })
 
 const requirements = ref<any[]>([])
@@ -254,17 +253,12 @@ const sendAIMessage = async () => {
   aiLoading.value = true
 
   try {
-    const response = await $fetch('/api/dialogflow/chat', {
+    const response = await $fetch('/api/ollama/chat', {
       method: 'POST',
       body: {
         message: userMessage,
-        sessionId: formData.dialogflowSessionId || undefined,
       },
     })
-
-    if (response.sessionId) {
-      formData.dialogflowSessionId = response.sessionId
-    }
 
     aiMessages.value.push({ type: 'ai', text: response.response || 'I\'m here to help!' })
   } catch (error) {

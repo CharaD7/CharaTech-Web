@@ -1,20 +1,7 @@
-import OpenAI from 'openai'
+import { defineEventHandler, readBody, createError } from 'h3'
 
-let openaiClient: OpenAI | null = null
-
-export const getOpenAIClient = () => {
-  if (openaiClient) return openaiClient
-
-  const config = useRuntimeConfig()
-  const apiKey = config.openaiApiKey as string
-
-  if (!apiKey) {
-    throw new Error('OpenAI API key not configured')
-  }
-
-  openaiClient = new OpenAI({ apiKey })
-  return openaiClient
-}
+const OLLAMA_API_URL = 'https://ollama.com/v1'
+const MODEL = 'gpt-oss:120b'
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
@@ -46,7 +33,12 @@ export const chatWithAI = async (
   conversationHistory: ChatMessage[] = []
 ): Promise<ChatCompletionResult> => {
   try {
-    const client = getOpenAIClient()
+    const config = useRuntimeConfig()
+    const apiKey = config.ollamaApiKey as string
+
+    if (!apiKey) {
+      throw new Error('Ollama API key not configured')
+    }
 
     const messages: ChatMessage[] = [
       { role: 'system', content: SYSTEM_PROMPT },
@@ -54,109 +46,62 @@ export const chatWithAI = async (
       { role: 'user', content: message },
     ]
 
-    const completion = await client.chat.completions.create({
-      model: 'gpt-4o',
-      messages,
-      max_tokens: 500,
-      temperature: 0.7,
+    const response = await fetch(`${OLLAMA_API_URL}/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages,
+        stream: false,
+      }),
     })
 
-    const response = completion.choices[0]?.message?.content
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error?.message || `Ollama API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const content = data.choices?.[0]?.message?.content || ''
 
     return {
       success: true,
-      response: response || '',
+      response: content,
     }
   } catch (error: any) {
-    console.error('OpenAI error:', error)
+    console.error('Ollama error:', error)
     return {
       success: false,
-      error: error.message || 'OpenAI API error',
+      error: error.message || 'Ollama API error',
     }
   }
 }
 
-export const generateRequirementsAnalysis = async (
-  requirements: Record<string, any>
-): Promise<{ success: boolean; analysis?: string; suggestions?: string[] }> => {
-  try {
-    const client = getOpenAIClient()
+export default defineEventHandler(async (event) => {
+  const body = await readBody(event)
+  const { message, conversationHistory } = body
 
-    const prompt = `Analyze these software requirements and provide feedback:
-
-${JSON.stringify(requirements, null, 2)}
-
-Provide:
-1. A brief summary of what you've understood
-2. Any gaps or ambiguities that need clarification
-3. Suggestions for additional features that are commonly expected for this type of project
-4. Potential technical considerations
-
-Keep the response structured and actionable.`
-
-    const completion = await client.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: 'You are a software requirements expert. Provide clear, actionable feedback.' },
-        { role: 'user', content: prompt },
-      ],
-      max_tokens: 800,
-      temperature: 0.5,
+  if (!message) {
+    throw createError({
+      statusCode: 400,
+      message: 'Message is required',
     })
-
-    const response = completion.choices[0]?.message?.content || undefined
-
-    return {
-      success: true,
-      analysis: response,
-    }
-  } catch (error: any) {
-    console.error('OpenAI analysis error:', error)
-    return {
-      success: false,
-    }
   }
-}
 
-export const estimateProject = async (
-  industry: string,
-  projectType: string[],
-  complexity: string,
-  budget?: string
-): Promise<{ success: boolean; estimate?: string; timeline?: string }> => {
-  try {
-    const client = getOpenAIClient()
+  const history: ChatMessage[] = conversationHistory || []
+  const result = await chatWithAI(message, history)
 
-    const prompt = `Provide a rough estimate for a ${complexity.toLowerCase()} ${projectType.join(', ')} project in the ${industry.toLowerCase()} industry${budget ? ` with a budget of ${budget}` : ''}.
-
-Give:
-1. Estimated development time range (in weeks)
-2. Recommended team size
-3. Key phases of development
-4. Any cost-saving tips
-
-Be realistic and helpful.`
-
-    const completion = await client.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: 'You are a software project estimation expert. Provide realistic estimates based on industry standards.' },
-        { role: 'user', content: prompt },
-      ],
-      max_tokens: 600,
-      temperature: 0.3,
+  if (!result.success) {
+    throw createError({
+      statusCode: 500,
+      message: result.error || 'AI error',
     })
-
-    const response = completion.choices[0]?.message?.content || undefined
-
-    return {
-      success: true,
-      estimate: response,
-    }
-  } catch (error: any) {
-    console.error('OpenAI estimate error:', error)
-    return {
-      success: false,
-    }
   }
-}
+
+  return {
+    response: result.response || '',
+  }
+})

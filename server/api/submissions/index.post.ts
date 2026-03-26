@@ -13,7 +13,6 @@ export default defineEventHandler(async (event) => {
       timeline: body.timeline,
       requirements: body.requirements || {},
       additionalNotes: body.additionalNotes,
-      dialogflowSessionId: body.dialogflowSessionId,
       aiConversation: body.aiConversation,
       status: 'PENDING',
     },

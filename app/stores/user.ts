@@ -8,23 +8,17 @@ export const useUserStore = defineStore('user', {
   }),
 
   actions: {
-     async fetchCurrentUser() {
-       // Only run on client-side
-       if (import.meta.server) {
-         return
-       }
- 
-       // Wait for Firebase to be initialized
-       const nuxtApp = useNuxtApp()
-       const $initFirebase = nuxtApp.$initFirebase
-       await $initFirebase()
- 
-       // Get Firebase ID token
-       const { getAccessToken: getAccessTokenFn } = useAuth()
-       const token = await getAccessTokenFn()
-      
+    async fetchCurrentUser() {
+      if (import.meta.server) {
+        return
+      }
+
+      const { supabase } = useSupabase()
+      const { getAccessToken: getAccessTokenFn } = useAuth()
+      const token = await getAccessTokenFn()
+     
       if (!token) {
-        console.log('No Firebase token available')
+        console.log('No Supabase token available')
         this.currentUser = null
         return
       }
@@ -32,7 +26,7 @@ export const useUserStore = defineStore('user', {
       this.loading = true
       
       try {
-        console.log('Fetching user with Firebase token...')
+        console.log('Fetching user with Supabase token...')
         
         const response = await useFetch('/api/users/me', {
           headers: {
@@ -56,22 +50,15 @@ export const useUserStore = defineStore('user', {
     },
 
     async updateUser(updates: Partial<User>) {
-      // Only run on client-side
       if (import.meta.server) {
         return
       }
 
-       // Wait for Firebase to be initialized
-       const nuxtApp = useNuxtApp()
-       const $initFirebase = nuxtApp.$initFirebase
-       await $initFirebase()
-
-       // Get Firebase ID token
-       const { getAccessToken: getAccessTokenFn } = useAuth()
-       const token = await getAccessTokenFn()
-      
+      const { getAccessToken: getAccessTokenFn } = useAuth()
+      const token = await getAccessTokenFn()
+     
       if (!token) {
-        console.log('No Firebase token available for update')
+        console.log('No Supabase token available for update')
         return
       }
 

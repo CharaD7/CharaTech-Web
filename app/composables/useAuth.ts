@@ -1,62 +1,39 @@
 import { ref } from 'vue'
 
 export const useAuth = () => {
-  const user = useState<any>('firebase-user', () => null)
+  const { supabase } = useSupabase()
+  const user = useState<any>('supabase-user', () => null)
   const isInitialized = ref(false)
-  const isFirebaseReady = ref(false)
-
-  const waitForFirebase = async () => {
-    if (isFirebaseReady.value) return true
-    
-    const nuxtApp = useNuxtApp()
-    const $initFirebase = nuxtApp.$initFirebase
-    
-    if ($initFirebase) {
-      await $initFirebase()
-      isFirebaseReady.value = true
-      return true
-    }
-    return false
-  }
 
   const initAuth = async () => {
-    const nuxtApp = useNuxtApp()
-    const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
-    const auth: any = await $getFirebaseAuth()
-    
-    if (auth) {
-      auth.onAuthStateChanged((firebaseUser: any) => {
-        user.value = firebaseUser
-        isInitialized.value = true
-      })
-    }
-  }
+    const { data: { session } } = await supabase.auth.getSession()
+    user.value = session?.user || null
+    isInitialized.value = true
 
-  if (import.meta.client && !isInitialized.value) {
-    waitForFirebase().then(() => {
-      initAuth()
+    supabase.auth.onAuthStateChange((_event, session) => {
+      user.value = session?.user || null
     })
   }
 
-  const register = async (email: string, password: string, fullName?: string) => {
-    await waitForFirebase()
-    
-    const nuxtApp = useNuxtApp()
-    const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
-    const auth: any = await $getFirebaseAuth()
-    
-    if (!auth) {
-      return { success: false, error: 'Firebase not initialized' }
-    }
+  if (import.meta.client && !isInitialized.value) {
+    initAuth()
+  }
 
+  const register = async (email: string, password: string, fullName?: string) => {
     try {
-      const { user: firebaseUser, error } = await auth.createUserWithEmailAndPassword(email, password)
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName }
+        }
+      })
       if (error) {
-        console.error('Firebase registration error:', error)
+        console.error('Supabase registration error:', error)
         return { success: false, error: error.message }
       }
-      user.value = firebaseUser
-      return { success: true, user: firebaseUser }
+      user.value = data.user
+      return { success: true, user: data.user, session: data.session }
     } catch (error: any) {
       console.error('Registration error:', error)
       return { success: false, error: error.message }
@@ -64,24 +41,17 @@ export const useAuth = () => {
   }
 
   const login = async (email: string, password: string) => {
-    await waitForFirebase()
-    
-    const nuxtApp = useNuxtApp()
-    const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
-    const auth: any = await $getFirebaseAuth()
-    
-    if (!auth) {
-      return { success: false, error: 'Firebase not initialized' }
-    }
-
     try {
-      const { user: firebaseUser, error } = await auth.signInWithEmailAndPassword(email, password)
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
       if (error) {
-        console.error('Firebase login error:', error)
+        console.error('Supabase login error:', error)
         return { success: false, error: error.message }
       }
-      user.value = firebaseUser
-      return { success: true, user: firebaseUser }
+      user.value = data.user
+      return { success: true, user: data.user, session: data.session }
     } catch (error: any) {
       console.error('Login error:', error)
       return { success: false, error: error.message }
@@ -89,18 +59,8 @@ export const useAuth = () => {
   }
 
   const logout = async () => {
-    await waitForFirebase()
-    
-    const nuxtApp = useNuxtApp()
-    const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
-    const auth: any = await $getFirebaseAuth()
-    
-    if (!auth) {
-      return { success: false, error: 'Firebase not initialized' }
-    }
-
     try {
-      await auth.signOut()
+      await supabase.auth.signOut()
       user.value = null
       return { success: true }
     } catch (error: any) {
@@ -110,21 +70,11 @@ export const useAuth = () => {
   }
 
   const getAccessToken = async (): Promise<string | null> => {
-    await waitForFirebase()
-    
-    const nuxtApp = useNuxtApp()
-    const $getFirebaseAuth = nuxtApp.$getFirebaseAuth
-    const auth: any = await $getFirebaseAuth()
-    
-    if (!auth?.currentUser) {
-      return null
-    }
-
     try {
-      const token = await auth.currentUser.getIdToken()
-      return token
+      const { data: { session } } = await supabase.auth.getSession()
+      return session?.access_token || null
     } catch (error) {
-      console.error('Failed to get Firebase token:', error)
+      console.error('Failed to get Supabase token:', error)
       return null
     }
   }
