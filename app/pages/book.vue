@@ -194,18 +194,20 @@ const pastBookings = computed(() =>
 const fetchEventTypes = async () => {
   try {
     const data = await $fetch('/api/calendly/event-types')
-    eventTypes.value = data.eventTypes
+    eventTypes.value = Array.isArray(data?.eventTypes) ? data.eventTypes : []
   } catch (error) {
     console.error('Failed to fetch event types:', error)
+    eventTypes.value = []
   }
 }
 
 const fetchBookings = async () => {
   try {
     const data = await $fetch('/api/calendly/bookings')
-    bookings.value = data.bookings
+    bookings.value = Array.isArray(data?.bookings) ? data.bookings : []
   } catch (error) {
     console.error('Failed to fetch bookings:', error)
+    bookings.value = []
   }
 }
 

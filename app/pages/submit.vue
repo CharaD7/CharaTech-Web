@@ -242,7 +242,8 @@ const complexityOptions = Object.values(ComplexityLevel).map(v => ({ value: v, l
 const budgetOptions = Object.values(BudgetRange).map(v => ({ value: v, label: v.replace(/_/g, ' ') }))
 
 const onIndustryChange = () => {
-  requirements.value = getIndustryRequirements(formData.industry)
+  const industryReqs = getIndustryRequirements(formData.industry)
+  requirements.value = Array.isArray(industryReqs) ? industryReqs : []
 }
 
 const aiMessages = ref<Array<{ type: 'user' | 'ai', text: string }>>([
