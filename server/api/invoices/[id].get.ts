@@ -1,6 +1,6 @@
 export default defineEventHandler(async (event) => {
   try {
-    const user = await verifyToken(event)
+    const user = await requireAuth(event)
     const id = getRouterParam(event, 'id')
 
     if (!id) throw createError({ statusCode: 400, message: 'Invoice ID required' })

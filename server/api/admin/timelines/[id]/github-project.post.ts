@@ -3,8 +3,7 @@
  * Requires GITHUB_TOKEN with `project` + `repo` scopes.
  */
 export default defineEventHandler(async (event) => {
-  const user = await verifyToken(event)
-  if (user.role !== 'ADMIN') throw createError({ statusCode: 403, message: 'Admin only' })
+  const user = await requireAdmin(event)
 
   const id = getRouterParam(event, 'id')!
   const {

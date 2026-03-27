@@ -1,13 +1,6 @@
 export default defineEventHandler(async (event) => {
   try {
-    const user = await verifyToken(event)
-    
-    if (user.role !== 'ADMIN') {
-      throw createError({
-        statusCode: 403,
-        message: 'Access denied. Admin only.'
-      })
-    }
+    const user = await requireAdmin(event)
 
     const body = await readBody(event)
     const {

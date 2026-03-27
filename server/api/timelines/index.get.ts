@@ -1,7 +1,6 @@
 // GET /api/timelines — client's own project timelines with live GitHub progress
 export default defineEventHandler(async (event) => {
-  const user = await verifyToken(event)
-  if (!user) throw createError({ statusCode: 401, message: 'Unauthorized' })
+  const user = await requireAuth(event)
 
   // Get all submissions for this user
   const submissions = await prisma.submission.findMany({

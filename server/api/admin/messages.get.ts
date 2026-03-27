@@ -2,8 +2,7 @@
  * Returns all conversations grouped by client, with last message and unread count.
  */
 export default defineEventHandler(async (event) => {
-  const user = await verifyToken(event)
-  if (user.role !== 'ADMIN') throw createError({ statusCode: 403, message: 'Admin only' })
+  const user = await requireAdmin(event)
 
   const messages = await prisma.message.findMany({
     where: {

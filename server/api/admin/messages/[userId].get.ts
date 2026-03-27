@@ -3,8 +3,7 @@
  * Marks all incoming messages as read.
  */
 export default defineEventHandler(async (event) => {
-  const user = await verifyToken(event)
-  if (user.role !== 'ADMIN') throw createError({ statusCode: 403, message: 'Admin only' })
+  const user = await requireAdmin(event)
 
   const clientId = getRouterParam(event, 'userId')!
 

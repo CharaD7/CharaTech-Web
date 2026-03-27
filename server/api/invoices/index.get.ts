@@ -1,6 +1,6 @@
 export default defineEventHandler(async (event) => {
   try {
-    const user = await verifyToken(event)
+    const user = await requireAuth(event)
 
     const invoices = await prisma.invoice.findMany({
       where: { clientId: user.id },

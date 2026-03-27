@@ -2,7 +2,7 @@
  * Mark all unread messages addressed to the current user as read.
  */
 export default defineEventHandler(async (event) => {
-  const user = await verifyToken(event)
+  const user = await requireAuth(event)
 
   const result = await prisma.message.updateMany({
     where: { receiverId: user.id, read: false },

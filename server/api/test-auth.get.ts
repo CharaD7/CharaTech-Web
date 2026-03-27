@@ -14,13 +14,7 @@ export default defineEventHandler(async (event) => {
   console.log('Token (first 50 chars):', token.substring(0, 50) + '...')
 
   try {
-    const decodedToken = await verifyToken(event)
-    console.log('Decoded token:', decodedToken)
-    
-    const user = await prisma.user.findUnique({
-      where: { firebaseUid: decodedToken.uid },
-    })
-    
+    const user = await requireAuth(event)
     console.log('User found:', user)
     
     return {
