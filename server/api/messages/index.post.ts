@@ -1,8 +1,8 @@
 /** POST /api/messages
  * Client sends a message to admin.
- * If admin has never replied (AI mode), auto-responds via OpenAI with a fallback.
+ * If admin has never replied (AI mode), auto-responds via Ollama with a fallback.
  */
-import { chatWithAI } from '../../../server/utils/openai'
+import { chatWithAI } from '~~/server/utils/openai'
 
 export default defineEventHandler(async (event) => {
   const user = await requireAuth(event)
@@ -33,22 +33,22 @@ export default defineEventHandler(async (event) => {
 
   let botReply: any = null
   if (!adminHasReplied) {
-    // AI mode — try OpenAI, fall back to a canned response
+    // AI mode — try Ollama, fall back to a canned response
     let botContent =
       "Thanks for reaching out to CharaTech! I'm Chara, your AI assistant. How can I help you today? Feel free to tell me about your software project requirements."
 
     try {
       const config = useRuntimeConfig()
-      const openaiApiKey = config.openaiApiKey as string | undefined
-      if (openaiApiKey) {
-        // Attempt OpenAI
+      const ollamaApiKey = config.ollamaApiKey as string | undefined
+      if (ollamaApiKey) {
+        // Attempt Ollama
         const result = await chatWithAI(content.trim())
         if (result.success && result.response) {
           botContent = result.response
         }
       }
     } catch {
-      // OpenAI unavailable — use default canned response
+      // Ollama unavailable — use default canned response
     }
 
     botReply = await prisma.message.create({
