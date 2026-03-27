@@ -204,6 +204,13 @@
 <script setup lang="ts">
 import { Industry, ProjectType, ComplexityLevel, BudgetRange } from '@/types'
 import { getIndustryRequirements } from '@/config/requirements'
+import BaseCard from '@/components/ui/BaseCard.vue'
+import BaseInput from '@/components/ui/BaseInput.vue'
+import BaseSelect from '@/components/ui/BaseSelect.vue'
+import BaseCheckboxGroup from '@/components/ui/BaseCheckboxGroup.vue'
+import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
+import BaseTextarea from '@/components/ui/BaseTextarea.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 
 definePageMeta({
   layout: 'default',

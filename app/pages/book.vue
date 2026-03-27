@@ -142,6 +142,12 @@
 </template>
 
 <script setup lang="ts">
+import BaseCard from '@/components/ui/BaseCard.vue'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import BaseBadge from '@/components/ui/BaseBadge.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
+
 interface EventType {
   uri: string
   name: string
