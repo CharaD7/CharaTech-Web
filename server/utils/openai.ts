@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody, createError } from 'h3'
 
-const OLLAMA_API_URL = 'https://api.ollama.ai/v1/chat/completions'
-const MODEL = 'llama-3.2-90b-vision-preview'
+const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'https://api.ollama.com/v1/chat/completions'
+const MODEL = process.env.OLLAMA_MODEL || 'llama-3.2-90b-vision-preview'
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
@@ -37,7 +37,8 @@ export const chatWithAI = async (
     const apiKey = config.ollamaApiKey as string
 
     if (!apiKey) {
-      throw new Error('Ollama API key not configured')
+      console.error('Ollama API key not configured - please set OLLAMA_API_KEY environment variable')
+      throw new Error('AI service not configured. Please contact support.')
     }
 
     const messages: ChatMessage[] = [
@@ -45,6 +46,9 @@ export const chatWithAI = async (
       ...conversationHistory,
       { role: 'user', content: message },
     ]
+
+    console.log('Calling Ollama API with model:', MODEL)
+    console.log('API URL:', OLLAMA_API_URL)
 
     const response = await fetch(OLLAMA_API_URL, {
       method: 'POST',
@@ -60,11 +64,14 @@ export const chatWithAI = async (
     })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
+      const errorText = await response.text()
+      console.error('Ollama API error:', response.status, errorText)
+      const errorData = JSON.parse(errorText || '{}')
       throw new Error(errorData.error?.message || `Ollama API error: ${response.status}`)
     }
 
     const data = await response.json()
+    console.log('Ollama response:', data)
     const content = data.choices?.[0]?.message?.content || ''
 
     return {
@@ -75,7 +82,7 @@ export const chatWithAI = async (
     console.error('Ollama error:', error)
     return {
       success: false,
-      error: error.message || 'Ollama API error',
+      error: error.message || 'AI service error. Please try again.',
     }
   }
 }
@@ -97,7 +104,7 @@ export default defineEventHandler(async (event) => {
   if (!result.success) {
     throw createError({
       statusCode: 500,
-      message: result.error || 'AI error',
+      message: result.error || 'AI service error. Please try again.',
     })
   }
 
