@@ -45,6 +45,8 @@ model Submission {
   dialogflowSessionId String?
   aiConversation      Json?
   status              SubmissionStatus @default(PENDING)
+  currency            String?          // Currency based on user's location
+  country             String?          // User's country
   reviewedAt          DateTime?
   reviewedBy          String?
   adminNotes          String?
@@ -60,6 +62,7 @@ model Submission {
   @@index([status])
   @@index([industry])
   @@index([createdAt])
+  @@index([currency])
 }
 
 model SubmissionVersion {
@@ -144,16 +147,25 @@ model CollabCursor {
 }
 
 model Attachment {
-  id           String     @id @default(uuid())
+  id           String         @id @default(uuid())
   submissionId String
-  fileName     String
-  fileUrl      String
-  fileType     String
-  fileSize     Int
-  createdAt    DateTime   @default(now())
-  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  type        AttachmentType @default(IMAGE)
+  fileName    String?
+  fileUrl     String
+  fileType    String?
+  fileSize    Int?
+  thumbnail    String?        // For video thumbnails
+  description String?
+  createdAt   DateTime       @default(now())
+  submission  Submission     @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 
   @@index([submissionId])
+}
+
+enum AttachmentType {
+  IMAGE
+  VIDEO
+  LINK
 }
 
 model Notification {

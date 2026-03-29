@@ -71,6 +71,16 @@ export enum SubmissionStatus {
   COMPLETED = 'COMPLETED'
 }
 
+export interface MediaAttachment {
+  id: string
+  type: 'image' | 'video' | 'link'
+  url: string
+  name?: string
+  thumbnail?: string
+  description?: string
+  createdAt: Date
+}
+
 export interface RequirementCategory {
   id: string
   title: string
@@ -104,6 +114,9 @@ export interface SubmissionData {
   requirements: Record<string, any>
   additionalNotes?: string
   dialogflowSessionId?: string
+  currency?: string
+  country?: string
+  media?: MediaAttachment[]
 }
 
 export interface User {
@@ -134,6 +147,9 @@ export interface Submission {
   dialogflowSessionId?: string
   aiConversation?: any
   status: SubmissionStatus
+  currency?: string
+  country?: string
+  media?: MediaAttachment[]
   reviewedAt?: Date
   reviewedBy?: string
   adminNotes?: string

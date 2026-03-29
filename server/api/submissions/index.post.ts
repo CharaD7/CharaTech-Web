@@ -15,8 +15,27 @@ export default defineEventHandler(async (event) => {
       additionalNotes: body.additionalNotes,
       aiConversation: body.aiConversation,
       status: 'PENDING',
+      currency: body.currency || 'USD',
+      country: body.country,
     },
   })
+
+  // Handle media attachments (images, videos, links)
+  if (body.media && Array.isArray(body.media) && body.media.length > 0) {
+    for (const media of body.media) {
+      await prisma.attachment.create({
+        data: {
+          submissionId: submission.id,
+          type: media.type || 'LINK',
+          fileName: media.name || null,
+          fileUrl: media.url,
+          fileType: media.type || null,
+          thumbnail: media.thumbnail || null,
+          description: media.description || null,
+        },
+      })
+    }
+  }
 
   const config = useRuntimeConfig()
   
@@ -46,6 +65,8 @@ export default defineEventHandler(async (event) => {
       <h1>New Requirements Submission</h1>
       <p><strong>Project:</strong> ${body.projectName}</p>
       <p><strong>Client:</strong> ${user.fullName || user.email}</p>
+      <p><strong>Country:</strong> ${body.country || 'Not specified'}</p>
+      <p><strong>Currency:</strong> ${body.currency || 'USD'}</p>
       <p><strong>Industry:</strong> ${body.industry}</p>
       <p><strong>Complexity:</strong> ${body.complexity}</p>
       <p><a href="${config.public.appUrl}/admin/submissions/${submission.id}">View Submission</a></p>
@@ -74,7 +95,13 @@ export default defineEventHandler(async (event) => {
         channel: ['IN_APP'],
         subject: 'New Requirements Submission',
         message: `${user.fullName || user.email} submitted requirements for "${body.projectName}".`,
-        metadata: { submissionId: submission.id, projectName: body.projectName, clientEmail: user.email },
+        metadata: { 
+          submissionId: submission.id, 
+          projectName: body.projectName, 
+          clientEmail: user.email,
+          currency: body.currency,
+          country: body.country 
+        },
         sentAt: new Date(),
       },
     })

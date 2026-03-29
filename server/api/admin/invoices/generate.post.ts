@@ -18,6 +18,9 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, message: 'Submission not found' })
     }
 
+    // Use the submission's currency if available, otherwise use the provided currency or default to USD
+    const invoiceCurrency = submission.currency || currency || 'USD'
+
     const pricing = generatePricing({
       projectName: submission.projectName,
       projectType: submission.projectType as string[],
@@ -25,7 +28,7 @@ export default defineEventHandler(async (event) => {
       industry: submission.industry as string,
       requirements: (submission.requirements as Record<string, any>) ?? {},
       budget: submission.budget as string | null,
-      currency: currency || 'USD',
+      currency: invoiceCurrency,
     })
 
     return {
@@ -37,6 +40,8 @@ export default defineEventHandler(async (event) => {
         complexity: submission.complexity,
         budget: submission.budget,
         timeline: submission.timeline,
+        currency: invoiceCurrency,
+        country: submission.country,
         clientId: submission.userId,
         client: submission.user,
       },
