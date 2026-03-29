@@ -165,7 +165,7 @@
             <h3 class="text-xl font-bold text-white">AI Assistant</h3>
           </div>
           
-          <div class="space-y-3 mb-4 max-h-96 overflow-y-auto">
+          <div class="space-y-3 mb-4 max-h-80 overflow-y-auto">
             <div 
               v-for="(msg, i) in aiMessages" 
               :key="i"
@@ -176,24 +176,39 @@
             >
               <p class="text-white">{{ msg.text }}</p>
             </div>
+            <div v-if="aiLoading" class="p-3 rounded-lg text-sm bg-white/5 mr-4">
+              <div class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4 text-purple-400" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-white/60">Thinking...</span>
+              </div>
+            </div>
           </div>
 
           <div class="flex gap-2">
-            <BaseInput
+            <input
               v-model="aiInput"
+              type="text"
               placeholder="Ask AI for help..."
+              class="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
               @keyup.enter="sendAIMessage"
-            />
-            <BaseButton
-              variant="primary"
               :disabled="aiLoading"
+            />
+            <button
+              class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="aiLoading || !aiInput.trim()"
               @click="sendAIMessage"
             >
               <svg v-if="!aiLoading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
-              <BaseSpinner v-else size="sm" />
-            </BaseButton>
+              <svg v-else class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </button>
           </div>
         </BaseCard>
       </div>
@@ -261,15 +276,24 @@ const sendAIMessage = async () => {
   aiLoading.value = true
 
   try {
+    const conversationHistory = aiMessages.value
+      .filter(m => m.type === 'user' || m.type === 'ai')
+      .map(m => ({
+        role: m.type === 'user' ? 'user' : 'assistant',
+        content: m.text
+      }))
+
     const response = await $fetch('/api/ollama/chat', {
       method: 'POST',
       body: {
         message: userMessage,
+        conversationHistory,
       },
     })
 
     aiMessages.value.push({ type: 'ai', text: response.response || 'I\'m here to help!' })
   } catch (error) {
+    console.error('AI Chat error:', error)
     aiMessages.value.push({ type: 'ai', text: 'Sorry, I encountered an error. Please try again.' })
   } finally {
     aiLoading.value = false

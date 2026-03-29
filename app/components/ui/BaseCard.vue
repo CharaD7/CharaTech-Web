@@ -1,5 +1,5 @@
 <template>
-  <div :class="['glass-morphism p-6 rounded-xl', className]">
+  <div :class="['glass-morphism p-6 rounded-xl', customClass]">
     <slot />
   </div>
 </template>
@@ -9,5 +9,6 @@ interface Props {
   class?: string
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
+const customClass = computed(() => props.class || '')
 </script>

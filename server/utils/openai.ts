@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody, createError } from 'h3'
 
-const OLLAMA_API_URL = 'https://ollama.com/v1'
-const MODEL = 'gpt-oss:120b'
+const OLLAMA_API_URL = process.env.OLLAMA_API_URL || 'http://localhost:11434/api/chat'
+const MODEL = process.env.OLLAMA_MODEL || 'llama3.2'
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
@@ -33,24 +33,16 @@ export const chatWithAI = async (
   conversationHistory: ChatMessage[] = []
 ): Promise<ChatCompletionResult> => {
   try {
-    const config = useRuntimeConfig()
-    const apiKey = config.ollamaApiKey as string
-
-    if (!apiKey) {
-      throw new Error('Ollama API key not configured')
-    }
-
     const messages: ChatMessage[] = [
       { role: 'system', content: SYSTEM_PROMPT },
       ...conversationHistory,
       { role: 'user', content: message },
     ]
 
-    const response = await fetch(`${OLLAMA_API_URL}/chat`, {
+    const response = await fetch(OLLAMA_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: MODEL,
@@ -65,7 +57,7 @@ export const chatWithAI = async (
     }
 
     const data = await response.json()
-    const content = data.choices?.[0]?.message?.content || ''
+    const content = data.message?.content || ''
 
     return {
       success: true,
