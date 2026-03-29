@@ -364,7 +364,7 @@ watch(() => props.timeline?.id, (id) => {
           </button>
         </div>
 
-        <div v-if="showRepoDropdown" class="absolute z-30 mt-1 w-full max-h-64 overflow-y-auto rounded-xl bg-gray-900/98 border border-white/10 shadow-2xl backdrop-blur-xl">
+        <GlowingScrollbar v-if="showRepoDropdown" class="absolute z-30 mt-1 w-full max-h-64 rounded-xl bg-gray-900/98 border border-white/10 shadow-2xl backdrop-blur-xl"></GlowingScrollbar>
           <div v-if="repoSearchLoading" class="p-4 text-center text-white/40 text-sm">Loading…</div>
           <div v-else-if="!repoSearchResults.length" class="p-4 text-center text-white/40 text-sm">No repos found</div>
           <button v-for="r in repoSearchResults" :key="r.id"

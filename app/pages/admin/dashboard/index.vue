@@ -309,7 +309,7 @@
               <div v-if="!submissions.length" class="text-white/50 text-sm text-center py-4">
                 No submissions available
               </div>
-              <div v-else class="space-y-2 max-h-96 overflow-y-auto">
+              <GlowingScrollbar v-else class="space-y-2 max-h-96"></GlowingScrollbar>
                 <button
                   v-for="sub in submissions"
                   :key="sub.id"

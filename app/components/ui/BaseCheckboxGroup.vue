@@ -4,7 +4,7 @@
       {{ label }}
       <span v-if="required" class="text-red-400">*</span>
     </label>
-    <div class="space-y-2 bg-white/5 p-4 rounded-lg border border-white/20 max-h-64 overflow-y-auto">
+    <GlowingScrollbar class="space-y-2 bg-white/5 p-4 rounded-lg border border-white/20 max-h-64"></GlowingScrollbar>
       <label
         v-for="option in options"
         :key="option.value"

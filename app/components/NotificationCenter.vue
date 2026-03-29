@@ -44,7 +44,7 @@
         </div>
 
         <!-- List -->
-        <div class="max-h-[60vh] sm:max-h-[420px] overflow-y-auto divide-y divide-white/5">
+        <GlowingScrollbar class="max-h-[60vh] sm:max-h-[420px] divide-y divide-white/5"></GlowingScrollbar>
           <!-- Loading skeleton -->
           <template v-if="loading">
             <div v-for="i in 3" :key="i" class="p-4 animate-pulse">

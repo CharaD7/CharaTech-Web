@@ -89,7 +89,7 @@
         </div>
         <div>
           <h4 class="text-sm font-semibold text-white/70 mb-2">Changes Summary</h4>
-          <div class="bg-gray-800/50 p-4 rounded-lg max-h-64 overflow-auto">
+          <GlowingScrollbar class="bg-gray-800/50 p-4 rounded-lg max-h-64"></GlowingScrollbar>
             <pre class="text-xs text-white/70 whitespace-pre-wrap">{{ formatJson(selectedVersion.changes) }}</pre>
           </div>
         </div>

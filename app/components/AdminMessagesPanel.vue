@@ -189,7 +189,7 @@ onUnmounted(() => unsubscribe())
         </button>
       </div>
 
-      <div class="flex-1 overflow-y-auto divide-y divide-white/5">
+      <GlowingScrollbar class="flex-1 divide-y divide-white/5"></GlowingScrollbar>
         <div v-if="loadingConvs" class="p-4 space-y-3">
           <div v-for="i in 4" :key="i" class="h-14 bg-white/5 rounded-lg animate-pulse" />
         </div>
@@ -269,7 +269,7 @@ onUnmounted(() => unsubscribe())
         </div>
 
         <!-- Messages -->
-        <div class="flex-1 overflow-y-auto px-4 py-3 space-y-2 scrollbar-thin min-h-0"
+        <GlowingScrollbar class="flex-1 px-4 py-3 space-y-2 min-h-0"
           style="background: rgba(10,5,20,0.4)">
 
           <div v-if="loadingThread" class="flex items-center justify-center h-24">
@@ -354,8 +354,4 @@ onUnmounted(() => unsubscribe())
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
-.scrollbar-thin { scrollbar-width: thin; scrollbar-color: rgba(139,92,246,0.2) transparent; }
-.scrollbar-thin::-webkit-scrollbar { width: 4px; }
-.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.2); border-radius: 2px; }
 </style>

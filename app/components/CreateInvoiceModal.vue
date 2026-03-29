@@ -67,7 +67,7 @@
           <div class="flex min-h-0" style="max-height: calc(90vh - 130px);">
 
             <!-- ── LEFT: FORM ── -->
-            <div class="w-full lg:w-[52%] overflow-y-auto p-6 space-y-5" style="scrollbar-width: thin; scrollbar-color: rgba(168,85,247,0.3) transparent;">
+            <GlowingScrollbar class="w-full lg:w-[52%] p-6 space-y-5"></GlowingScrollbar>
 
               <!-- SECTION: Client & Project -->
               <div class="rounded-xl border border-white/8 overflow-hidden" style="background: rgba(255,255,255,0.02);">
@@ -388,9 +388,8 @@
             </div>
 
             <!-- ── RIGHT: LIVE PREVIEW ── -->
-            <div
-              class="hidden lg:flex lg:w-[48%] border-l border-white/8 overflow-y-auto flex-col bg-black/10 p-5"
-              style="scrollbar-width: thin; scrollbar-color: rgba(168,85,247,0.2) transparent;"
+            <GlowingScrollbar
+              class="hidden lg:flex lg:w-[48%] border-l border-white/8 flex-col bg-black/10 p-5"
             >
               <!-- Preview label -->
               <div class="flex items-center gap-2 mb-4">
@@ -908,18 +907,6 @@ const close = () => {
 .item-list-leave-to {
   opacity: 0;
   transform: translateX(-8px);
-}
-
-/* Scrollbar styling */
-:deep(::-webkit-scrollbar) {
-  width: 4px;
-}
-:deep(::-webkit-scrollbar-track) {
-  background: transparent;
-}
-:deep(::-webkit-scrollbar-thumb) {
-  background: rgba(168, 85, 247, 0.2);
-  border-radius: 2px;
 }
 
 /* Date input color fix */

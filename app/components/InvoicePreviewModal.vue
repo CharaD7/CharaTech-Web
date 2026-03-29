@@ -53,7 +53,7 @@
           </div>
 
           <!-- Invoice document (scrollable) -->
-          <div class="flex-1 overflow-y-auto p-6" style="scrollbar-width: thin; scrollbar-color: rgba(168,85,247,0.2) transparent;">
+          <GlowingScrollbar class="flex-1 p-6"></GlowingScrollbar>
             <div
               id="invoice-print-area"
               class="rounded-2xl overflow-hidden border border-white/8"
@@ -356,7 +356,4 @@ const printInvoice = () => {
   from { opacity: 0; transform: scale(0.95) translateY(12px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
-:deep(::-webkit-scrollbar) { width: 4px; }
-:deep(::-webkit-scrollbar-track) { background: transparent; }
-:deep(::-webkit-scrollbar-thumb) { background: rgba(168,85,247,0.2); border-radius: 2px; }
 </style>

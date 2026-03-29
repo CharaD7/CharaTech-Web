@@ -188,9 +188,8 @@ onUnmounted(() => unsubscribe())
         </div>
 
         <!-- Messages area -->
-        <div class="flex-1 overflow-y-auto px-3 py-3 space-y-2 scrollbar-thin"
+        <GlowingScrollbar class="flex-1 px-3 py-3 space-y-2"
           style="min-height: 0; background: rgba(10,5,20,0.6);">
-
           <div v-if="loading" class="flex items-center justify-center h-24">
             <div class="w-6 h-6 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
           </div>
@@ -233,7 +232,7 @@ onUnmounted(() => unsubscribe())
           </div>
 
           <div ref="messagesEnd" />
-        </div>
+        </GlowingScrollbar>
 
         <!-- Handoff notice -->
         <div v-if="!isAiHandled"
@@ -310,9 +309,4 @@ onUnmounted(() => unsubscribe())
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
 }
-
-.scrollbar-thin { scrollbar-width: thin; scrollbar-color: rgba(139,92,246,0.3) transparent; }
-.scrollbar-thin::-webkit-scrollbar { width: 4px; }
-.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 2px; }
 </style>

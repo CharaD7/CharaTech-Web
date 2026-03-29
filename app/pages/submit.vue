@@ -287,7 +287,7 @@
             <h3 class="text-xl font-bold text-white">AI Assistant</h3>
           </div>
           
-          <div class="space-y-3 mb-4 max-h-80 overflow-y-auto">
+          <GlowingScrollbar class="space-y-3 mb-4 max-h-80"></GlowingScrollbar>
             <div 
               v-for="(msg, i) in aiMessages" 
               :key="i"

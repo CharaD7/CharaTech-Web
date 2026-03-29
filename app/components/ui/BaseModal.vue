@@ -25,9 +25,9 @@
               </svg>
             </button>
           </div>
-          <div class="p-6 overflow-y-auto flex-1">
+          <GlowingScrollbar class="p-6 overflow-y-auto flex-1">
             <slot />
-          </div>
+          </GlowingScrollbar>
         </div>
       </div>
     </Transition>
