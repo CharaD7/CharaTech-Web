@@ -82,7 +82,7 @@ defineEmits<{
 
 const showPassword = ref(false)
 const isFocused = ref(false)
-const inputId = `input-${Math.random().toString(36).slice(2, 9)}`
+const inputId = `input-${crypto.randomUUID?.() || Math.random().toString(36).slice(2, 9)}`
 
 const actualType = computed(() => {
   if (props.type === 'password') {

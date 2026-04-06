@@ -44,7 +44,7 @@
         </div>
 
         <!-- List -->
-        <GlowingScrollbar class="max-h-[60vh] sm:max-h-[420px] divide-y divide-white/5"></GlowingScrollbar>
+        <GlowingScrollbar class="max-h-[60vh] sm:max-h-[420px] divide-y divide-white/5">
           <!-- Loading skeleton -->
           <template v-if="loading">
             <div v-for="i in 3" :key="i" class="p-4 animate-pulse">
@@ -91,7 +91,7 @@
               <p class="text-xs text-gray-600 mt-1">{{ formatDate(n.createdAt) }}</p>
             </div>
           </button>
-        </div>
+        </GlowingScrollbar>
 
         <!-- Footer -->
         <div class="border-t border-white/10 px-4 py-3 bg-white/5">
@@ -118,6 +118,7 @@
 
 <script setup lang="ts">
 import type { AppNotification } from '~/composables/useRealtimeNotifications'
+import GlowingScrollbar from '@/components/ui/GlowingScrollbar.vue'
 
 const { notifications, unreadCount, loading, fetchNotifications, subscribe, unsubscribe, markAsRead, markAllAsRead, formatDate } = useRealtimeNotifications()
 

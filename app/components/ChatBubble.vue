@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import GlowingScrollbar from '@/components/ui/GlowingScrollbar.vue'
+
 /**
  * ChatBubble — Floating real-time chat widget for authenticated clients.
  * Sits in the bottom-right corner on every page.

@@ -375,7 +375,7 @@
           </div>
 
           <!-- Body -->
-          <GlowingScrollbar class="flex-1 p-7 space-y-5"></GlowingScrollbar>
+          <GlowingScrollbar class="flex-1 p-7 space-y-5">
             <!-- Due Date + Amount -->
             <div class="grid grid-cols-2 gap-4">
               <div class="bg-white/5 rounded-xl p-4 border border-white/10">
@@ -444,7 +444,7 @@
                 ✉️ Contact CharaTech
               </a>
             </div>
-          </div>
+          </GlowingScrollbar>
         </div>
       </div>
     </Transition>
@@ -456,7 +456,7 @@ import type { Submission } from '~/types'
 
 definePageMeta({
   layout: 'default',
-  middleware: ['auth']
+  ssr: false
 })
 
 const userStore = useUserStore()

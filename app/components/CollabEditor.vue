@@ -106,6 +106,9 @@
 
 <script setup lang="ts">
 import { useCollaboration } from '~/composables/useCollaboration'
+import BaseBadge from '@/components/ui/BaseBadge.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseAlert from '@/components/ui/BaseAlert.vue'
 
 interface Props {
   submissionId: string

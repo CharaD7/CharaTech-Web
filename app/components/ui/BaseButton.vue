@@ -18,6 +18,8 @@
 </template>
 
 <script setup lang="ts">
+import BaseSpinner from './BaseSpinner.vue'
+
 interface Props {
   type?: 'button' | 'submit' | 'reset'
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'

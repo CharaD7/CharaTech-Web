@@ -309,7 +309,7 @@
               <div v-if="!submissions.length" class="text-white/50 text-sm text-center py-4">
                 No submissions available
               </div>
-              <GlowingScrollbar v-else class="space-y-2 max-h-96"></GlowingScrollbar>
+              <GlowingScrollbar v-else class="space-y-2 max-h-96">
                 <button
                   v-for="sub in submissions"
                   :key="sub.id"
@@ -324,7 +324,7 @@
                   <div class="text-sm font-medium text-white truncate">{{ sub.projectName }}</div>
                   <div class="text-xs text-white/40 truncate">{{ sub.user?.email }}</div>
                 </button>
-              </div>
+              </GlowingScrollbar>
             </div>
           </div>
           <div class="lg:col-span-2">

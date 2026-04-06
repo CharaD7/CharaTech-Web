@@ -67,7 +67,7 @@
           <div class="flex min-h-0" style="max-height: calc(90vh - 130px);">
 
             <!-- ── LEFT: FORM ── -->
-            <GlowingScrollbar class="w-full lg:w-[52%] p-6 space-y-5"></GlowingScrollbar>
+            <GlowingScrollbar class="w-full lg:w-[52%] p-6 space-y-5">
 
               <!-- SECTION: Client & Project -->
               <div class="rounded-xl border border-white/8 overflow-hidden" style="background: rgba(255,255,255,0.02);">
@@ -385,7 +385,7 @@
                   />
                 </div>
               </div>
-            </div>
+            </GlowingScrollbar>
 
             <!-- ── RIGHT: LIVE PREVIEW ── -->
             <GlowingScrollbar
@@ -534,7 +534,7 @@
                   <p class="text-white/25 text-[10px] tracking-widest uppercase">Thank you for choosing CharaTech · info@charatech.com</p>
                 </div>
               </div>
-            </div>
+            </GlowingScrollbar>
           </div>
 
           <!-- ═══ FOOTER ACTIONS ═══ -->
@@ -608,6 +608,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
+import GlowingScrollbar from '@/components/ui/GlowingScrollbar.vue'
 
 interface LineItem {
   _key: number

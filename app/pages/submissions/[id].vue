@@ -50,9 +50,9 @@
 
         <div>
           <h3 class="text-lg font-semibold text-white mb-3">Selected Requirements</h3>
-          <GlowingScrollbar class="bg-gray-900 p-4 rounded max-h-96"></GlowingScrollbar>
+          <GlowingScrollbar class="bg-gray-900 p-4 rounded max-h-96">
             <pre class="text-xs text-white/80">{{ JSON.stringify(submission.requirements, null, 2) }}</pre>
-          </div>
+          </GlowingScrollbar>
         </div>
 
         <div class="mt-8">

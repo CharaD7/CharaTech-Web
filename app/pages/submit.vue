@@ -69,7 +69,7 @@
             <div v-show="currentStep === 2">
               <h2 class="text-2xl font-bold text-white mb-6">Feature Requirements</h2>
               
-              <div class="space-y-6" v-if="requirements.length">
+              <GlowingScrollbar class="space-y-6 max-h-[500px] overflow-y-auto pr-2" v-if="requirements.length">
                 <BaseCard
                   v-for="category in requirements"
                   :key="category.id"
@@ -82,32 +82,135 @@
                     {{ category.description }}
                   </p>
                   
-                  <div class="space-y-3">
+                  <div class="space-y-4">
                     <template v-for="item in category.items" :key="item.id">
-                      <div class="flex items-start gap-3">
+                      <!-- Checkbox Input -->
+                      <div v-if="item.type === 'checkbox'" class="flex items-start gap-3">
                         <BaseCheckbox
-                          v-if="item.type === 'checkbox'"
                           :model-value="!!formData.requirements[item.id]"
                           :label="item.label"
+                          :required="item.required"
                           @update:model-value="formData.requirements[item.id] = $event"
                         />
+                        <div v-if="item.description" class="text-sm text-white/50 mt-1">
+                          {{ item.description }}
+                        </div>
+                      </div>
+
+                      <!-- Radio Input -->
+                      <div v-else-if="item.type === 'radio'" class="space-y-2">
+                        <label class="block text-sm font-medium text-white">
+                          {{ item.label }}
+                          <span v-if="item.required" class="text-red-400">*</span>
+                        </label>
+                        <div class="space-y-2">
+                          <label
+                            v-for="option in item.options || []"
+                            :key="option"
+                            class="flex items-center gap-3 cursor-pointer"
+                          >
+                            <input
+                              type="radio"
+                              :name="item.id"
+                              :value="option"
+                              :checked="formData.requirements[item.id] === option"
+                              @change="formData.requirements[item.id] = option"
+                              class="w-4 h-4 text-purple-600 bg-gray-700 border-gray-600 focus:ring-purple-600"
+                            />
+                            <span class="text-white">{{ option }}</span>
+                          </label>
+                        </div>
+                        <div v-if="item.description" class="text-sm text-white/50 mt-1">
+                          {{ item.description }}
+                        </div>
+                      </div>
+
+                      <!-- Text Input -->
+                      <div v-else-if="item.type === 'text'" class="space-y-2">
+                        <label class="block text-sm font-medium text-white">
+                          {{ item.label }}
+                          <span v-if="item.required" class="text-red-400">*</span>
+                        </label>
                         <BaseInput
-                          v-else-if="item.type === 'text'"
                           :model-value="formData.requirements[item.id] || ''"
                           :placeholder="item.label"
+                          :required="item.required"
                           @update:model-value="formData.requirements[item.id] = $event"
                         />
+                        <div v-if="item.description" class="text-sm text-white/50">
+                          {{ item.description }}
+                        </div>
+                      </div>
+
+                      <!-- Textarea Input -->
+                      <div v-else-if="item.type === 'textarea'" class="space-y-2">
+                        <label class="block text-sm font-medium text-white">
+                          {{ item.label }}
+                          <span v-if="item.required" class="text-red-400">*</span>
+                        </label>
                         <BaseTextarea
-                          v-else-if="item.type === 'textarea'"
                           :model-value="formData.requirements[item.id] || ''"
                           :placeholder="item.label"
                           :rows="3"
+                          :required="item.required"
                           @update:model-value="formData.requirements[item.id] = $event"
                         />
+                        <div v-if="item.description" class="text-sm text-white/50">
+                          {{ item.description }}
+                        </div>
+                      </div>
+
+                      <!-- Select Input -->
+                      <div v-else-if="item.type === 'select'" class="space-y-2">
+                        <label class="block text-sm font-medium text-white">
+                          {{ item.label }}
+                          <span v-if="item.required" class="text-red-400">*</span>
+                        </label>
+                        <BaseSelect
+                          :model-value="formData.requirements[item.id]"
+                          :options="(item.options || []).map(opt => ({ value: opt, label: opt }))"
+                          :placeholder="`Select ${item.label}`"
+                          :required="item.required"
+                          @update:model-value="formData.requirements[item.id] = $event"
+                        />
+                        <div v-if="item.description" class="text-sm text-white/50">
+                          {{ item.description }}
+                        </div>
+                      </div>
+
+                      <!-- Number Input -->
+                      <div v-else-if="item.type === 'number'" class="space-y-2">
+                        <label class="block text-sm font-medium text-white">
+                          {{ item.label }}
+                          <span v-if="item.required" class="text-red-400">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          :value="formData.requirements[item.id] || ''"
+                          :placeholder="item.label"
+                          :required="item.required"
+                          @input="formData.requirements[item.id] = $event.target.value"
+                          class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        />
+                        <div v-if="item.description" class="text-sm text-white/50">
+                          {{ item.description }}
+                        </div>
                       </div>
                     </template>
                   </div>
                 </BaseCard>
+              </GlowingScrollbar>
+
+              <div v-else class="text-center py-12">
+                <div class="text-6xl mb-4">📋</div>
+                <h3 class="text-2xl font-bold text-white mb-2">No Requirements Found</h3>
+                <p class="text-white/60 mb-6">Please select an industry to see the relevant requirements.</p>
+                <button
+                  @click="currentStep = 1"
+                  class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition"
+                >
+                  Go Back to Industry Selection
+                </button>
               </div>
             </div>
 
@@ -174,7 +277,8 @@
                 </div>
 
                 <!-- Media Preview Grid -->
-                <div v-if="media.length > 0" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <GlowingScrollbar v-if="media.length > 0" class="max-h-80 overflow-y-auto pr-2">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div
                     v-for="(item, index) in media"
                     :key="index"
@@ -228,6 +332,7 @@
                     </button>
                   </div>
                 </div>
+                </GlowingScrollbar>
 
                 <div v-else class="text-center py-8 text-white/40">
                   <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -251,7 +356,7 @@
               <BaseButton
                 v-if="currentStep < 3"
                 variant="primary"
-                @click="currentStep++"
+                @click="handleNextStep"
               >
                 Next
               </BaseButton>
@@ -287,7 +392,7 @@
             <h3 class="text-xl font-bold text-white">AI Assistant</h3>
           </div>
           
-          <GlowingScrollbar class="space-y-3 mb-4 max-h-80"></GlowingScrollbar>
+          <GlowingScrollbar class="space-y-3 mb-4 max-h-80">
             <div 
               v-for="(msg, i) in aiMessages" 
               :key="i"
@@ -307,7 +412,7 @@
                 <span class="text-white/60">Thinking...</span>
               </div>
             </div>
-          </div>
+          </GlowingScrollbar>
 
           <div class="flex gap-2">
             <input
@@ -348,11 +453,13 @@ import BaseCheckboxGroup from '@/components/ui/BaseCheckboxGroup.vue'
 import BaseCheckbox from '@/components/ui/BaseCheckbox.vue'
 import BaseTextarea from '@/components/ui/BaseTextarea.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import AlertWrapper from '@/components/ui/AlertWrapper.vue'
 import { useUserLocation } from '@/composables/useUserLocation'
 
 definePageMeta({
   layout: 'default',
-  middleware: ['auth']
+  ssr: false
 })
 
 const { user, getAccessToken } = useAuth()
@@ -361,6 +468,7 @@ const { location: userLocation, loading: locationLoading } = useUserLocation()
 
 const currentStep = ref(1)
 const submitting = ref(false)
+const validationErrors = ref<Record<string, string>>({})
 
 const formData = reactive({
   projectName: '',
@@ -375,6 +483,53 @@ const formData = reactive({
 
 const requirements = ref<any[]>([])
 
+// Validation rules
+const validationRules = {
+  1: ['projectName', 'industry', 'projectTypes', 'complexity'],
+  2: () => {
+    const errors: string[] = []
+    requirements.value.forEach(category => {
+      category.items.forEach(item => {
+        if (item.required && !formData.requirements[item.id]) {
+          errors.push(`${item.label} is required`)
+        }
+      })
+    })
+    return errors
+  }
+}
+
+const validateStep = (step: number): boolean => {
+  validationErrors.value = {}
+  
+  if (step === 1) {
+    const requiredFields = validationRules[1]
+    requiredFields.forEach(field => {
+      if (!formData[field as keyof typeof formData]) {
+        validationErrors.value[field] = `${field} is required`
+      }
+    })
+  } else if (step === 2) {
+    const step2Errors = validationRules[2]()
+    if (step2Errors.length > 0) {
+      validationErrors.value.step2 = step2Errors.join(', ')
+    }
+  }
+  
+  return Object.keys(validationErrors.value).length === 0
+}
+
+const handleNextStep = () => {
+  if (validateStep(currentStep.value)) {
+    currentStep.value++
+  }
+}
+
+const handlePrevStep = () => {
+  currentStep.value--
+  validationErrors.value = {}
+}
+
 const industryOptions = Object.values(Industry).map(v => ({ value: v, label: v.replace(/_/g, ' ') }))
 const projectTypeOptions = Object.values(ProjectType).map(v => ({ value: v, label: v.replace(/_/g, ' ') }))
 const complexityOptions = Object.values(ComplexityLevel).map(v => ({ value: v, label: v }))
@@ -382,6 +537,7 @@ const budgetOptions = Object.values(BudgetRange).map(v => ({ value: v, label: v.
 
 const onIndustryChange = () => {
   const industryReqs = getIndustryRequirements(formData.industry)
+  console.log('Industry requirements loaded:', industryReqs)
   requirements.value = Array.isArray(industryReqs) ? industryReqs : []
 }
 
@@ -442,6 +598,14 @@ const aiMessages = ref<Array<{ type: 'user' | 'ai', text: string }>>([
 const aiInput = ref('')
 const aiLoading = ref(false)
 
+// Inject showAlert from global provide
+const showAlert = inject('showAlert', null)
+
+// Fallback showAlert function if injection fails
+const fallbackShowAlert = (variant: string, message: string, title?: string) => {
+  console.log(`Alert: ${variant} - ${title || 'No title'} - ${message}`)
+}
+
 const sendAIMessage = async () => {
   if (!aiInput.value.trim()) return
 
@@ -458,17 +622,28 @@ const sendAIMessage = async () => {
         content: m.text
       }))
 
-    const response = await $fetch('/api/ollama/chat', {
+    // Use server-side proxy to avoid CORS issues
+    const response = await $fetch('/api/ai/chat', {
       method: 'POST',
       body: {
-        message: userMessage,
-        conversationHistory,
+        model: 'llama-3.2-90b-vision-preview',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are Chara, an AI assistant for CharaTech - a software requirements gathering platform.\n\nYour role is to help clients articulate their software project requirements through friendly, conversational guidance.\n\nGuidelines:\n- Ask clarifying questions about project goals, target users, and must-have features\n- Suggest relevant technologies when appropriate (but let the client decide)\n- Be concise but thorough - avoid jargon\n- If requirements are vague, gently prompt for more detail\n- Keep responses under 3 sentences unless detailed explanation is needed\n- You can ask about: industry, project type (web app, mobile, etc.), budget range, timeline, key features, integrations needed\n\nStart by greeting the user warmly and asking what kind of software project they\'re looking to build.'
+          },
+          ...conversationHistory,
+          { role: 'user', content: userMessage }
+        ],
+        stream: false,
       },
     })
 
-    aiMessages.value.push({ type: 'ai', text: response.response || 'I\'m here to help!' })
+    const aiResponse = response.choices?.[0]?.message?.content || 'I\'m here to help!'
+    aiMessages.value.push({ type: 'ai', text: aiResponse })
   } catch (error) {
     console.error('AI Chat error:', error)
+    (showAlert || fallbackShowAlert)('warning', 'AI service is temporarily unavailable. Please try again later.', 'AI Service Error')
     aiMessages.value.push({ type: 'ai', text: 'Sorry, I encountered an error. Please try again.' })
   } finally {
     aiLoading.value = false
@@ -476,7 +651,10 @@ const sendAIMessage = async () => {
 }
 
 const handleSubmit = async () => {
-  if (!user.value) return
+  if (!user.value) {
+    router.push('/login')
+    return
+  }
 
   submitting.value = true
 
@@ -507,10 +685,11 @@ const handleSubmit = async () => {
       },
     })
 
+    (showAlert || fallbackShowAlert)('success', 'Requirements submitted successfully!', 'Success')
     router.push('/dashboard')
   } catch (error: any) {
     console.error('Submission error:', error)
-    alert('Failed to submit requirements. Please try again.')
+    (showAlert || fallbackShowAlert)('danger', 'Failed to submit requirements. Please try again.', 'Submission Error')
   } finally {
     submitting.value = false
   }

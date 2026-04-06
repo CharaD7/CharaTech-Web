@@ -36,7 +36,7 @@ model Submission {
   userId              String
   projectName         String
   industry            Industry
-  projectType         ProjectType[]
+  projectTypes        ProjectType[]
   complexity          ComplexityLevel
   budget              BudgetRange?
   timeline            String?

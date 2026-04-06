@@ -99,6 +99,11 @@
 </template>
 
 <script setup lang="ts">
+import BaseBadge from '@/components/ui/BaseBadge.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
+
 interface LinearTeam {
   id: string
   name: string

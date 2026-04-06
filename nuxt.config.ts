@@ -6,7 +6,7 @@ export default defineNuxtConfig({
   ssr: true,
   
   nitro: {
-    preset: 'vercel',
+    preset: process.env.NUXT_PRESET || (process.dev ? 'node-server' : 'vercel'),
     prerender: {
       routes: ['/'],
       failOnError: false

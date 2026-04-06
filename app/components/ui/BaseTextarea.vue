@@ -49,5 +49,5 @@ defineEmits<{
   'blur': [event: FocusEvent]
 }>()
 
-const textareaId = `textarea-${Math.random().toString(36).slice(2, 9)}`
+const textareaId = `textarea-${crypto.randomUUID?.() || Math.random().toString(36).slice(2, 9)}`
 </script>

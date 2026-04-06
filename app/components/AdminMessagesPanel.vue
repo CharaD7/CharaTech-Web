@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import GlowingScrollbar from '@/components/ui/GlowingScrollbar.vue'
+
 /**
  * AdminMessagesPanel — Full-featured admin messaging panel.
  * Left: conversation list with unread badges, client info, last message.
@@ -189,7 +191,7 @@ onUnmounted(() => unsubscribe())
         </button>
       </div>
 
-      <GlowingScrollbar class="flex-1 divide-y divide-white/5"></GlowingScrollbar>
+      <GlowingScrollbar class="flex-1 divide-y divide-white/5">
         <div v-if="loadingConvs" class="p-4 space-y-3">
           <div v-for="i in 4" :key="i" class="h-14 bg-white/5 rounded-lg animate-pulse" />
         </div>
@@ -232,7 +234,7 @@ onUnmounted(() => unsubscribe())
             </div>
           </div>
         </button>
-      </div>
+      </GlowingScrollbar>
     </div>
 
     <!-- ─── Message Thread ──────────────────────────────────────────────── -->
@@ -270,8 +272,7 @@ onUnmounted(() => unsubscribe())
 
         <!-- Messages -->
         <GlowingScrollbar class="flex-1 px-4 py-3 space-y-2 min-h-0"
-          style="background: rgba(10,5,20,0.4)">
-
+          style="background: rgba(10,5,20,0.4);">
           <div v-if="loadingThread" class="flex items-center justify-center h-24">
             <div class="w-6 h-6 rounded-full border-2 border-purple-500 border-t-transparent animate-spin" />
           </div>
@@ -304,7 +305,7 @@ onUnmounted(() => unsubscribe())
           </template>
 
           <div ref="messagesEnd" />
-        </div>
+        </GlowingScrollbar>
 
         <!-- Quick replies -->
         <div class="px-4 py-2 border-t border-white/5 overflow-x-auto flex-shrink-0">

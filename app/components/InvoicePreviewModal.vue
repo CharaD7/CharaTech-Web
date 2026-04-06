@@ -53,7 +53,7 @@
           </div>
 
           <!-- Invoice document (scrollable) -->
-          <GlowingScrollbar class="flex-1 p-6"></GlowingScrollbar>
+          <GlowingScrollbar class="flex-1 p-6">
             <div
               id="invoice-print-area"
               class="rounded-2xl overflow-hidden border border-white/8"
@@ -178,7 +178,7 @@
                 </p>
               </div>
             </div>
-          </div>
+          </GlowingScrollbar>
 
           <!-- Footer actions -->
           <div
@@ -243,6 +243,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import GlowingScrollbar from '@/components/ui/GlowingScrollbar.vue'
 
 interface Props {
   show: boolean

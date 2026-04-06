@@ -33,8 +33,7 @@ export const chatWithAI = async (
   conversationHistory: ChatMessage[] = []
 ): Promise<ChatCompletionResult> => {
   try {
-    const config = useRuntimeConfig()
-    const apiKey = config.ollamaApiKey as string
+    const apiKey = process.env.OLLAMA_API_KEY
 
     if (!apiKey) {
       console.error('Ollama API key not configured - please set OLLAMA_API_KEY environment variable')

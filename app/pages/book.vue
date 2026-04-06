@@ -166,7 +166,7 @@ interface Booking {
 
 definePageMeta({
   layout: 'default',
-  middleware: ['auth']
+  ssr: false
 })
 
 const { user } = useAuth()

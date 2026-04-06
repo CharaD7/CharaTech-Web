@@ -4,7 +4,10 @@
       {{ label }}
       <span v-if="required" class="text-red-400">*</span>
     </label>
-    <GlowingScrollbar class="space-y-2 bg-white/5 p-4 rounded-lg border border-white/20 max-h-64"></GlowingScrollbar>
+    <GlowingScrollbar 
+      maxHeight="320px"
+      className="space-y-2 bg-white/5 p-4 rounded-lg border border-white/20"
+    >
       <label
         v-for="option in options"
         :key="option.value"
@@ -20,7 +23,7 @@
         />
         <span class="text-white">{{ option.label }}</span>
       </label>
-    </div>
+    </GlowingScrollbar>
     <p v-if="hint" class="text-xs text-white/60 mt-1">{{ hint }}</p>
     <p v-if="error" class="text-xs text-red-300 mt-1">{{ error }}</p>
   </div>
@@ -53,7 +56,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: string[]]
 }>()
 
-const checkboxId = `checkbox-group-${Math.random().toString(36).slice(2, 9)}`
+const checkboxId = `checkbox-group-${crypto.randomUUID?.() || Math.random().toString(36).slice(2, 9)}`
 
 const toggleOption = (value: string) => {
   const newValue = props.modelValue.includes(value)

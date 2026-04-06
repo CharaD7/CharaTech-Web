@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
   if (!result.success) {
     throw createError({
       statusCode: 500,
-      message: result.error || 'AI error',
+      message: result.error || 'AI service error. Please try again.',
     })
   }
 

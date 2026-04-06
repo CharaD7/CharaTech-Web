@@ -89,9 +89,9 @@
         </div>
         <div>
           <h4 class="text-sm font-semibold text-white/70 mb-2">Changes Summary</h4>
-          <GlowingScrollbar class="bg-gray-800/50 p-4 rounded-lg max-h-64"></GlowingScrollbar>
+          <GlowingScrollbar class="bg-gray-800/50 p-4 rounded-lg max-h-64">
             <pre class="text-xs text-white/70 whitespace-pre-wrap">{{ formatJson(selectedVersion.changes) }}</pre>
-          </div>
+          </GlowingScrollbar>
         </div>
         <div class="flex justify-end gap-2 pt-4 border-t border-white/10">
           <BaseButton variant="secondary" @click="showDetailsModal = false">Close</BaseButton>
@@ -105,6 +105,12 @@
 </template>
 
 <script setup lang="ts">
+import BaseBadge from '@/components/ui/BaseBadge.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseSpinner from '@/components/ui/BaseSpinner.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
+import GlowingScrollbar from '@/components/ui/GlowingScrollbar.vue'
+
 interface SubmissionVersion {
   id: string
   submissionId: string

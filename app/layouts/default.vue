@@ -53,9 +53,9 @@
 
     <!-- Main Content -->
     <main class="flex-1">
-      <GlowingScrollbar class="h-full">
+      <div class="h-full">
         <slot />
-      </GlowingScrollbar>
+      </div>
     </main>
 
     <!-- Footer -->

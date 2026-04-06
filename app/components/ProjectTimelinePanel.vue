@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import GlowingScrollbar from '@/components/ui/GlowingScrollbar.vue'
+
 /**
  * ProjectTimelinePanel — Feature-rich GitHub-connected project timeline.
  * Tabs: Overview | Milestones | Activity | Code Stats
@@ -364,7 +366,7 @@ watch(() => props.timeline?.id, (id) => {
           </button>
         </div>
 
-        <GlowingScrollbar v-if="showRepoDropdown" class="absolute z-30 mt-1 w-full max-h-64 rounded-xl bg-gray-900/98 border border-white/10 shadow-2xl backdrop-blur-xl"></GlowingScrollbar>
+        <GlowingScrollbar v-if="showRepoDropdown" class="absolute z-30 mt-1 w-full max-h-64 rounded-xl bg-gray-900/98 border border-white/10 shadow-2xl backdrop-blur-xl">
           <div v-if="repoSearchLoading" class="p-4 text-center text-white/40 text-sm">Loading…</div>
           <div v-else-if="!repoSearchResults.length" class="p-4 text-center text-white/40 text-sm">No repos found</div>
           <button v-for="r in repoSearchResults" :key="r.id"
@@ -379,7 +381,7 @@ watch(() => props.timeline?.id, (id) => {
             </div>
             <div v-if="r.description" class="text-xs text-white/40 mt-0.5 truncate">{{ r.description }}</div>
           </button>
-        </div>
+        </GlowingScrollbar>
       </div>
     </div>
 
