@@ -40,7 +40,7 @@ async function checkAdmin() {
       const newAdmin = await prisma.user.create({
         data: {
           email: 'jijakahn6@gmail.com',
-          firebaseUid: 'gKT3k6RkyobOYbLHCU0qOw70xLH2',
+          supabaseUid: 'gKT3k6RkyobOYbLHCU0qOw70xLH2',
           role: 'ADMIN'
         }
       })

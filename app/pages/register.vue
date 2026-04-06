@@ -182,16 +182,16 @@ const handleRegister = async () => {
 
    if (result.success && result.user) {
      try {
-       await $fetch('/api/auth/register', {
-         method: 'POST',
-         body: {
-           firebaseUid: result.user.uid,
-           email: form.email,
-           fullName: form.fullName,
-           phoneNumber: form.phoneNumber,
-           companyName: form.companyName,
-         },
-       })
+        await $fetch('/api/auth/register', {
+          method: 'POST',
+          body: {
+            supabaseUid: result.user.id,
+            email: form.email,
+            fullName: form.fullName,
+            phoneNumber: form.phoneNumber,
+            companyName: form.companyName,
+          },
+        })
 
        await navigateTo(`/auth/confirm?email=${encodeURIComponent(form.email)}`)
      } catch (err: any) {

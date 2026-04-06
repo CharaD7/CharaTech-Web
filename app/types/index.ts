@@ -121,7 +121,7 @@ export interface SubmissionData {
 
 export interface User {
   id: string
-  firebaseUid: string
+  supabaseUid: string
   email: string
   fullName?: string
   phoneNumber?: string

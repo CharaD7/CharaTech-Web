@@ -122,7 +122,7 @@ const handleLogin = async () => {
 
     console.log('Login successful, fetching user data...')
     
-    // Wait for Firebase auth to update
+    // Wait for auth state to update
     await new Promise(resolve => setTimeout(resolve, 500))
     
     // Fetch current user from database

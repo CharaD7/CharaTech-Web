@@ -14,11 +14,11 @@ const prisma = new PrismaClient({
 
 async function main() {
   const adminEmail = 'jijakahn6@gmail.com'
-  const adminFirebaseUid = 'gKT3k6RkyobOYbLHCU0qOw70xLH2'
+  const adminSupabaseUid = 'gKT3k6RkyobOYbLHCU0qOw70xLH2'
 
   // Check if admin already exists
   const existingAdmin = await prisma.user.findUnique({
-    where: { firebaseUid: adminFirebaseUid }
+    where: { supabaseUid: adminSupabaseUid }
   })
 
   if (existingAdmin) {
@@ -36,7 +36,7 @@ async function main() {
     // Create admin user
     const admin = await prisma.user.create({
       data: {
-        firebaseUid: adminFirebaseUid,
+        supabaseUid: adminSupabaseUid,
         email: adminEmail,
         role: 'ADMIN',
         emailVerified: true,

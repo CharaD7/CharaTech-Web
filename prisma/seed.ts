@@ -13,7 +13,7 @@ async function main() {
   console.log('Starting database seeding...')
 
   const adminEmail = process.env.ADMIN_EMAIL || 'jijakahn6@gmail.com'
-  const adminFirebaseUid = process.env.ADMIN_FIREBASE_UID || '2cfQUoHN96dbx0ovHoCgDRIa4113'
+  const adminSupabaseUid = process.env.ADMIN_SUPABASE_UID || '2cfQUoHN96dbx0ovHoCgDRIa4113'
   const adminFullName = 'System Administrator'
 
   try {
@@ -29,7 +29,7 @@ async function main() {
         data: {
           role: 'ADMIN',
           emailVerified: true,
-          firebaseUid: adminFirebaseUid,
+          supabaseUid: adminSupabaseUid,
           fullName: adminFullName,
         },
       })
@@ -38,7 +38,7 @@ async function main() {
       // Create new admin user in database
       dbUser = await prisma.user.create({
         data: {
-          firebaseUid: adminFirebaseUid,
+          supabaseUid: adminSupabaseUid,
           email: adminEmail,
           fullName: adminFullName,
           role: 'ADMIN',
@@ -52,8 +52,8 @@ async function main() {
     console.log('Admin user details:')
     console.log(`  Email: ${adminEmail}`)
     console.log(`  Role: ${dbUser.role}`)
-    console.log(`  Firebase UID: ${dbUser.firebaseUid}`)
-    console.log('\nNote: The user already exists in Firebase. Use Firebase credentials to login.')
+    console.log(`  Supabase UID: ${dbUser.supabaseUid}`)
+    console.log('\nNote: Use Supabase credentials to login.')
   } catch (error) {
     console.error('Error during seeding:', error)
     throw error
