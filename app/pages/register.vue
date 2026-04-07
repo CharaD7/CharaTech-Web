@@ -193,7 +193,7 @@ const handleRegister = async () => {
           },
         })
 
-       await navigateTo(`/auth/confirm?email=${encodeURIComponent(form.email)}`)
+        await navigateTo(`/auth/confirm?email=${encodeURIComponent(form.email)}&sent=true`)
      } catch (err: any) {
        error.value = err.data?.message || err.message || 'Failed to create user profile'
        loading.value = false

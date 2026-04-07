@@ -53,7 +53,6 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       emailVerified: true,
-      redirectUrl: data.session ? '/dashboard' : '/login',
     }
   } catch (error: any) {
     if (error.statusCode) {
