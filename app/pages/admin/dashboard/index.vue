@@ -94,27 +94,30 @@
               </div>
 
               <div class="flex gap-3 mt-6">
-                <button
+                <BaseButton
+                  variant="secondary"
                   @click="verifyUserEmail(selectedUserDetail)"
                   :disabled="selectedUserDetail.emailVerified || verifyingEmail"
-                  class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  :loading="verifyingEmail"
                 >
                   <span>✓</span> Verify Email
-                </button>
-                <button
+                </BaseButton>
+                <BaseButton
+                  variant="secondary"
                   @click="generateAuthLink(selectedUserDetail)"
                   :disabled="generatingLink"
-                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  :loading="generatingLink"
                 >
-                  <span v-if="generatingLink">⏳</span><span v-else>🔗</span> Generate Auth Link
-                </button>
-                <button
+                  <span>🔗</span> Generate Auth Link
+                </BaseButton>
+                <BaseButton
+                  variant="danger"
                   @click="deleteUser(selectedUserDetail)"
                   :disabled="deletingUser"
-                  class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  :loading="deletingUser"
                 >
-                  <span v-if="deletingUser">⏳</span><span v-else>🗑️</span> Delete User
-                </button>
+                  <span>🗑️</span> Delete User
+                </BaseButton>
               </div>
             </div>
 
@@ -549,11 +552,71 @@
     @close="showInvoicePreview = false; selectedInvoice = null"
     @updated="onInvoiceUpdated"
   />
+
+  <!-- Verify Email Modal -->
+  <BaseModal :show="showVerifyModal" title="Verify User Email" size="sm" @close="showVerifyModal = false; userToAction = null">
+    <div class="space-y-4">
+      <p class="text-white/80">
+        Are you sure you want to verify the email for <span class="text-white font-semibold">{{ userToAction?.email }}</span>?
+      </p>
+      <p class="text-white/50 text-sm">
+        This will mark the user's email as verified without them needing to click a confirmation link.
+      </p>
+      <div class="flex justify-end gap-3 pt-4">
+        <BaseButton variant="secondary" @click="showVerifyModal = false; userToAction = null">Cancel</BaseButton>
+        <BaseButton variant="primary" :loading="verifyingEmail" @click="confirmVerifyEmail">Verify Email</BaseButton>
+      </div>
+    </div>
+  </BaseModal>
+
+  <!-- Generate Auth Link Modal -->
+  <BaseModal :show="showAuthLinkModal" title="Generate Auth Link" size="md" @close="showAuthLinkModal = false; userToAction = null">
+    <div class="space-y-4">
+      <p class="text-white/80">
+        Generate an authentication link for <span class="text-white font-semibold">{{ userToAction?.email }}</span>
+      </p>
+      <div v-if="!generatedAuthLink" class="flex justify-center py-4">
+        <BaseButton variant="primary" :loading="generatingLink" @click="confirmGenerateAuthLink">
+          Generate Link
+        </BaseButton>
+      </div>
+      <div v-else class="space-y-3">
+        <div class="p-3 bg-white/5 rounded-lg break-all">
+          <p class="text-white/60 text-xs mb-1">Auth Link:</p>
+          <p class="text-purple-300 text-sm select-all">{{ generatedAuthLink }}</p>
+        </div>
+        <div class="flex justify-end gap-3">
+          <BaseButton variant="secondary" @click="showAuthLinkModal = false; userToAction = null; generatedAuthLink = ''">Close</BaseButton>
+          <BaseButton variant="primary" @click="copyAuthLink">Copy to Clipboard</BaseButton>
+        </div>
+      </div>
+    </div>
+  </BaseModal>
+
+  <!-- Delete User Modal -->
+  <BaseModal :show="showDeleteModal" title="Delete User" size="sm" @close="showDeleteModal = false; userToAction = null">
+    <div class="space-y-4">
+      <div class="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+        <span class="text-3xl">⚠️</span>
+        <p class="text-white">
+          Are you sure you want to delete user <span class="font-semibold">{{ userToAction?.email }}</span>?
+        </p>
+      </div>
+      <p class="text-red-400 text-sm">
+        This action cannot be undone. All user data, submissions, and messages will be permanently deleted.
+      </p>
+      <div class="flex justify-end gap-3 pt-4">
+        <BaseButton variant="secondary" @click="showDeleteModal = false; userToAction = null">Cancel</BaseButton>
+        <BaseButton variant="danger" :loading="deletingUser" @click="confirmDeleteUser">Delete User</BaseButton>
+      </div>
+    </div>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import BaseButton from '~/components/ui/BaseButton.vue'
+import BaseModal from '~/components/ui/BaseModal.vue'
 
 definePageMeta({
   middleware: 'admin',
@@ -590,6 +653,11 @@ const selectedUserDetail = ref<any>(null)
 const verifyingEmail = ref(false)
 const generatingLink = ref(false)
 const deletingUser = ref(false)
+const showVerifyModal = ref(false)
+const showDeleteModal = ref(false)
+const showAuthLinkModal = ref(false)
+const generatedAuthLink = ref('')
+const userToAction = ref<any>(null)
 const selectedSubmission = ref(null)
 const selectedConversation = ref(null)
 const conversations = ref([])
@@ -653,17 +721,26 @@ const viewUser = async (user: any) => {
   }
 }
 
-const verifyUserEmail = async (user: any) => {
-  if (!user) return
+const verifyUserEmail = (user: any) => {
+  userToAction.value = user
+  showVerifyModal.value = true
+}
+
+const confirmVerifyEmail = async () => {
+  if (!userToAction.value) return
   verifyingEmail.value = true
   try {
     const headers = await getAuthHeaders()
-    await $fetch(`/api/admin/users/${user.id}/verify-email`, {
+    await $fetch(`/api/admin/users/${userToAction.value.id}/verify-email`, {
       method: 'POST',
       headers,
     })
-    selectedUserDetail.value = { ...user, emailVerified: true }
+    if (selectedUserDetail.value?.id === userToAction.value.id) {
+      selectedUserDetail.value = { ...selectedUserDetail.value, emailVerified: true }
+    }
     await fetchUsers()
+    showVerifyModal.value = false
+    userToAction.value = null
   } catch (error) {
     console.error('Failed to verify email:', error)
   } finally {
@@ -671,41 +748,58 @@ const verifyUserEmail = async (user: any) => {
   }
 }
 
-const generateAuthLink = async (user: any) => {
-  if (!user) return
+const generateAuthLink = (user: any) => {
+  userToAction.value = user
+  generatedAuthLink.value = ''
+  showAuthLinkModal.value = true
+}
+
+const confirmGenerateAuthLink = async () => {
+  if (!userToAction.value) return
   generatingLink.value = true
   try {
     const headers = await getAuthHeaders()
-    const result = await $fetch(`/api/admin/users/${user.id}/generate-auth-link`, {
+    const result = await $fetch(`/api/admin/users/${userToAction.value.id}/generate-auth-link`, {
       method: 'POST',
       headers,
     }) as any
     if (result?.properties?.confirmationUrl) {
-      await navigator.clipboard.writeText(result.properties.confirmationUrl)
-      alert('Auth link copied to clipboard!')
+      generatedAuthLink.value = result.properties.confirmationUrl
     }
   } catch (error) {
     console.error('Failed to generate auth link:', error)
-    alert('Failed to generate auth link')
+    generatedAuthLink.value = ''
   } finally {
     generatingLink.value = false
   }
 }
 
-const deleteUser = async (user: any) => {
-  if (!user) return
-  if (!confirm(`Are you sure you want to delete user ${user.email}? This action cannot be undone.`)) {
-    return
+const copyAuthLink = async () => {
+  if (generatedAuthLink.value) {
+    await navigator.clipboard.writeText(generatedAuthLink.value)
   }
+}
+
+const deleteUser = (user: any) => {
+  userToAction.value = user
+  showDeleteModal.value = true
+}
+
+const confirmDeleteUser = async () => {
+  if (!userToAction.value) return
   deletingUser.value = true
   try {
     const headers = await getAuthHeaders()
-    await $fetch(`/api/admin/users/${user.id}/delete`, {
+    await $fetch(`/api/admin/users/${userToAction.value.id}/delete`, {
       method: 'POST',
       headers,
     })
-    selectedUserDetail.value = null
+    if (selectedUserDetail.value?.id === userToAction.value.id) {
+      selectedUserDetail.value = null
+    }
     await fetchUsers()
+    showDeleteModal.value = false
+    userToAction.value = null
   } catch (error) {
     console.error('Failed to delete user:', error)
   } finally {
