@@ -66,10 +66,20 @@ export const requireAuth = async (event: H3Event) => {
     })
     
     if (user && !user.supabaseUid) {
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: { supabaseUid: decodedToken.uid },
-      })
+      // Run update in separate transaction
+      try {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { supabaseUid: decodedToken.uid },
+        })
+        // Refetch fresh user after update
+        user = await prisma.user.findUnique({
+          where: { id: user.id },
+        })
+      } catch {
+        // Fallback: continue even if update fails temporarily
+        // User will be upgraded on next request
+      }
     }
   }
 
