@@ -1,8 +1,35 @@
 @import "tailwindcss";
 
 @layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
+
   body {
     @apply bg-background text-foreground;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* Fix iOS Safari 100vh issue */
+  @supports (-webkit-touch-callout: none) {
+    .min-h-screen {
+      min-height: -webkit-fill-available;
+      min-height: 100dvh;
+    }
+    
+    .h-screen {
+      height: -webkit-fill-available;
+      height: 100dvh;
+    }
   }
 }
 
