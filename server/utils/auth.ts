@@ -7,7 +7,7 @@ export const verifyToken = async (event: H3Event) => {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     throw createError({
       statusCode: 401,
-      message: 'Unauthorized',
+      message: 'Unauthorized - No token provided',
     })
   }
 
@@ -22,7 +22,10 @@ export const verifyToken = async (event: H3Event) => {
     
     if (!supabaseUrl || !supabaseKey) {
       console.error('Missing Supabase credentials')
-      throw new Error('Supabase configuration missing')
+      throw createError({
+        statusCode: 500,
+        message: 'Server configuration error - Supabase not configured',
+      })
     }
     
     const supabase = createClient(supabaseUrl, supabaseKey)
@@ -30,10 +33,11 @@ export const verifyToken = async (event: H3Event) => {
     
     if (error || !user) {
       console.error('Token verification failed:', error?.message)
-      throw new Error('Invalid token')
+      throw createError({
+        statusCode: 401,
+        message: 'Invalid or expired token',
+      })
     }
-    
-    console.log('Supabase token verified:', { id: user.id, email: user.email })
     
     return {
       uid: user.id,
@@ -42,10 +46,11 @@ export const verifyToken = async (event: H3Event) => {
       provider: 'supabase'
     }
   } catch (error: any) {
+    if (error.statusCode) throw error
     console.error('JWT verification error:', error.message)
     throw createError({
       statusCode: 401,
-      message: 'Invalid token',
+      message: 'Token verification failed',
     })
   }
 }
@@ -73,7 +78,7 @@ export const requireAuth = async (event: H3Event) => {
   if (!user) {
     throw createError({
       statusCode: 404,
-      message: 'User not found',
+      message: 'User not found in database',
     })
   }
 
@@ -87,7 +92,7 @@ export const requireAdmin = async (event: H3Event) => {
   if (user.role !== 'ADMIN') {
     throw createError({
       statusCode: 403,
-      message: 'Admin access required',
+      message: 'Admin access required - You do not have permission',
     })
   }
 
