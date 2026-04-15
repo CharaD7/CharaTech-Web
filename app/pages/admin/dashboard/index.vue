@@ -93,21 +93,45 @@
                 </div>
               </div>
 
-              <div class="space-y-4">
-                <h4 class="text-lg font-semibold text-white">Statistics</h4>
-                <div class="grid grid-cols-2 gap-4">
-                  <div class="bg-white/5 p-4 rounded-lg">
-                    <div class="text-2xl font-bold text-white">{{ selectedUserDetail._count?.submissions || 0 }}</div>
-                    <div class="text-white/60 text-sm">Submissions</div>
-                  </div>
-                  <div class="bg-white/5 p-4 rounded-lg">
-                    <div class="text-2xl font-bold text-white">{{ selectedUserDetail._count?.notifications || 0 }}</div>
-                    <div class="text-white/60 text-sm">Notifications</div>
-                  </div>
-                  <div class="bg-white/5 p-4 rounded-lg">
-                    <div class="text-2xl font-bold text-white">{{ selectedUserDetail._count?.calendlyBookings || 0 }}</div>
-                    <div class="text-white/60 text-sm">Bookings</div>
-                  </div>
+              <div class="flex gap-3 mt-6">
+                <button
+                  @click="verifyUserEmail(selectedUserDetail)"
+                  :disabled="selectedUserDetail.emailVerified || verifyingEmail"
+                  class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <span>✓</span> Verify Email
+                </button>
+                <button
+                  @click="generateAuthLink(selectedUserDetail)"
+                  :disabled="generatingLink"
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <span v-if="generatingLink">⏳</span><span v-else>🔗</span> Generate Auth Link
+                </button>
+                <button
+                  @click="deleteUser(selectedUserDetail)"
+                  :disabled="deletingUser"
+                  class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <span v-if="deletingUser">⏳</span><span v-else>🗑️</span> Delete User
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <h4 class="text-lg font-semibold text-white">Statistics</h4>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="bg-white/5 p-4 rounded-lg">
+                  <div class="text-2xl font-bold text-white">{{ selectedUserDetail._count?.submissions || 0 }}</div>
+                  <div class="text-white/60 text-sm">Submissions</div>
+                </div>
+                <div class="bg-white/5 p-4 rounded-lg">
+                  <div class="text-2xl font-bold text-white">{{ selectedUserDetail._count?.notifications || 0 }}</div>
+                  <div class="text-white/60 text-sm">Notifications</div>
+                </div>
+                <div class="bg-white/5 p-4 rounded-lg">
+                  <div class="text-2xl font-bold text-white">{{ selectedUserDetail._count?.calendlyBookings || 0 }}</div>
+                  <div class="text-white/60 text-sm">Bookings</div>
                 </div>
               </div>
             </div>
@@ -548,6 +572,9 @@ const stats = ref([
 const submissions = ref([])
 const users = ref<any[]>([])
 const selectedUserDetail = ref<any>(null)
+const verifyingEmail = ref(false)
+const generatingLink = ref(false)
+const deletingUser = ref(false)
 const selectedSubmission = ref(null)
 const selectedConversation = ref(null)
 const conversations = ref([])
@@ -608,6 +635,66 @@ const viewUser = async (user: any) => {
     selectedUserDetail.value = data
   } catch (error) {
     console.error('Failed to fetch user details:', error)
+  }
+}
+
+const verifyUserEmail = async (user: any) => {
+  if (!user) return
+  verifyingEmail.value = true
+  try {
+    const headers = await getAuthHeaders()
+    await $fetch(`/api/admin/users/${user.id}/verify-email`, {
+      method: 'POST',
+      headers,
+    })
+    selectedUserDetail.value = { ...user, emailVerified: true }
+    await fetchUsers()
+  } catch (error) {
+    console.error('Failed to verify email:', error)
+  } finally {
+    verifyingEmail.value = false
+  }
+}
+
+const generateAuthLink = async (user: any) => {
+  if (!user) return
+  generatingLink.value = true
+  try {
+    const headers = await getAuthHeaders()
+    const result = await $fetch(`/api/admin/users/${user.id}/generate-auth-link`, {
+      method: 'POST',
+      headers,
+    }) as any
+    if (result?.properties?.confirmationUrl) {
+      await navigator.clipboard.writeText(result.properties.confirmationUrl)
+      alert('Auth link copied to clipboard!')
+    }
+  } catch (error) {
+    console.error('Failed to generate auth link:', error)
+    alert('Failed to generate auth link')
+  } finally {
+    generatingLink.value = false
+  }
+}
+
+const deleteUser = async (user: any) => {
+  if (!user) return
+  if (!confirm(`Are you sure you want to delete user ${user.email}? This action cannot be undone.`)) {
+    return
+  }
+  deletingUser.value = true
+  try {
+    const headers = await getAuthHeaders()
+    await $fetch(`/api/admin/users/${user.id}/delete`, {
+      method: 'POST',
+      headers,
+    })
+    selectedUserDetail.value = null
+    await fetchUsers()
+  } catch (error) {
+    console.error('Failed to delete user:', error)
+  } finally {
+    deletingUser.value = false
   }
 }
 
