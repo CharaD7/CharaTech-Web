@@ -34,6 +34,153 @@
         </div>
       </div>
 
+      <!-- Users Tab -->
+      <div v-if="activeTab === 'users'" class="space-y-6">
+        <div class="glass-morphism p-6 rounded-xl border border-white/10">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-white">Registered Users</h3>
+            <span class="text-white/60">{{ users.length }} users</span>
+          </div>
+
+          <div v-if="selectedUserDetail" class="space-y-6">
+            <button @click="selectedUserDetail = null" class="text-purple-400 hover:text-purple-300 text-sm">
+              ← Back to list
+            </button>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+              <div class="space-y-4">
+                <h4 class="text-lg font-semibold text-white">User Details</h4>
+                <div class="space-y-3 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-white/60">Full Name</span>
+                    <span class="text-white">{{ selectedUserDetail.fullName || '—' }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-white/60">Email</span>
+                    <span class="text-white">{{ selectedUserDetail.email }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-white/60">Phone</span>
+                    <span class="text-white">{{ selectedUserDetail.phoneNumber || '—' }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-white/60">Company</span>
+                    <span class="text-white">{{ selectedUserDetail.companyName || '—' }}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-white/60">Role</span>
+                    <span :class="['px-2 py-0.5 rounded text-xs font-semibold',
+                      selectedUserDetail.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-300' : 'bg-blue-500/20 text-blue-300']">
+                      {{ selectedUserDetail.role }}
+                    </span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-white/60">Email Verified</span>
+                    <span :class="selectedUserDetail.emailVerified ? 'text-green-400' : 'text-red-400'">
+                      {{ selectedUserDetail.emailVerified ? 'Yes' : 'No' }}
+                    </span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-white/60">Phone Verified</span>
+                    <span :class="selectedUserDetail.phoneVerified ? 'text-green-400' : 'text-red-400'">
+                      {{ selectedUserDetail.phoneVerified ? 'Yes' : 'No' }}
+                    </span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-white/60">Joined</span>
+                    <span class="text-white">{{ formatDate(selectedUserDetail.createdAt) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <h4 class="text-lg font-semibold text-white">Statistics</h4>
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="bg-white/5 p-4 rounded-lg">
+                    <div class="text-2xl font-bold text-white">{{ selectedUserDetail._count?.submissions || 0 }}</div>
+                    <div class="text-white/60 text-sm">Submissions</div>
+                  </div>
+                  <div class="bg-white/5 p-4 rounded-lg">
+                    <div class="text-2xl font-bold text-white">{{ selectedUserDetail._count?.notifications || 0 }}</div>
+                    <div class="text-white/60 text-sm">Notifications</div>
+                  </div>
+                  <div class="bg-white/5 p-4 rounded-lg">
+                    <div class="text-2xl font-bold text-white">{{ selectedUserDetail._count?.calendlyBookings || 0 }}</div>
+                    <div class="text-white/60 text-sm">Bookings</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="selectedUserDetail.submissions?.length" class="space-y-4">
+              <h4 class="text-lg font-semibold text-white">Recent Submissions</h4>
+              <div class="space-y-2">
+                <div v-for="sub in selectedUserDetail.submissions" :key="sub.id"
+                  class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                  <div>
+                    <div class="text-white font-medium">{{ sub.projectName }}</div>
+                    <div class="text-white/40 text-xs">{{ formatDate(sub.createdAt) }}</div>
+                  </div>
+                  <span :class="['px-2 py-1 rounded text-xs font-semibold', getStatusClass(sub.status)]">
+                    {{ sub.status }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="selectedUserDetail.notifications?.length" class="space-y-4">
+              <h4 class="text-lg font-semibold text-white">Recent Notifications</h4>
+              <div class="space-y-2">
+                <div v-for="notif in selectedUserDetail.notifications" :key="notif.id"
+                  class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                  <div>
+                    <div class="text-white font-medium">{{ notif.subject }}</div>
+                    <div class="text-white/40 text-xs">{{ formatDate(notif.createdAt) }}</div>
+                  </div>
+                  <span :class="notif.read ? 'text-green-400' : 'text-yellow-400'">
+                    {{ notif.read ? 'Read' : 'Unread' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-white/5">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-white/60 text-xs uppercase">Name</th>
+                    <th class="px-4 py-3 text-left text-white/60 text-xs uppercase">Email</th>
+                    <th class="px-4 py-3 text-left text-white/60 text-xs uppercase">Company</th>
+                    <th class="px-4 py-3 text-left text-white/60 text-xs uppercase">Submissions</th>
+                    <th class="px-4 py-3 text-left text-white/60 text-xs uppercase">Joined</th>
+                    <th class="px-4 py-3 text-left text-white/60 text-xs uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="user in users" :key="user.id"
+                    class="border-t border-white/10 hover:bg-white/5 transition cursor-pointer"
+                    @click="viewUser(user)">
+                    <td class="px-4 py-4 text-white">{{ user.fullName || '—' }}</td>
+                    <td class="px-4 py-4 text-white/80">{{ user.email }}</td>
+                    <td class="px-4 py-4 text-white/80">{{ user.companyName || '—' }}</td>
+                    <td class="px-4 py-4 text-white/80">{{ user._count?.submissions || 0 }}</td>
+                    <td class="px-4 py-4 text-white/60 text-sm">{{ formatDate(user.createdAt) }}</td>
+                    <td class="px-4 py-4" @click.stop>
+                      <button @click="viewUser(user)"
+                        class="px-3 py-1.5 text-xs rounded-lg bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 transition">
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Stats Overview -->
       <div v-if="activeTab === 'overview'" class="grid md:grid-cols-4 gap-6 mb-8">
         <div 
@@ -383,6 +530,7 @@ const filters = reactive({
 
 const tabs = [
   { id: 'overview', label: 'Overview', icon: '📊' },
+  { id: 'users', label: 'Users', icon: '👥' },
   { id: 'submissions', label: 'Submissions', icon: '📋' },
   { id: 'messages', label: 'Messages', icon: '💬' },
   { id: 'invoices', label: 'Invoices', icon: '🧾' },
@@ -398,6 +546,8 @@ const stats = ref([
 ])
 
 const submissions = ref([])
+const users = ref<any[]>([])
+const selectedUserDetail = ref<any>(null)
 const selectedSubmission = ref(null)
 const selectedConversation = ref(null)
 const conversations = ref([])
@@ -438,6 +588,28 @@ const filteredSubmissions = computed(() => {
 
   return result
 })
+
+const fetchUsers = async () => {
+  try {
+    const headers = await getAuthHeaders()
+    const data = await $fetch('/api/admin/users', { headers }) as any
+    if (data) {
+      users.value = Array.isArray(data) ? data : []
+    }
+  } catch (error) {
+    console.error('Failed to fetch users:', error)
+  }
+}
+
+const viewUser = async (user: any) => {
+  try {
+    const headers = await getAuthHeaders()
+    const data = await $fetch(`/api/admin/users?id=${user.id}`, { headers }) as any
+    selectedUserDetail.value = data
+  } catch (error) {
+    console.error('Failed to fetch user details:', error)
+  }
+}
 
 const fetchSubmissions = async () => {
   try {
@@ -679,6 +851,7 @@ const getTimelineStatusClass = (status: string) => {
 }
 
 onMounted(() => {
+  fetchUsers()
   fetchSubmissions()
   fetchInvoices()
   fetchTimelines()
