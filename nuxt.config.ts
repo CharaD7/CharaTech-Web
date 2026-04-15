@@ -26,6 +26,7 @@ export default defineNuxtConfig({
     databaseUrl: process.env.DATABASE_URL,
     jwtSecret: process.env.JWT_SECRET,
     supabaseJwtSecret: process.env.SUPABASE_JWT_SECRET,
+    supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
     ollamaApiKey: process.env.OLLAMA_API_KEY,
     adminSupabaseUid: process.env.ADMIN_SUPABASE_UID,
     
@@ -33,6 +34,7 @@ export default defineNuxtConfig({
     public: {
       supabaseProjectUrl: process.env.SUPABASE_PROJECT_URL,
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+      supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
       adminEmail: process.env.ADMIN_EMAIL || 'admin@charatech.com',
       appUrl: process.env.NUXT_PUBLIC_APP_URL || 'http://localhost:3000',
     }
