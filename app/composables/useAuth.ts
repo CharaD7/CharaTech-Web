@@ -29,13 +29,11 @@ export const useAuth = () => {
         }
       })
       if (error) {
-        console.error('Supabase registration error:', error)
         return { success: false, error: error.message }
       }
       user.value = data.user
       return { success: true, user: data.user, session: data.session }
     } catch (error: any) {
-      console.error('Registration error:', error)
       return { success: false, error: error.message }
     }
   }
@@ -47,13 +45,11 @@ export const useAuth = () => {
         password,
       })
       if (error) {
-        console.error('Supabase login error:', error)
         return { success: false, error: error.message }
       }
       user.value = data.user
       return { success: true, user: data.user, session: data.session }
     } catch (error: any) {
-      console.error('Login error:', error)
       return { success: false, error: error.message }
     }
   }
@@ -64,7 +60,6 @@ export const useAuth = () => {
       user.value = null
       return { success: true }
     } catch (error: any) {
-      console.error('Logout error:', error)
       return { success: false, error: error.message }
     }
   }
@@ -73,8 +68,7 @@ export const useAuth = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       return session?.access_token || null
-    } catch (error) {
-      console.error('Failed to get Supabase token:', error)
+    } catch {
       return null
     }
   }

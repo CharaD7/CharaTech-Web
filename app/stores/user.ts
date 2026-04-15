@@ -13,12 +13,10 @@ export const useUserStore = defineStore('user', {
         return
       }
 
-      const { supabase } = useSupabase()
       const { getAccessToken: getAccessTokenFn } = useAuth()
       const token = await getAccessTokenFn()
      
       if (!token) {
-        console.log('No Supabase token available')
         this.currentUser = null
         return
       }
@@ -26,8 +24,6 @@ export const useUserStore = defineStore('user', {
       this.loading = true
       
       try {
-        console.log('Fetching user with Supabase token...')
-        
         const response = await useFetch('/api/users/me', {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -35,14 +31,11 @@ export const useUserStore = defineStore('user', {
         })
 
         if (response.error?.value) {
-          console.error('Error fetching user:', response.error.value)
           throw new Error('Failed to fetch user')
         }
 
-        console.log('Fetched user data:', response.data?.value)
         this.currentUser = response.data?.value as User
       } catch (error) {
-        console.error('Failed to fetch user:', error)
         throw error
       } finally {
         this.loading = false
@@ -58,7 +51,6 @@ export const useUserStore = defineStore('user', {
       const token = await getAccessTokenFn()
      
       if (!token) {
-        console.log('No Supabase token available for update')
         return
       }
 
@@ -75,7 +67,6 @@ export const useUserStore = defineStore('user', {
 
         this.currentUser = response.data?.value as User
       } catch (error) {
-        console.error('Failed to update user:', error)
         throw error
       } finally {
         this.loading = false
