@@ -14,15 +14,15 @@
         </div>
       </div>
 
-      <!-- Tabs Navigation -->
-      <div class="mb-6">
-        <div class="flex gap-2 bg-white/5 p-2 rounded-xl inline-flex">
+       <!-- Tabs Navigation -->
+       <div class="mb-6">
+         <div class="flex flex-wrap gap-2 bg-white/5 p-2 rounded-xl w-fit max-w-full overflow-x-auto">
           <button
             v-for="tab in tabs"
             :key="tab.id"
             @click="activeTab = tab.id"
             :class="[
-              'px-6 py-3 rounded-lg font-semibold transition-all',
+            'px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold text-xs sm:text-sm transition-all whitespace-nowrap',
               activeTab === tab.id
                 ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                 : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -222,8 +222,8 @@
         </div>
       </div>
 
-      <!-- Stats Overview -->
-      <div v-if="activeTab === 'overview'" class="grid md:grid-cols-4 gap-6 mb-8">
+       <!-- Stats Overview -->
+       <div v-if="activeTab === 'overview'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         <div 
           v-for="stat in stats" 
           :key="stat.label"
@@ -238,8 +238,8 @@
       <!-- Submissions Tab -->
       <div v-if="activeTab === 'submissions'" class="space-y-6">
         <!-- Filters -->
-        <div class="glass-morphism p-6 rounded-xl border border-white/10">
-          <div class="grid md:grid-cols-4 gap-4">
+         <div class="glass-morphism p-4 sm:p-6 rounded-xl border border-white/10">
+           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <input
               v-model="search"
               type="text"
@@ -423,9 +423,9 @@
         </div>
       </div>
 
-      <!-- Timelines Tab -->
-      <div v-if="activeTab === 'timelines'">
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+       <!-- Timelines Tab -->
+       <div v-if="activeTab === 'timelines'">
+         <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 flex-col lg:flex-row">
           <!-- Sidebar: list of timelines -->
           <div class="lg:col-span-1 space-y-2">
             <div class="glass-morphism rounded-xl border border-white/10 p-4">
@@ -488,9 +488,9 @@
         </div>
       </div>
 
-      <!-- Linear Tab -->
-      <div v-if="activeTab === 'linear'">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+       <!-- Linear Tab -->
+       <div v-if="activeTab === 'linear'">
+         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 flex-col lg:flex-row">
           <div class="lg:col-span-1">
             <div class="glass-morphism p-6 rounded-xl border border-white/10">
               <h3 class="text-lg font-semibold text-white mb-4">Select Submission</h3>

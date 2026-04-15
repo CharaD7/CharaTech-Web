@@ -8,28 +8,28 @@
     </div>
 
     <!-- Quick Actions -->
-    <div class="grid md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
       <NuxtLink 
         to="/submit" 
-        class="glass-morphism p-8 rounded-xl hover:scale-105 transition-transform group"
+        class="glass-morphism p-6 sm:p-8 rounded-xl hover:scale-105 transition-transform group"
       >
-        <div class="text-6xl mb-4 group-hover:scale-110 transition-transform">📝</div>
-        <h2 class="text-2xl font-bold text-white mb-2">New Submission</h2>
+        <div class="text-4xl sm:text-6xl mb-3 sm:mb-4 group-hover:scale-110 transition-transform">📝</div>
+        <h2 class="text-xl sm:text-2xl font-bold text-white mb-2">New Submission</h2>
         <p class="text-white/70">Start a new requirements form</p>
       </NuxtLink>
 
-      <div class="glass-morphism p-8 rounded-xl">
-        <div class="text-6xl mb-4">📊</div>
-        <h2 class="text-2xl font-bold text-white mb-2">Total Submissions</h2>
+      <div class="glass-morphism p-6 sm:p-8 rounded-xl">
+        <div class="text-4xl sm:text-6xl mb-3 sm:mb-4">📊</div>
+        <h2 class="text-xl sm:text-2xl font-bold text-white mb-2">Total Submissions</h2>
         <p class="text-3xl font-bold text-purple-400">{{ submissions.length }}</p>
       </div>
 
       <div
-        class="glass-morphism p-8 rounded-xl cursor-pointer hover:scale-105 transition-transform"
+        class="glass-morphism p-6 sm:p-8 rounded-xl cursor-pointer hover:scale-105 transition-transform"
         @click="activeTab = 'invoices'"
       >
-        <div class="text-6xl mb-4">🧾</div>
-        <h2 class="text-2xl font-bold text-white mb-2">Invoices</h2>
+        <div class="text-4xl sm:text-6xl mb-3 sm:mb-4">🧾</div>
+        <h2 class="text-xl sm:text-2xl font-bold text-white mb-2">Invoices</h2>
         <p class="text-3xl font-bold text-pink-400">{{ invoices.length }}</p>
         <p class="text-white/50 text-sm mt-1">
           <span v-if="unpaidCount > 0" class="text-yellow-400">{{ unpaidCount }} awaiting payment</span>
@@ -40,13 +40,13 @@
 
     <!-- Tab Navigation -->
     <div class="mb-6">
-      <div class="flex gap-2 bg-white/5 p-1.5 rounded-xl inline-flex">
+      <div class="flex flex-wrap gap-2 bg-white/5 p-1.5 rounded-xl w-fit max-w-full overflow-x-auto">
         <button
           v-for="tab in tabs"
           :key="tab.id"
           @click="activeTab = tab.id"
           :class="[
-            'px-6 py-2.5 rounded-lg font-semibold text-sm transition-all',
+            'px-4 sm:px-6 py-2 py-2.5 rounded-lg font-semibold text-xs sm:text-sm transition-all whitespace-nowrap',
             activeTab === tab.id
               ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/20'
               : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -59,7 +59,7 @@
 
     <!-- ── SUBMISSIONS TAB ── -->
     <div v-if="activeTab === 'submissions'">
-      <div class="glass-morphism p-8 rounded-xl">
+      <div class="glass-morphism p-4 sm:p-6 md:p-8 rounded-xl">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-3xl font-bold text-white">Your Submissions</h2>
           <button
@@ -93,18 +93,18 @@
           <div
             v-for="submission in submissions"
             :key="submission.id"
-            class="bg-white/5 p-6 rounded-lg hover:bg-white/10 transition border border-white/10"
+            class="bg-white/5 p-4 sm:p-6 rounded-lg hover:bg-white/10 transition border border-white/10"
           >
-            <div class="flex justify-between items-start mb-3">
-              <div>
-                <h3 class="text-xl font-semibold text-white mb-1">{{ submission.projectName }}</h3>
+            <div class="flex flex-col sm:flex-row justify-between items-start gap-3 mb-3">
+              <div class="w-full sm:w-auto">
+                <h3 class="text-lg sm:text-xl font-semibold text-white mb-1">{{ submission.projectName }}</h3>
                 <p class="text-white/60 text-sm">{{ submission.industry }}</p>
               </div>
               <span :class="['px-3 py-1 rounded-full text-xs font-semibold', getStatusClass(submission.status)]">
                 {{ submission.status }}
               </span>
             </div>
-            <div class="grid md:grid-cols-3 gap-4 text-sm text-white/70 mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm text-white/70 mb-4">
               <div><span class="font-medium text-white">Complexity:</span> {{ submission.complexity }}</div>
               <div><span class="font-medium text-white">Budget:</span> {{ submission.budget || 'Not specified' }}</div>
               <div><span class="font-medium text-white">Submitted:</span> {{ formatDate(submission.createdAt) }}</div>
