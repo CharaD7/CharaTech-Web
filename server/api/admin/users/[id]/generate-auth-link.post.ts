@@ -1,29 +1,28 @@
 export default defineEventHandler(async (event) => {
-  await requireAdmin(event)
-
-  const id = getRouterParam(event, 'id')
-
-  if (!id) {
-    throw createError({
-      statusCode: 400,
-      message: 'User ID required',
-    })
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id },
-  })
-
-  if (!user) {
-    throw createError({
-      statusCode: 404,
-      message: 'User not found',
-    })
-  }
-
-  const config = useRuntimeConfig()
-
   try {
+    await requireAdmin(event)
+
+    const id = getRouterParam(event, 'id')
+
+    if (!id) {
+      throw createError({
+        statusCode: 400,
+        message: 'User ID required',
+      })
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id },
+    })
+
+    if (!user) {
+      throw createError({
+        statusCode: 404,
+        message: 'User not found',
+      })
+    }
+
+    const config = useRuntimeConfig()
     const { createClient } = await import('@supabase/supabase-js')
     
     const supabaseUrl = config.public.supabaseProjectUrl || process.env.SUPABASE_PROJECT_URL
