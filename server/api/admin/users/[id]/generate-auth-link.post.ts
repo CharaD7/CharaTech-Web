@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     if (!supabaseUrl || !supabaseKey) {
       throw createError({
         statusCode: 500,
-        message: 'Supabase configuration missing',
+        message: 'Supabase service key not configured',
       })
     }
     
@@ -44,7 +44,6 @@ export default defineEventHandler(async (event) => {
     })
 
     if (error) {
-      console.error('Failed to generate auth link:', error.message)
       throw createError({
         statusCode: 400,
         message: error.message,
@@ -60,10 +59,10 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch (error: any) {
-    console.error('Generate auth link error:', error.message)
+    if (error.statusCode) throw error
     throw createError({
       statusCode: 500,
-      message: error.message || 'Failed to generate auth link',
+      message: 'Failed to generate auth link',
     })
   }
 })

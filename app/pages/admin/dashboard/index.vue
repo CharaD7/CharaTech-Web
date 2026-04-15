@@ -617,6 +617,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import BaseButton from '~/components/ui/BaseButton.vue'
 import BaseModal from '~/components/ui/BaseModal.vue'
+const toast = useAppToast()
 
 definePageMeta({
   middleware: 'admin',
@@ -706,8 +707,8 @@ const fetchUsers = async () => {
     if (data) {
       users.value = Array.isArray(data) ? data : []
     }
-  } catch (error) {
-    console.error('Failed to fetch users:', error)
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to fetch users')
   }
 }
 
@@ -716,8 +717,8 @@ const viewUser = async (user: any) => {
     const headers = await getAuthHeaders()
     const data = await $fetch(`/api/admin/users?id=${user.id}`, { headers }) as any
     selectedUserDetail.value = data
-  } catch (error) {
-    console.error('Failed to fetch user details:', error)
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to fetch user details')
   }
 }
 
@@ -738,11 +739,12 @@ const confirmVerifyEmail = async () => {
     if (selectedUserDetail.value?.id === userToAction.value.id) {
       selectedUserDetail.value = { ...selectedUserDetail.value, emailVerified: true }
     }
+    toast.success('User email verified successfully')
     await fetchUsers()
     showVerifyModal.value = false
     userToAction.value = null
-  } catch (error) {
-    console.error('Failed to verify email:', error)
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to verify email')
   } finally {
     verifyingEmail.value = false
   }
@@ -765,9 +767,10 @@ const confirmGenerateAuthLink = async () => {
     }) as any
     if (result?.properties?.confirmationUrl) {
       generatedAuthLink.value = result.properties.confirmationUrl
+      toast.success('Auth link generated successfully')
     }
-  } catch (error) {
-    console.error('Failed to generate auth link:', error)
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to generate auth link')
     generatedAuthLink.value = ''
   } finally {
     generatingLink.value = false
@@ -777,6 +780,7 @@ const confirmGenerateAuthLink = async () => {
 const copyAuthLink = async () => {
   if (generatedAuthLink.value) {
     await navigator.clipboard.writeText(generatedAuthLink.value)
+    toast.success('Auth link copied to clipboard')
   }
 }
 
@@ -797,11 +801,12 @@ const confirmDeleteUser = async () => {
     if (selectedUserDetail.value?.id === userToAction.value.id) {
       selectedUserDetail.value = null
     }
+    toast.success('User deleted successfully')
     await fetchUsers()
     showDeleteModal.value = false
     userToAction.value = null
-  } catch (error) {
-    console.error('Failed to delete user:', error)
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to delete user')
   } finally {
     deletingUser.value = false
   }
@@ -814,8 +819,8 @@ const fetchSubmissions = async () => {
       submissions.value = data.value
       updateStats()
     }
-  } catch (error) {
-    console.error('Failed to fetch submissions:', error)
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to fetch submissions')
   }
 }
 
@@ -857,8 +862,8 @@ const fetchInvoices = async () => {
     const headers = await getAuthHeaders()
     const data = await $fetch('/api/admin/invoices', { headers }) as any
     if (data?.invoices) invoices.value = data.invoices
-  } catch (error) {
-    console.error('Failed to fetch invoices:', error)
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to fetch invoices')
   }
 }
 
@@ -868,7 +873,6 @@ const openCreateInvoice = async (submission?: any) => {
   activeTab.value = 'invoices'
   showInvoiceModal.value = true
 
-  // Auto-generate estimate when opening from a submission
   if (submission?.id) {
     generatingInvoice.value = true
     try {
@@ -883,8 +887,8 @@ const openCreateInvoice = async (submission?: any) => {
         invoicePreGeneratedTaxRate.value = result.pricing.suggestedTaxRate
         invoicePreGeneratedNotes.value = result.pricing.notes
       }
-    } catch (err) {
-      console.error('Failed to auto-generate estimate:', err)
+    } catch (err: any) {
+      toast.error(err.data?.message || 'Failed to auto-generate estimate')
     } finally {
       generatingInvoice.value = false
     }
@@ -904,9 +908,10 @@ const quickSendInvoice = async (invoice: any) => {
       headers,
       body: { status: 'SENT' }
     })
+    toast.success('Invoice sent successfully')
     await fetchInvoices()
-  } catch (error) {
-    console.error('Failed to send invoice:', error)
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to send invoice')
   }
 }
 
@@ -918,9 +923,10 @@ const quickMarkPaid = async (invoice: any) => {
       headers,
       body: { status: 'PAID' }
     })
+    toast.success('Invoice marked as paid')
     await fetchInvoices()
-  } catch (error) {
-    console.error('Failed to mark invoice paid:', error)
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to mark invoice paid')
   }
 }
 
@@ -970,8 +976,9 @@ const sendMessage = async () => {
     })
 
     newMessage.value = ''
-  } catch (error) {
-    console.error('Failed to send message:', error)
+    toast.success('Message sent successfully')
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to send message')
   }
 }
 
@@ -1063,8 +1070,8 @@ async function fetchTimelines() {
     if (timelines.value.length && !selectedTimeline.value) {
       selectedTimeline.value = timelines.value[0]
     }
-  } catch (e) {
-    console.error('fetchTimelines error', e)
+  } catch (e: any) {
+    toast.error(e.data?.message || 'Failed to fetch timelines')
   } finally {
     timelinesLoading.value = false
   }
@@ -1088,8 +1095,9 @@ const syncToLinear = async () => {
       headers,
       body: { submissionId: selectedLinearSubmission.value.id }
     })
-  } catch (error) {
-    console.error('Failed to sync to Linear:', error)
+    toast.success('Synced to Linear successfully')
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to sync to Linear')
   }
 }
 </script>

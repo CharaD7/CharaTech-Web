@@ -1,13 +1,7 @@
 <script setup lang="ts">
 import GlowingScrollbar from '@/components/ui/GlowingScrollbar.vue'
 
-/**
- * AdminMessagesPanel — Full-featured admin messaging panel.
- * Left: conversation list with unread badges, client info, last message.
- * Right: message thread with AI / Human mode indicators, quick-reply templates.
- * Real-time via Supabase Realtime Broadcast.
- */
-
+const toast = useAppToast()
 const { user, getAccessToken } = useAuth()
 const { subscribe, broadcast, unsubscribe } = useRealtimeMessages()
 
@@ -61,20 +55,18 @@ async function fetchConversations() {
   try {
     const headers = await authHeaders()
     conversations.value = await $fetch<any[]>('/api/admin/messages', { headers }) as any[]
-  } catch (e) {
-    console.error('fetchConversations', e)
+  } catch (e: any) {
+    toast.error(e.data?.message || 'Failed to fetch conversations')
   } finally {
     loadingConvs.value = false
   }
 }
 
-// ─── Message thread ─────────────────────────────────────────────────────────
 async function selectConversation(clientId: string) {
   selectedClientId.value = clientId
   loadingThread.value = true
   messages.value = []
 
-  // Mark conversation unread count as 0
   const conv = conversations.value.find(c => c.clientId === clientId)
   if (conv) conv.unreadCount = 0
 
@@ -85,8 +77,8 @@ async function selectConversation(clientId: string) {
     isAiHandled.value = data.isAiHandled ?? true
     selectedClient.value = data.client
     adminId.value = data.adminId
-  } catch (e) {
-    console.error('selectConversation', e)
+  } catch (e: any) {
+    toast.error(e.data?.message || 'Failed to load conversation')
   } finally {
     loadingThread.value = false
     scrollToBottom()
@@ -124,17 +116,14 @@ async function sendMessage() {
     const idx = messages.value.findIndex(m => m.id === tempId)
     if (idx >= 0 && data.message) messages.value[idx] = data.message
 
-    // Mark as human mode since admin just replied
     isAiHandled.value = false
 
-    // Update conversation preview
     const conv = conversations.value.find(c => c.clientId === selectedClientId.value)
     if (conv) { conv.lastMessage = content; conv.lastMessageAt = new Date().toISOString() }
 
-    // Broadcast to client's realtime channel
     if (data.message) await broadcast(data.message)
-  } catch (e) {
-    console.error('sendMessage', e)
+  } catch (e: any) {
+    toast.error(e.data?.message || 'Failed to send message')
     messages.value = messages.value.filter(m => m.id !== tempId)
     newMessage.value = content
   } finally {

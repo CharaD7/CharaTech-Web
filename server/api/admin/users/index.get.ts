@@ -2,7 +2,6 @@ export default defineEventHandler(async (event) => {
   try {
     await requireAdmin(event)
   } catch (error: any) {
-    console.error('Admin auth failed:', error.message)
     throw error
   }
 
@@ -70,7 +69,6 @@ export default defineEventHandler(async (event) => {
     return users
   } catch (error: any) {
     if (error.statusCode) throw error
-    console.error('Database error:', error.message)
     throw createError({
       statusCode: 500,
       message: 'Database error occurred',

@@ -17,22 +17,21 @@ export const verifyToken = async (event: H3Event) => {
   try {
     const { createClient } = await import('@supabase/supabase-js')
     
-    const supabaseUrl = config.public.supabaseProjectUrl || process.env.SUPABASE_PROJECT_URL
-    const supabaseKey = config.public.supabaseAnonKey || process.env.SUPABASE_ANON_KEY
+    const supabaseUrl = config.public.supabaseProjectUrl
+    const supabaseKey = config.public.supabaseAnonKey
     
     if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase credentials')
       throw createError({
         statusCode: 500,
-        message: 'Server configuration error - Supabase not configured',
+        message: 'Server configuration error - Supabase not configured on server',
       })
     }
     
     const supabase = createClient(supabaseUrl, supabaseKey)
+    
     const { data: { user }, error } = await supabase.auth.getUser(token)
     
     if (error || !user) {
-      console.error('Token verification failed:', error?.message)
       throw createError({
         statusCode: 401,
         message: 'Invalid or expired token',
@@ -47,7 +46,6 @@ export const verifyToken = async (event: H3Event) => {
     }
   } catch (error: any) {
     if (error.statusCode) throw error
-    console.error('JWT verification error:', error.message)
     throw createError({
       statusCode: 401,
       message: 'Token verification failed',
@@ -92,7 +90,7 @@ export const requireAdmin = async (event: H3Event) => {
   if (user.role !== 'ADMIN') {
     throw createError({
       statusCode: 403,
-      message: 'Admin access required - You do not have permission',
+      message: 'Admin access required',
     })
   }
 
