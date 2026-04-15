@@ -192,10 +192,24 @@
                     <td class="px-4 py-4 text-white/80">{{ user._count?.submissions || 0 }}</td>
                     <td class="px-4 py-4 text-white/60 text-sm">{{ formatDate(user.createdAt) }}</td>
                     <td class="px-4 py-4" @click.stop>
-                      <button @click="viewUser(user)"
-                        class="px-3 py-1.5 text-xs rounded-lg bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 transition">
-                        View
-                      </button>
+                      <div class="flex gap-1" @click.stop>
+                        <BaseButton size="sm" variant="ghost" @click="verifyUserEmail(user)" :disabled="user.emailVerified"
+                          class="!p-1.5 !text-green-300 hover:!bg-green-500/25" title="Verify Email">
+                          ✓
+                        </BaseButton>
+                        <BaseButton size="sm" variant="ghost" @click="generateAuthLink(user)"
+                          class="!p-1.5 !text-blue-300 hover:!bg-blue-500/25" title="Generate Auth Link">
+                          🔗
+                        </BaseButton>
+                        <BaseButton size="sm" variant="ghost" @click="deleteUser(user)"
+                          class="!p-1.5 !text-red-300 hover:!bg-red-500/25" title="Delete User">
+                          🗑️
+                        </BaseButton>
+                        <BaseButton size="sm" variant="ghost" @click="viewUser(user)"
+                          class="!p-1.5 !text-purple-300 hover:!bg-purple-500/25" title="View Details">
+                          👁
+                        </BaseButton>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -539,6 +553,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import BaseButton from '~/components/ui/BaseButton.vue'
 
 definePageMeta({
   middleware: 'admin',
