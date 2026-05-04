@@ -4,22 +4,22 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
 
     const submission = await prisma.submission.create({
-    data: {
-      userId: user.id,
-      projectName: body.projectName,
-      industry: body.industry,
-      projectTypes: body.projectTypes || [],
-      complexity: body.complexity,
-      budget: body.budget,
-      timeline: body.timeline,
-      requirements: body.requirements || {},
-      additionalNotes: body.additionalNotes,
-      aiConversation: body.aiConversation,
-      status: 'PENDING',
-      currency: body.currency || 'USD',
-      country: body.country,
-    },
-  })
+      data: {
+        userId: user.id,
+        projectName: body.projectName,
+        industry: body.industry,
+        projectTypes: body.projectTypes || [],
+        complexity: body.complexity,
+        budget: body.budget || undefined,
+        timeline: body.timeline || undefined,
+        requirements: body.requirements || {},
+        additionalNotes: body.additionalNotes || undefined,
+        aiConversation: body.aiConversation || undefined,
+        status: 'PENDING',
+        currency: body.currency || 'USD',
+        country: body.country || undefined,
+      },
+    })
 
   // Handle media attachments (images, videos, links)
   if (body.media && Array.isArray(body.media) && body.media.length > 0) {
