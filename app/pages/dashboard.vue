@@ -79,6 +79,14 @@
           <p class="text-white/70 mt-4">Loading submissions...</p>
         </div>
 
+        <div v-else-if="submissionsError" class="text-center py-12">
+          <div class="text-4xl mb-4">⚠️</div>
+          <p class="text-red-400 mb-4">{{ submissionsError }}</p>
+          <button @click="fetchSubmissions" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+            Retry
+          </button>
+        </div>
+
         <div v-else-if="submissions.length === 0" class="text-center py-16">
           <div class="text-6xl mb-4">📋</div>
           <p class="text-xl text-white/70 mb-6">No submissions yet</p>
@@ -477,22 +485,34 @@ const tabs = [
 // ── Submissions ──────────────────────────────────────────────
 const submissions = ref<Submission[]>([])
 const loading = ref(true)
+const submissionsError = ref('')
 
 const fetchSubmissions = async () => {
-  if (!user.value) return
   try {
     const token = await getAccessToken()
-    if (!token) return
+    if (!token) {
+      submissionsError.value = 'No authentication token available'
+      return
+    }
     const data = await $fetch<Submission[]>('/api/submissions', {
       headers: { Authorization: `Bearer ${token}` },
     })
     submissions.value = data
-  } catch (error) {
+    submissionsError.value = ''
+  } catch (error: any) {
     console.error('Failed to fetch submissions:', error)
+    submissionsError.value = error.data?.message || error.message || 'Failed to load submissions'
   } finally {
     loading.value = false
   }
 }
+
+// Watch for user to be available, then fetch
+watch(() => user.value, (newUser) => {
+  if (newUser) {
+    fetchSubmissions()
+  }
+}, { immediate: true })
 
 // ── Invoices ─────────────────────────────────────────────────
 const invoices = ref<any[]>([])
@@ -525,7 +545,6 @@ const isOverdue = (inv: any) =>
   inv.status === 'OVERDUE' || (inv.status === 'SENT' && inv.dueDate && new Date(inv.dueDate) < new Date())
 
 onMounted(() => {
-  fetchSubmissions()
   fetchInvoices()
   fetchTimelines()
 })
