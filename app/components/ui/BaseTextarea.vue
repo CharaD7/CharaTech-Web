@@ -12,7 +12,7 @@
       :required="required"
       :rows="rows"
       :class="[
-        'w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none transition resize-none',
+        'w-full px-4 py-3 bg-gray-900/80 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-300 focus:ring-2 focus:ring-purple-400 focus:border-transparent outline-none transition resize-none',
         { 'cursor-not-allowed opacity-50': disabled },
         textareaClass
       ]"

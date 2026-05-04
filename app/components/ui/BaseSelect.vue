@@ -10,7 +10,7 @@
       :disabled="disabled"
       :required="required"
       :class="[
-        'w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition appearance-none bg-no-repeat bg-right pr-10 cursor-pointer',
+        'w-full px-4 py-3 bg-gray-900/80 backdrop-blur-sm border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition appearance-none bg-no-repeat bg-right pr-10 cursor-pointer',
         { 'cursor-not-allowed opacity-50': disabled },
         selectClass
       ]"

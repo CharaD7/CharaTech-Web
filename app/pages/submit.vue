@@ -24,6 +24,7 @@
                   label="Project Name"
                   placeholder="My Awesome Project"
                   required
+                  :error="validationErrors.projectName"
                 />
 
                 <BaseSelect
@@ -32,6 +33,7 @@
                   label="Industry"
                   placeholder="Select Industry"
                   required
+                  :error="validationErrors.industry"
                   @update:model-value="onIndustryChange"
                 />
 
@@ -49,6 +51,7 @@
                   label="Complexity Level"
                   placeholder="Select Complexity"
                   required
+                  :error="validationErrors.complexity"
                 />
 
                 <BaseSelect
@@ -190,7 +193,7 @@
                           :placeholder="item.label"
                           :required="item.required"
                           @input="formData.requirements[item.id] = $event.target.value"
-                          class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          class="w-full px-4 py-2 bg-gray-900/80 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                         />
                         <div v-if="item.description" class="text-sm text-white/50">
                           {{ item.description }}
@@ -200,6 +203,10 @@
                   </div>
                 </BaseCard>
               </GlowingScrollbar>
+
+              <div v-if="validationErrors.step2" class="mt-4 p-3 bg-red-500/20 border border-red-400/50 rounded-lg text-red-300 text-sm">
+                {{ validationErrors.step2 }}
+              </div>
 
               <div v-else class="text-center py-12">
                 <div class="text-6xl mb-4">📋</div>
@@ -234,12 +241,12 @@
                     v-model="newMediaUrl"
                     type="url"
                     placeholder="Paste image URL, video URL, or link..."
-                    class="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    class="flex-1 px-4 py-2 bg-gray-900/80 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     @keyup.enter="addMedia"
                   />
                   <select
                     v-model="newMediaType"
-                    class="px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    class="px-4 py-2 bg-gray-900/80 backdrop-blur-sm border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="image">Image</option>
                     <option value="video">Video</option>
@@ -419,7 +426,7 @@
               v-model="aiInput"
               type="text"
               placeholder="Ask AI for help..."
-              class="flex-1 px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              class="flex-1 px-4 py-2 bg-gray-900/80 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
               @keyup.enter="sendAIMessage"
               :disabled="aiLoading"
             />
@@ -464,6 +471,7 @@ definePageMeta({
 
 const { user, getAccessToken } = useAuth()
 const router = useRouter()
+const toast = useAppToast()
 const { location: userLocation, loading: locationLoading } = useUserLocation()
 
 const currentStep = ref(1)
@@ -483,7 +491,6 @@ const formData = reactive({
 
 const requirements = ref<any[]>([])
 
-// Validation rules
 const validationRules = {
   1: ['projectName', 'industry', 'projectTypes', 'complexity'],
   2: () => {
@@ -491,7 +498,7 @@ const validationRules = {
     requirements.value.forEach(category => {
       category.items.forEach(item => {
         if (item.required && !formData.requirements[item.id]) {
-          errors.push(`${item.label} is required`)
+          errors.push(item.label)
         }
       })
     })
@@ -506,13 +513,13 @@ const validateStep = (step: number): boolean => {
     const requiredFields = validationRules[1]
     requiredFields.forEach(field => {
       if (!formData[field as keyof typeof formData]) {
-        validationErrors.value[field] = `${field} is required`
+        validationErrors.value[field] = `${field.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())} is required`
       }
     })
   } else if (step === 2) {
     const step2Errors = validationRules[2]()
     if (step2Errors.length > 0) {
-      validationErrors.value.step2 = step2Errors.join(', ')
+      validationErrors.value.step2 = 'Required fields: ' + step2Errors.join(', ')
     }
   }
   
@@ -522,6 +529,9 @@ const validateStep = (step: number): boolean => {
 const handleNextStep = () => {
   if (validateStep(currentStep.value)) {
     currentStep.value++
+  } else {
+    const firstError = Object.values(validationErrors.value)[0]
+    toast.error(firstError || 'Please fill in all required fields')
   }
 }
 
@@ -537,7 +547,6 @@ const budgetOptions = Object.values(BudgetRange).map(v => ({ value: v, label: v.
 
 const onIndustryChange = () => {
   const industryReqs = getIndustryRequirements(formData.industry)
-  console.log('Industry requirements loaded:', industryReqs)
   requirements.value = Array.isArray(industryReqs) ? industryReqs : []
 }
 
@@ -598,14 +607,6 @@ const aiMessages = ref<Array<{ type: 'user' | 'ai', text: string }>>([
 const aiInput = ref('')
 const aiLoading = ref(false)
 
-// Inject showAlert from global provide
-const showAlert = inject('showAlert', null)
-
-// Fallback showAlert function if injection fails
-const fallbackShowAlert = (variant: string, message: string, title?: string) => {
-  console.log(`Alert: ${variant} - ${title || 'No title'} - ${message}`)
-}
-
 const sendAIMessage = async () => {
   if (!aiInput.value.trim()) return
 
@@ -622,7 +623,6 @@ const sendAIMessage = async () => {
         content: m.text
       }))
 
-    // Use server-side proxy to avoid CORS issues
     const response = await $fetch('/api/ai/chat', {
       method: 'POST',
       body: {
@@ -630,7 +630,7 @@ const sendAIMessage = async () => {
         messages: [
           {
             role: 'system',
-            content: 'You are Chara, an AI assistant for CharaTech - a software requirements gathering platform.\n\nYour role is to help clients articulate their software project requirements through friendly, conversational guidance.\n\nGuidelines:\n- Ask clarifying questions about project goals, target users, and must-have features\n- Suggest relevant technologies when appropriate (but let the client decide)\n- Be concise but thorough - avoid jargon\n- If requirements are vague, gently prompt for more detail\n- Keep responses under 3 sentences unless detailed explanation is needed\n- You can ask about: industry, project type (web app, mobile, etc.), budget range, timeline, key features, integrations needed\n\nStart by greeting the user warmly and asking what kind of software project they\'re looking to build.'
+            content: 'You are Chara, an AI assistant for CharaTech - a software requirements gathering platform.'
           },
           ...conversationHistory,
           { role: 'user', content: userMessage }
@@ -641,9 +641,8 @@ const sendAIMessage = async () => {
 
     const aiResponse = response.choices?.[0]?.message?.content || 'I\'m here to help!'
     aiMessages.value.push({ type: 'ai', text: aiResponse })
-  } catch (error) {
-    console.error('AI Chat error:', error)
-    (showAlert || fallbackShowAlert)('warning', 'AI service is temporarily unavailable. Please try again later.', 'AI Service Error')
+  } catch {
+    toast.warning('AI service is temporarily unavailable')
     aiMessages.value.push({ type: 'ai', text: 'Sorry, I encountered an error. Please try again.' })
   } finally {
     aiLoading.value = false
@@ -653,6 +652,12 @@ const sendAIMessage = async () => {
 const handleSubmit = async () => {
   if (!user.value) {
     router.push('/login')
+    return
+  }
+
+  if (!validateStep(currentStep.value)) {
+    const firstError = Object.values(validationErrors.value)[0]
+    toast.error(firstError || 'Please fill in all required fields')
     return
   }
 
@@ -685,11 +690,10 @@ const handleSubmit = async () => {
       },
     })
 
-    (showAlert || fallbackShowAlert)('success', 'Requirements submitted successfully!', 'Success')
+    toast.success('Requirements submitted successfully!')
     router.push('/dashboard')
   } catch (error: any) {
-    console.error('Submission error:', error)
-    (showAlert || fallbackShowAlert)('danger', 'Failed to submit requirements. Please try again.', 'Submission Error')
+    toast.error(error.data?.message || 'Failed to submit requirements')
   } finally {
     submitting.value = false
   }
