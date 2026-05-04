@@ -3,6 +3,8 @@ export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
     const body = await readBody(event)
 
+    console.log('Submission payload:', JSON.stringify(body, null, 2))
+
     const submission = await prisma.submission.create({
       data: {
         userId: user.id,
@@ -14,7 +16,7 @@ export default defineEventHandler(async (event) => {
         timeline: body.timeline || undefined,
         requirements: body.requirements || {},
         additionalNotes: body.additionalNotes || undefined,
-        aiConversation: body.aiConversation || undefined,
+        aiConversation: body.aiConversation && Array.isArray(body.aiConversation) && body.aiConversation.length > 0 ? body.aiConversation : undefined,
         status: 'PENDING',
         currency: body.currency || 'USD',
         country: body.country || undefined,
