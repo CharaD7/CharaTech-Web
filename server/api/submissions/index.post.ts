@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
       userId: user.id,
       projectName: body.projectName,
       industry: body.industry,
-      projectType: body.projectTypes || [],
+      projectTypes: body.projectTypes || [],
       complexity: body.complexity,
       budget: body.budget,
       timeline: body.timeline,
