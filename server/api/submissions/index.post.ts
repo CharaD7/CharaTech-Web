@@ -1,8 +1,9 @@
 export default defineEventHandler(async (event) => {
-  const user = await requireAuth(event)
-  const body = await readBody(event)
+  try {
+    const user = await requireAuth(event)
+    const body = await readBody(event)
 
-  const submission = await prisma.submission.create({
+    const submission = await prisma.submission.create({
     data: {
       userId: user.id,
       projectName: body.projectName,
@@ -108,4 +109,12 @@ export default defineEventHandler(async (event) => {
   }
 
   return submission
+  } catch (error: any) {
+    console.error('Submission error:', error)
+    throw createError({
+      statusCode: 500,
+      message: error.message || 'Internal server error',
+      data: error
+    })
+  }
 })
