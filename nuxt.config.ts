@@ -18,7 +18,8 @@ export default defineNuxtConfig({
     '@vueuse/motion/nuxt',
     '@nuxt/image',
     '@pinia/nuxt',
-    '@nuxtjs/color-mode'
+    '@nuxtjs/color-mode',
+		'@vercel/analytics'
   ],
 
   runtimeConfig: {
