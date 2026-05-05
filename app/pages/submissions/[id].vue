@@ -1,86 +1,201 @@
 <template>
-  <div class="container mx-auto px-4 py-8 max-w-4xl">
-    <div v-if="loading" class="text-center py-20">
-      <UIcon name="i-heroicons-arrow-path" class="animate-spin text-6xl text-white" />
-    </div>
-
-    <div v-else-if="error" class="text-center py-20">
-      <div class="text-6xl mb-4">⚠️</div>
-      <p class="text-red-400 text-xl mb-4">{{ error }}</p>
-      <UButton @click="fetchSubmission" variant="outline" color="white">
-        Retry
-      </UButton>
-    </div>
-
-    <div v-else-if="submission" class="glass-morphism p-8 rounded-xl">
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-white mb-2">{{ submission.projectName }}</h1>
-        <UBadge :color="getStatusColor(submission.status)" size="lg">
-          {{ submission.status }}
-        </UBadge>
+  <div class="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+      <!-- Loading State -->
+      <div v-if="loading" class="flex items-center justify-center min-h-[60vh]">
+        <div class="text-center">
+          <UIcon name="i-heroicons-arrow-path" class="animate-spin text-6xl text-purple-400 mb-4" />
+          <p class="text-white/60">Loading submission details...</p>
+        </div>
       </div>
 
-      <div class="space-y-6">
+      <!-- Error State -->
+      <div v-else-if="error" class="flex items-center justify-center min-h-[60vh]">
+        <div class="glass-morphism p-8 rounded-2xl max-w-md text-center">
+          <div class="text-6xl mb-4">⚠️</div>
+          <h3 class="text-xl font-bold text-red-400 mb-2">Unable to Load</h3>
+          <p class="text-white/60 mb-6">{{ error }}</p>
+          <div class="flex gap-3 justify-center">
+            <UButton @click="fetchSubmission" variant="solid" color="purple">
+              Retry
+            </UButton>
+            <UButton @click="$router.back()" variant="outline" color="white">
+              Go Back
+            </UButton>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div v-else-if="submission" class="space-y-6">
+        <!-- Header Card -->
+        <div class="glass-morphism p-6 sm:p-8 rounded-2xl border border-white/10">
+          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+            <div class="flex-1">
+              <h1 class="text-3xl sm:text-4xl font-bold text-white mb-3">{{ submission.projectName }}</h1>
+              <div class="flex flex-wrap items-center gap-3">
+                <UBadge :color="getStatusColor(submission.status)" size="lg" class="font-semibold">
+                  {{ submission.status.replace(/_/g, ' ') }}
+                </UBadge>
+                <span class="text-white/40 text-sm">
+                  Submitted {{ formatDate(submission.createdAt) }}
+                </span>
+              </div>
+            </div>
+            <UButton
+              @click="$router.back()"
+              variant="outline"
+              color="white"
+              icon="i-heroicons-arrow-left"
+              class="w-fit"
+            >
+              Back
+            </UButton>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-6 border-t border-white/10">
+            <div class="text-center p-3 bg-white/5 rounded-lg">
+              <div class="text-2xl mb-1">🏭</div>
+              <div class="text-xs text-white/40 uppercase tracking-wider">Industry</div>
+              <div class="text-sm font-semibold text-white mt-1">{{ submission.industry.replace(/_/g, ' ') }}</div>
+            </div>
+            <div class="text-center p-3 bg-white/5 rounded-lg">
+              <div class="text-2xl mb-1">⚡</div>
+              <div class="text-xs text-white/40 uppercase tracking-wider">Complexity</div>
+              <div class="text-sm font-semibold text-white mt-1">{{ submission.complexity }}</div>
+            </div>
+            <div class="text-center p-3 bg-white/5 rounded-lg">
+              <div class="text-2xl mb-1">💰</div>
+              <div class="text-xs text-white/40 uppercase tracking-wider">Budget</div>
+              <div class="text-sm font-semibold text-white mt-1">{{ formatBudget(submission.budget) }}</div>
+            </div>
+            <div class="text-center p-3 bg-white/5 rounded-lg">
+              <div class="text-2xl mb-1">⏱️</div>
+              <div class="text-xs text-white/40 uppercase tracking-wider">Timeline</div>
+              <div class="text-sm font-semibold text-white mt-1">{{ submission.timeline || 'Not set' }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project Types -->
+        <div v-if="submission.projectTypes?.length" class="glass-morphism p-6 rounded-2xl border border-white/10">
+          <h2 class="text-xl font-bold text-white mb-4">Project Types</h2>
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="type in submission.projectTypes"
+              :key="type"
+              class="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-lg text-sm font-medium border border-purple-500/30"
+            >
+              {{ type.replace(/_/g, ' ') }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Two Column Layout -->
         <div class="grid md:grid-cols-2 gap-6">
-          <div>
-            <h3 class="text-lg font-semibold text-white mb-3">Project Details</h3>
-            <div class="space-y-2 text-white/80">
-              <p><strong>Industry:</strong> {{ submission.industry.replace(/_/g, ' ') }}</p>
-              <p><strong>Complexity:</strong> {{ submission.complexity }}</p>
-              <p><strong>Budget:</strong> {{ submission.budget?.replace(/_/g, ' ') || 'N/A' }}</p>
-              <p><strong>Timeline:</strong> {{ submission.timeline || 'N/A' }}</p>
-              <p><strong>Submitted:</strong> {{ formatDate(submission.createdAt) }}</p>
+          <!-- Contact Info -->
+          <div v-if="submission.user" class="glass-morphism p-6 rounded-2xl border border-white/10">
+            <h2 class="text-xl font-bold text-white mb-4">Contact Information</h2>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                  {{ (submission.user.fullName || 'U')[0].toUpperCase() }}
+                </div>
+                <div class="flex-1">
+                  <div class="text-white font-medium">{{ submission.user.fullName || 'Not provided' }}</div>
+                  <div class="text-white/40 text-sm">{{ submission.user.email }}</div>
+                </div>
+              </div>
+              <div v-if="submission.user.companyName" class="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+                <span class="text-2xl">🏢</span>
+                <div>
+                  <div class="text-white/40 text-xs uppercase">Company</div>
+                  <div class="text-white">{{ submission.user.companyName }}</div>
+                </div>
+              </div>
+              <div v-if="submission.user.phoneNumber" class="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+                <span class="text-2xl">📱</span>
+                <div>
+                  <div class="text-white/40 text-xs uppercase">Phone</div>
+                  <div class="text-white">{{ submission.user.phoneNumber }}</div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div v-if="submission.user">
-            <h3 class="text-lg font-semibold text-white mb-3">Contact Information</h3>
-            <div class="space-y-2 text-white/80">
-              <p><strong>Name:</strong> {{ submission.user.fullName || 'N/A' }}</p>
-              <p><strong>Email:</strong> {{ submission.user.email }}</p>
-              <p><strong>Company:</strong> {{ submission.user.companyName || 'N/A' }}</p>
-              <p><strong>Phone:</strong> {{ submission.user.phoneNumber || 'N/A' }}</p>
+          <!-- Additional Details -->
+          <div class="space-y-6">
+            <div v-if="submission.country || submission.currency" class="glass-morphism p-6 rounded-2xl border border-white/10">
+              <h2 class="text-xl font-bold text-white mb-4">Location & Currency</h2>
+              <div class="space-y-3">
+                <div v-if="submission.country" class="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+                  <span class="text-2xl">🌍</span>
+                  <div>
+                    <div class="text-white/40 text-xs uppercase">Country</div>
+                    <div class="text-white">{{ submission.country }}</div>
+                  </div>
+                </div>
+                <div v-if="submission.currency" class="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+                  <span class="text-2xl">💱</span>
+                  <div>
+                    <div class="text-white/40 text-xs uppercase">Currency</div>
+                    <div class="text-white">{{ submission.currency }}</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div v-if="submission.additionalNotes">
-          <h3 class="text-lg font-semibold text-white mb-3">Additional Notes</h3>
-          <p class="text-white/80 bg-white/5 p-4 rounded">{{ submission.additionalNotes }}</p>
+        <!-- Requirements -->
+        <div class="glass-morphism p-6 sm:p-8 rounded-2xl border border-white/10">
+          <h2 class="text-xl font-bold text-white mb-4">Selected Requirements</h2>
+          <div class="bg-gray-900/50 rounded-xl p-4 border border-white/5">
+            <GlowingScrollbar class="max-h-96">
+              <pre class="text-sm text-white/70">{{ JSON.stringify(submission.requirements, null, 2) }}</pre>
+            </GlowingScrollbar>
+          </div>
         </div>
 
-        <div v-if="submission.adminNotes">
-          <h3 class="text-lg font-semibold text-white mb-3">Admin Notes</h3>
-          <p class="text-white/80 bg-yellow-500/10 p-4 rounded border border-yellow-500/30">
-            {{ submission.adminNotes }}
-          </p>
+        <!-- Additional Notes -->
+        <div v-if="submission.additionalNotes" class="glass-morphism p-6 sm:p-8 rounded-2xl border border-white/10">
+          <h2 class="text-xl font-bold text-white mb-4">Additional Notes</h2>
+          <div class="p-4 bg-white/5 rounded-xl border border-white/10">
+            <p class="text-white/80 leading-relaxed">{{ submission.additionalNotes }}</p>
+          </div>
         </div>
 
-        <div>
-          <h3 class="text-lg font-semibold text-white mb-3">Selected Requirements</h3>
-          <GlowingScrollbar class="bg-gray-900 p-4 rounded max-h-96">
-            <pre class="text-xs text-white/80">{{ JSON.stringify(submission.requirements, null, 2) }}</pre>
-          </GlowingScrollbar>
+        <!-- Admin Notes -->
+        <div v-if="submission.adminNotes" class="glass-morphism p-6 sm:p-8 rounded-2xl border border-yellow-500/30 bg-yellow-500/5">
+          <h2 class="text-xl font-bold text-yellow-300 mb-4">Admin Notes</h2>
+          <div class="p-4 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
+            <p class="text-yellow-100 leading-relaxed">{{ submission.adminNotes }}</p>
+          </div>
         </div>
 
-        <div class="mt-8">
-          <VersionHistory :submission-id="submission.id" />
-        </div>
-
-        <div class="mt-8">
-          <CollabEditor :submission-id="submission.id" />
+        <!-- Collaboration & Versions -->
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="glass-morphism p-6 rounded-2xl border border-white/10">
+            <VersionHistory :submission-id="submission.id" />
+          </div>
+          <div class="glass-morphism p-6 rounded-2xl border border-white/10">
+            <CollabEditor :submission-id="submission.id" />
+          </div>
         </div>
       </div>
 
-      <div class="mt-8 flex justify-between">
-        <UButton @click="$router.back()" variant="outline">
-          Back
-        </UButton>
+      <!-- Not Found State -->
+      <div v-else class="flex items-center justify-center min-h-[60vh]">
+        <div class="glass-morphism p-8 rounded-2xl max-w-md text-center">
+          <div class="text-6xl mb-4">🔍</div>
+          <h3 class="text-xl font-bold text-white/60 mb-2">Submission Not Found</h3>
+          <p class="text-white/40 mb-6">The submission you're looking for doesn't exist or you don't have access.</p>
+          <UButton @click="$router.back()" variant="outline" color="white">
+            Go Back
+          </UButton>
+        </div>
       </div>
-    </div>
-
-    <div v-else class="text-center py-20">
-      <p class="text-white/70 text-xl">Submission not found</p>
     </div>
   </div>
 </template>
@@ -130,6 +245,11 @@ const getStatusColor = (status: string) => {
     COMPLETED: 'emerald',
   }
   return colors[status] || 'gray'
+}
+
+const formatBudget = (budget: string | null) => {
+  if (!budget) return 'Not specified'
+  return budget.replace(/_/g, ' ').replace('FROM', '$').replace('TO', '-').replace('LESS THAN', '<').replace('ABOVE', '>')
 }
 
 const formatDate = (date: string | Date) => {
