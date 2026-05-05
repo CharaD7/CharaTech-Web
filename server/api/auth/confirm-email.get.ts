@@ -55,14 +55,9 @@ export default defineEventHandler(async (event) => {
       emailVerified: true,
     }
   } catch (error: any) {
-    if (error.statusCode) {
-      throw error
-    }
-    
-    console.error('Email verification error:', error)
     throw createError({
       statusCode: 500,
-      message: 'Failed to verify email',
+      message: error.message || 'Email verification failed'
     })
   }
 })

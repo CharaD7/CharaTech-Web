@@ -61,10 +61,9 @@ export default defineEventHandler(async (event) => {
       (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
     )
   } catch (error: any) {
-    console.error('Error in /api/admin/messages:', error)
-    throw createError({
-      statusCode: error.statusCode || 500,
-      message: error.message || 'Failed to fetch messages'
-    })
+      throw createError({
+        statusCode: error.statusCode || 500,
+        message: error.message || 'Failed to fetch messages'
+      })
   }
 })

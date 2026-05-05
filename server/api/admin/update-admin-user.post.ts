@@ -21,7 +21,6 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch (error: any) {
-    console.error('Error updating admin user:', error)
     throw createError({
       statusCode: 500,
       message: error.message || 'Failed to update user to admin'

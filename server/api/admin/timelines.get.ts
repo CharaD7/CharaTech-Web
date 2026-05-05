@@ -26,12 +26,9 @@ export default defineEventHandler(async (event) => {
       projectName: subMap[t.submissionId]?.projectName ?? 'Untitled',
     }))
   } catch (error: any) {
-    console.error('Timelines error:', error)
-    if (error.statusCode) throw error
     throw createError({
       statusCode: 500,
-      message: 'Failed to load timelines',
-      cause: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: error.message || 'Failed to fetch timelines'
     })
   }
 })

@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
         location: e.location?.join_url || e.location?.location
       }))
     } catch (error) {
-      console.error('Failed to fetch Calendly events:', error)
+      // Failed to fetch external Calendly events
     }
   }
   

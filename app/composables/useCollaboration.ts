@@ -128,9 +128,9 @@ export const useCollaboration = (submissionId: Ref<string>) => {
         headers: { Authorization: `Bearer ${token}` },
         body: { field, position }
       })
-    } catch (err: any) {
-      console.error('Failed to update cursor:', err)
-    }
+      } catch (err: any) {
+        // Failed to update cursor
+      }
   }
 
   const subscribeToRealtime = () => {

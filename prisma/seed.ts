@@ -1,68 +1,51 @@
-import { PrismaClient } from '@prisma/client'
-import 'dotenv/config'
-import { Pool } from 'pg'
-import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient, UserRole } from '@prisma/client'
+import * as dotenv from 'dotenv'
 
-const connectionString = process.env.DATABASE_URL
+// Load environment variables
+dotenv.config()
 
-const pool = new Pool({ connectionString })
-const adapter = new PrismaPg(pool)
-const prisma = new PrismaClient({ adapter })
+const prisma = new PrismaClient()
 
 async function main() {
-  console.log('Starting database seeding...')
+  const adminEmail = 'jijakahn6@gmail.com'
+  const adminSupabaseUid = 'gKT3k6RkyobOYbLHCU0qOw70xLH2'
 
-  const adminEmail = process.env.ADMIN_EMAIL || 'jijakahn6@gmail.com'
-  const adminSupabaseUid = process.env.ADMIN_SUPABASE_UID || '2cfQUoHN96dbx0ovHoCgDRIa4113'
-  const adminFullName = 'System Administrator'
+  // Check if admin already exists by supabaseUid
+  let dbUser = await prisma.user.findUnique({
+    where: { supabaseUid: adminSupabaseUid }
+  })
 
-  try {
-    // Check if user exists in database
-    let dbUser = await prisma.user.findUnique({
-      where: { email: adminEmail },
+  // If not found by supabaseUid, try by email
+  if (!dbUser) {
+    dbUser = await prisma.user.findUnique({
+      where: { email: adminEmail }
     })
+  }
 
-    if (dbUser) {
-      // Update existing user to admin
-      dbUser = await prisma.user.update({
-        where: { email: adminEmail },
-        data: {
-          role: 'ADMIN',
-          emailVerified: true,
-          supabaseUid: adminSupabaseUid,
-          fullName: adminFullName,
-        },
+  if (dbUser) {
+    // Update to ensure they have ADMIN role
+    if (dbUser.role !== UserRole.ADMIN) {
+      await prisma.user.update({
+        where: { id: dbUser.id },
+        data: { role: UserRole.ADMIN }
       })
-      console.log('✓ Updated existing user to ADMIN role')
-    } else {
-      // Create new admin user in database
-      dbUser = await prisma.user.create({
-        data: {
-          supabaseUid: adminSupabaseUid,
-          email: adminEmail,
-          fullName: adminFullName,
-          role: 'ADMIN',
-          emailVerified: true,
-        },
-      })
-      console.log('✓ Created admin user in database')
     }
-
-    console.log('\n✓ Seeding completed successfully!')
-    console.log('Admin user details:')
-    console.log(`  Email: ${adminEmail}`)
-    console.log(`  Role: ${dbUser.role}`)
-    console.log(`  Supabase UID: ${dbUser.supabaseUid}`)
-    console.log('\nNote: Use Supabase credentials to login.')
-  } catch (error) {
-    console.error('Error during seeding:', error)
-    throw error
+  } else {
+    // Create admin user
+    dbUser = await prisma.user.create({
+      data: {
+        supabaseUid: adminSupabaseUid,
+        email: adminEmail,
+        role: UserRole.ADMIN,
+        emailVerified: true,
+        fullName: 'System Administrator'
+      }
+    })
   }
 }
 
 main()
-  .catch((e) => {
-    console.error(e)
+  .catch(() => {
     process.exit(1)
   })
   .finally(async () => {

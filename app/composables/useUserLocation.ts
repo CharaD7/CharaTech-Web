@@ -88,7 +88,6 @@ export const useUserLocation = () => {
         currencySymbol: currencyInfo.symbol,
       }
     } catch (err) {
-      console.error('Location detection error:', err)
       error.value = 'Could not detect location'
       location.value = {
         country: 'United States',

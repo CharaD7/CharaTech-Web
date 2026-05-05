@@ -21,8 +21,7 @@ export default defineEventHandler(async (event) => {
     })
 
     return submissions
-  } catch (error) {
-    console.error('Error fetching submissions:', error)
+  } catch (error: any) {
     throw createError({
       statusCode: error.statusCode || 500,
       message: error.message || 'Failed to fetch submissions'

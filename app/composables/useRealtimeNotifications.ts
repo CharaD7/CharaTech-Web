@@ -36,7 +36,7 @@ export const useRealtimeNotifications = () => {
       })
       notifications.value = data
     } catch (e) {
-      console.error('Failed to fetch notifications:', e)
+      toast.error('Failed to load notifications')
     } finally {
       loading.value = false
     }
@@ -118,7 +118,7 @@ export const useRealtimeNotifications = () => {
       const n = notifications.value.find(n => n.id === id)
       if (n) { n.read = true; n.readAt = new Date().toISOString() }
     } catch (e) {
-      console.error('Failed to mark notification as read:', e)
+      toast.error('Failed to mark as read')
     }
   }
 
@@ -133,7 +133,7 @@ export const useRealtimeNotifications = () => {
       const now = new Date().toISOString()
       notifications.value = notifications.value.map(n => ({ ...n, read: true, readAt: now }))
     } catch (e) {
-      console.error('Failed to mark all as read:', e)
+      toast.error('Failed to mark all as read')
     }
   }
 
@@ -151,7 +151,7 @@ export const useRealtimeNotifications = () => {
         ids.includes(n.id) ? { ...n, read: true, readAt: now } : n
       )
     } catch (e) {
-      console.error('Failed to bulk mark as read:', e)
+      toast.error('Failed to mark as read')
     }
   }
 
@@ -168,7 +168,7 @@ export const useRealtimeNotifications = () => {
         ids.includes(n.id) ? { ...n, read: false, readAt: null } : n
       )
     } catch (e) {
-      console.error('Failed to bulk mark as unread:', e)
+      toast.error('Failed to mark as unread')
     }
   }
 
@@ -184,7 +184,7 @@ export const useRealtimeNotifications = () => {
       // Remove archived notifications from the list
       notifications.value = notifications.value.filter(n => !ids.includes(n.id))
     } catch (e) {
-      console.error('Failed to bulk archive:', e)
+      toast.error('Failed to archive notifications')
     }
   }
 

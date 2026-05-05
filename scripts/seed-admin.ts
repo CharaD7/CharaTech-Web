@@ -22,19 +22,16 @@ async function main() {
   })
 
   if (existingAdmin) {
-    console.log('Admin user already exists:', existingAdmin)
-    
     // Update to ensure they have ADMIN role
     if (existingAdmin.role !== 'ADMIN') {
-      const updated = await prisma.user.update({
+      await prisma.user.update({
         where: { id: existingAdmin.id },
         data: { role: 'ADMIN' }
       })
-      console.log('Updated user to ADMIN role:', updated)
     }
   } else {
     // Create admin user
-    const admin = await prisma.user.create({
+    await prisma.user.create({
       data: {
         supabaseUid: adminSupabaseUid,
         email: adminEmail,
@@ -43,13 +40,11 @@ async function main() {
         fullName: 'System Administrator'
       }
     })
-    console.log('Created admin user:', admin)
   }
 }
 
 main()
-  .catch((e) => {
-    console.error('Error seeding admin:', e)
+  .catch(() => {
     process.exit(1)
   })
   .finally(async () => {

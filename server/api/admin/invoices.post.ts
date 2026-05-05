@@ -76,8 +76,7 @@ export default defineEventHandler(async (event) => {
     })
 
     return { success: true, invoice }
-  } catch (error) {
-    console.error('Error creating invoice:', error)
+  } catch (error: any) {
     throw createError({
       statusCode: error.statusCode || 500,
       message: error.message || 'Failed to create invoice'

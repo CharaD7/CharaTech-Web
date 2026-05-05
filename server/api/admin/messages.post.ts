@@ -52,8 +52,7 @@ export default defineEventHandler(async (event) => {
     })
 
     return { success: true, message }
-  } catch (error) {
-    console.error('Error sending message:', error)
+  } catch (error: any) {
     throw createError({
       statusCode: error.statusCode || 500,
       message: error.message || 'Failed to send message'

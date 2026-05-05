@@ -31,7 +31,6 @@ export default defineEventHandler(async (event) => {
         },
       })
     } catch (dbError: any) {
-      console.error('Database error during user upsert:', dbError)
       throw createError({
         statusCode: 500,
         message: 'Failed to create user in database. Please try again.',
@@ -53,16 +52,11 @@ export default defineEventHandler(async (event) => {
         })
       } catch (notifError) {
         // Log but don't fail - notification is non-critical
-        console.error('Failed to create welcome notification:', notifError)
       }
     }
     
     return user
   } catch (error: any) {
-    // Log the full error for debugging
-    console.error('Registration error:', error)
-    console.error('Registration error stack:', error.stack)
-    
     // Re-throw H3 errors as-is
     if (error.statusCode) {
       throw error

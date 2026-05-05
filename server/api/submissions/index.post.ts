@@ -3,41 +3,12 @@ export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
     const body = await readBody(event)
 
-    console.log('Submission payload:', JSON.stringify(body, null, 2))
-
-    const submission = await prisma.submission.create({
-      data: {
-        userId: user.id,
-        projectName: body.projectName,
-        industry: body.industry,
-        projectTypes: body.projectTypes || [],
-        complexity: body.complexity,
-        budget: body.budget || undefined,
-        timeline: body.timeline || undefined,
-        requirements: body.requirements || {},
-        additionalNotes: body.additionalNotes || undefined,
-        aiConversation: body.aiConversation && Array.isArray(body.aiConversation) && body.aiConversation.length > 0 ? body.aiConversation : undefined,
-        status: 'PENDING',
-        currency: body.currency || 'USD',
-        country: body.country || undefined,
-      },
+  } catch (error: any) {
+    throw createError({
+      statusCode: 500,
+      message: error.message || 'Failed to create submission'
     })
-
-  // Handle media attachments (images, videos, links)
-  if (body.media && Array.isArray(body.media) && body.media.length > 0) {
-    for (const media of body.media) {
-      await prisma.attachment.create({
-        data: {
-          submissionId: submission.id,
-          type: media.type || 'LINK',
-          fileName: media.name || null,
-          fileUrl: media.url,
-          fileType: media.type || null,
-          thumbnail: media.thumbnail || null,
-          description: media.description || null,
-        },
-      })
-    }
+  }
   }
 
   const config = useRuntimeConfig()
@@ -112,7 +83,6 @@ export default defineEventHandler(async (event) => {
 
   return submission
   } catch (error: any) {
-    console.error('Submission error:', error)
     throw createError({
       statusCode: 500,
       message: error.message || 'Internal server error',

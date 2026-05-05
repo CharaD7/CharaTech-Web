@@ -36,7 +36,6 @@ export const chatWithAI = async (
     const apiKey = process.env.OLLAMA_API_KEY
 
     if (!apiKey) {
-      console.error('Ollama API key not configured - please set OLLAMA_API_KEY environment variable')
       throw new Error('AI service not configured. Please contact support.')
     }
 
@@ -45,9 +44,6 @@ export const chatWithAI = async (
       ...conversationHistory,
       { role: 'user', content: message },
     ]
-
-    console.log('Calling Ollama API with model:', MODEL)
-    console.log('API URL:', OLLAMA_API_URL)
 
     const response = await fetch(OLLAMA_API_URL, {
       method: 'POST',
@@ -64,13 +60,11 @@ export const chatWithAI = async (
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Ollama API error:', response.status, errorText)
       const errorData = JSON.parse(errorText || '{}')
       throw new Error(errorData.error?.message || `Ollama API error: ${response.status}`)
     }
 
     const data = await response.json()
-    console.log('Ollama response:', data)
     const content = data.choices?.[0]?.message?.content || ''
 
     return {
@@ -78,7 +72,6 @@ export const chatWithAI = async (
       response: content,
     }
   } catch (error: any) {
-    console.error('Ollama error:', error)
     return {
       success: false,
       error: error.message || 'AI service error. Please try again.',

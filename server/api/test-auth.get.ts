@@ -1,33 +1,13 @@
 export default defineEventHandler(async (event) => {
   const authHeader = getHeader(event, 'authorization')
-  
-  console.log('Auth header:', authHeader)
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return {
-      success: false,
-      error: 'No authorization header'
-    }
+  if (!authHeader) {
+    throw createError({ statusCode: 401, message: 'No auth header' })
   }
-
-  const token = authHeader.split('Bearer ')[1]
-  console.log('Token (first 50 chars):', token.substring(0, 50) + '...')
-
+  const token = authHeader.replace('Bearer ', '')
   try {
-    const user = await requireAuth(event)
-    console.log('User found:', user)
-    
-    return {
-      success: true,
-      decodedToken,
-      user
-    }
+    const user = await verifyToken(token)
+    return { user }
   } catch (error: any) {
-    console.error('Test error:', error)
-    return {
-      success: false,
-      error: error.message,
-      stack: error.stack
-    }
+    throw createError({ statusCode: 401, message: 'Invalid token' })
   }
 })

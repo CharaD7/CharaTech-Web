@@ -1074,7 +1074,6 @@ const fetchMessages = async () => {
   } catch (error: any) {
     const msg = error.data?.message || error.message || 'Failed to fetch messages'
     toast.error(msg)
-    console.error('fetchMessages error:', error)
   }
 }
 

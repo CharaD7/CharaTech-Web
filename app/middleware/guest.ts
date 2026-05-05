@@ -12,7 +12,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         try {
           await userStore.fetchCurrentUser()
         } catch (error) {
-          console.error('Error fetching user:', error)
+          // Failed to fetch user
         }
       }
 
@@ -25,7 +25,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       return navigateTo('/dashboard')
     }
   } catch (error) {
-    console.error('Guest middleware error:', error)
     return
   }
 })

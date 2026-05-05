@@ -28,11 +28,9 @@ export default defineEventHandler(async (event: H3Event) => {
 
     return response
   } catch (error: any) {
-    console.error('AI API Error:', error)
     throw createError({
       statusCode: 500,
-      statusMessage: 'AI service temporarily unavailable',
-      data: { originalError: error.message }
+      message: error.message || 'AI chat failed'
     })
   }
 })

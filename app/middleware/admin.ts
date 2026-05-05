@@ -17,12 +17,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       try {
         await userStore.fetchCurrentUser()
       } catch (error) {
-        console.error('Error fetching user:', error)
         return navigateTo('/admin/login')
       }
     }
   } catch (error) {
-    console.error('Admin middleware error:', error)
     return navigateTo('/admin/login')
   }
    

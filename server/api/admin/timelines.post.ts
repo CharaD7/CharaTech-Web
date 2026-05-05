@@ -59,8 +59,7 @@ export default defineEventHandler(async (event) => {
     }
 
     return { success: true, timeline }
-  } catch (error) {
-    console.error('Error creating timeline:', error)
+  } catch (error: any) {
     throw createError({
       statusCode: error.statusCode || 500,
       message: error.message || 'Failed to create timeline'

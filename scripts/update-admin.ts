@@ -1,39 +1,29 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import pg from 'pg'
+import dotenv from 'dotenv'
 
-// Create PostgreSQL connection pool
+dotenv.config()
+
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL
 })
 
-// Create Prisma adapter for PostgreSQL
 const adapter = new PrismaPg(pool)
-
-// Initialize Prisma Client with the adapter
 const prisma = new PrismaClient({ adapter })
 
-async function main() {
-  const adminEmail = 'jijakahn6@gmail.com'
-  
+async function updateAdmin() {
   try {
-    // Update user to admin role
     const user = await prisma.user.update({
-      where: {
-        email: adminEmail
-      },
-      data: {
-        role: 'ADMIN'
-      }
+      where: { email: 'jijakahn6@gmail.com' },
+      data: { role: 'ADMIN' }
     })
-    
-    console.log('✅ User updated to admin:', user.email, '- Role:', user.role)
   } catch (error) {
-    console.error('❌ Error updating user:', error)
+    process.exit(1)
   } finally {
     await prisma.$disconnect()
-    await pool.end()
+    pool.end()
   }
 }
 
-main()
+updateAdmin()

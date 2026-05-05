@@ -27,7 +27,6 @@ export const verifyTokenWithRestAPI = async (token: string) => {
     
     throw new Error('Invalid token')
   } catch (error: any) {
-    console.error('Token verification error:', error.message)
     throw new Error('Invalid token')
   }
 }
@@ -48,7 +47,6 @@ export const verifyTokenFallback = async (event: H3Event) => {
     const decodedToken = await verifyTokenWithRestAPI(token)
     return decodedToken
   } catch (error: any) {
-    console.error('Token verification error:', error.message)
     throw createError({
       statusCode: 401,
       message: 'Invalid token',

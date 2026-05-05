@@ -22,33 +22,23 @@ async function checkAdmin() {
     })
 
     if (admin) {
-      console.log('Admin user found:')
-      console.log(JSON.stringify(admin, null, 2))
-      
       if (admin.role !== 'ADMIN') {
-        console.log('\nUpdating role to ADMIN...')
-        const updated = await prisma.user.update({
+        await prisma.user.update({
           where: { id: admin.id },
           data: { role: 'ADMIN' }
         })
-        console.log('Updated:', JSON.stringify(updated, null, 2))
       }
     } else {
-      console.log('Admin user not found')
-      console.log('\nCreating admin user...')
-      
-      const newAdmin = await prisma.user.create({
+      await prisma.user.create({
         data: {
           email: 'jijakahn6@gmail.com',
           supabaseUid: 'gKT3k6RkyobOYbLHCU0qOw70xLH2',
           role: 'ADMIN'
         }
       })
-      
-      console.log('Created:', JSON.stringify(newAdmin, null, 2))
     }
   } catch (error) {
-    console.error('Error:', error)
+    process.exit(1)
   } finally {
     await prisma.$disconnect()
   }
