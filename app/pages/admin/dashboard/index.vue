@@ -848,7 +848,37 @@ const { getAccessToken } = useAuth()
 
 const getAuthHeaders = async () => {
   const token = await getAccessToken()
-  return token ? { Authorization: `Bearer ${token}` } : {}
+  if (!token) {
+    toast.error('Authentication required')
+    return null
+  }
+  return { Authorization: `Bearer ${token}` }
+}
+
+const fetchSubmissions = async () => {
+  const headers = await getAuthHeaders()
+  if (!headers) return
+  
+  try {
+    const data = await $fetch('/api/admin/submissions', { headers }) as any
+    submissions.value = Array.isArray(data) ? data : (data.submissions || [])
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to fetch submissions')
+  }
+}
+
+const fetchUsers = async () => {
+  const headers = await getAuthHeaders()
+  if (!headers) return
+  
+  try {
+    const data = await $fetch('/api/admin/users', { headers }) as any
+    if (data) {
+      users.value = Array.isArray(data) ? data : []
+    }
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to fetch users')
+  }
 }
 
 const clearGeneratedInvoice = () => {
@@ -858,13 +888,27 @@ const clearGeneratedInvoice = () => {
 }
 
 const fetchInvoices = async () => {
+  const headers = await getAuthHeaders()
+  if (!headers) return
+  
   try {
-    const headers = await getAuthHeaders()
     const data = await $fetch('/api/admin/invoices', { headers }) as any
     if (data?.invoices) invoices.value = data.invoices
   } catch (error: any) {
     toast.error(error.data?.message || 'Failed to fetch invoices')
   }
+}
+
+const fetchMessages = async () => {
+  const headers = await getAuthHeaders()
+  if (!headers) return
+  
+  try {
+    conversations.value = await $fetch('/api/admin/messages', { headers }) as any[]
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to fetch messages')
+  }
+}
 }
 
 const openCreateInvoice = async (submission?: any) => {
@@ -1058,6 +1102,7 @@ onMounted(() => {
   fetchSubmissions()
   fetchInvoices()
   fetchTimelines()
+  fetchMessages()
 })
 
 async function fetchTimelines() {
