@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
     const clients = clientIds.length
       ? await prisma.user.findMany({
           where: { id: { in: clientIds } },
-          select: { id: true, name: true, email: true },
+          select: { id: true, fullName: true, email: true },
         })
       : []
 
@@ -52,7 +52,7 @@ export default defineEventHandler(async (event) => {
       const client = clients.find(c => c.id === conv.clientId)
       return {
         ...conv,
-        clientName: client?.name || client?.email?.split('@')[0] || 'Client',
+        clientName: client?.fullName || client?.email?.split('@')[0] || 'Client',
         clientEmail: client?.email || '',
       }
     })
