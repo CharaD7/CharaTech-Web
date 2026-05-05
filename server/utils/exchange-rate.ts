@@ -17,8 +17,10 @@ const FALLBACK_RATES: Record<string, number> = {
 export async function getExchangeRate(currency: string): Promise<number> {
   const normalized = (currency || 'USD').toUpperCase()
   
-  // Return 1 for USD or if rate is already in our fallback list
+  // Return 1 for USD
   if (normalized === 'USD') return 1
+  
+  // Check fallback rates first
   if (FALLBACK_RATES[normalized]) return FALLBACK_RATES[normalized]
   
   try {
@@ -26,16 +28,15 @@ export async function getExchangeRate(currency: string): Promise<number> {
     const response = await fetch(
       `https://api.exchangerate-api.com/v4/latest/USD`,
       { 
-        headers: { 'User-Agent': 'CharaTech/1.0' },
-        // Cache for 1 hour in production
-        ...(process.env.NODE_ENV === 'production' ? { next: { revalidate: 3600 } } : {})
+        headers: { 'User-Agent': 'CharaTech/1.0' }
       }
     )
     
     if (!response.ok) throw new Error('Exchange rate API error')
     
     const data = await response.json()
-    const rate = data.rates?.[normalized]
+    const rates = data.rates || {}
+    const rate = rates[normalized] || rates[normalized.toLowerCase()]
     
     if (rate && typeof rate === 'number' && rate > 0) {
       return rate
@@ -43,7 +44,6 @@ export async function getExchangeRate(currency: string): Promise<number> {
     
     throw new Error(`Rate not found for ${normalized}`)
   } catch (error) {
-    console.warn(`Failed to fetch exchange rate for ${normalized}, using fallback`)
     return FALLBACK_RATES[normalized] || 1
   }
 }
