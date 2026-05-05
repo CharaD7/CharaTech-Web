@@ -4,6 +4,14 @@
       <UIcon name="i-heroicons-arrow-path" class="animate-spin text-6xl text-white" />
     </div>
 
+    <div v-else-if="error" class="text-center py-20">
+      <div class="text-6xl mb-4">⚠️</div>
+      <p class="text-red-400 text-xl mb-4">{{ error }}</p>
+      <UButton @click="fetchSubmission" variant="outline" color="white">
+        Retry
+      </UButton>
+    </div>
+
     <div v-else-if="submission" class="glass-morphism p-8 rounded-xl">
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-white mb-2">{{ submission.projectName }}</h1>
@@ -84,24 +92,29 @@ definePageMeta({
 })
 
 const route = useRoute()
-const { user } = useAuth()
+const { user, getAccessToken } = useAuth()
 
 const submission = ref<any>(null)
 const loading = ref(true)
+const error = ref('')
 
 const fetchSubmission = async () => {
-  if (!user.value) return
-
   try {
-    const token = await user.value.getIdToken()
+    const token = await getAccessToken()
+    if (!token) {
+      error.value = 'Authentication required'
+      return
+    }
     const data = await $fetch(`/api/submissions/${route.params.id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     })
     submission.value = data
-  } catch (error) {
-    console.error('Failed to fetch submission:', error)
+    error.value = ''
+  } catch (err: any) {
+    console.error('Failed to fetch submission:', err)
+    error.value = err.data?.message || err.message || 'Failed to load submission'
   } finally {
     loading.value = false
   }
@@ -110,12 +123,12 @@ const fetchSubmission = async () => {
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
     PENDING: 'yellow',
-    REVIEWING: 'blue',
-    QUOTED: 'purple',
-    ACCEPTED: 'green',
-    REJECTED: 'red',
-    IN_PROGRESS: 'cyan',
-    COMPLETED: 'emerald',
+    REVIEWING': 'blue',
+    QUOTED': 'purple',
+    ACCEPTED': 'green',
+    REJECTED': 'red',
+    IN_PROGRESS': 'cyan',
+    COMPLETED': 'emerald',
   }
   return colors[status] || 'gray'
 }
@@ -128,7 +141,10 @@ const formatDate = (date: string | Date) => {
   })
 }
 
-onMounted(() => {
-  fetchSubmission()
-})
+// Watch for user to be available
+watch(() => user.value, (newUser) => {
+  if (newUser) {
+    fetchSubmission()
+  }
+}, { immediate: true })
 </script>
