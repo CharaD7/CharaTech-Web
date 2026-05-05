@@ -34,7 +34,11 @@
             <div class="flex-1">
               <h1 class="text-3xl sm:text-4xl font-bold text-white mb-3">{{ submission.projectName }}</h1>
               <div class="flex flex-wrap items-center gap-3">
-                <UBadge :color="getStatusColor(submission.status)" size="lg" class="font-semibold">
+                <UBadge
+                  :color="getStatusColor(submission.status)"
+                  size="lg"
+                  class="font-semibold"
+                >
                   {{ submission.status.replace(/_/g, ' ') }}
                 </UBadge>
                 <span class="text-white/40 text-sm">
@@ -46,9 +50,14 @@
               @click="$router.back()"
               variant="outline"
               color="white"
-              icon="i-heroicons-arrow-left"
-              class="w-fit"
+              size="sm"
+              class="w-fit border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10"
             >
+              <template #leading>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+              </template>
               Back
             </UButton>
           </div>
@@ -256,22 +265,21 @@ const fetchSubmission = async () => {
   }
 }
 
-const getStatusColor = (status: string) => {
-  const colors: Record<string, string> = {
-    PENDING: 'yellow',
-    REVIEWING: 'blue',
-    QUOTED: 'purple',
-    ACCEPTED: 'green',
-    REJECTED: 'red',
-    IN_PROGRESS: 'cyan',
-    COMPLETED: 'emerald',
-  }
-  return colors[status] || 'gray'
-}
+
 
 const formatBudget = (budget: string | null) => {
   if (!budget) return 'Not specified'
   return budget.replace(/_/g, ' ').replace('FROM', '$').replace('TO', '-').replace('LESS THAN', '<').replace('ABOVE', '>')
+}
+
+const statusClasses: Record<string, string> = {
+  PENDING: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+  REVIEWING: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+  QUOTED: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+  ACCEPTED: 'bg-green-500/20 text-green-300 border-green-500/30',
+  REJECTED: 'bg-red-500/20 text-red-300 border-red-500/30',
+  IN_PROGRESS: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
+  COMPLETED: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
 }
 
 const formatRequirementKey = (key: string) => {
