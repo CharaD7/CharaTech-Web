@@ -500,7 +500,7 @@ const fetchSubmissions = async () => {
     submissions.value = data
     submissionsError.value = ''
   } catch (error: any) {
-    console.error('Failed to fetch submissions:', error)
+    
     submissionsError.value = error.data?.message || error.message || 'Failed to load submissions'
   } finally {
     loading.value = false
@@ -529,7 +529,7 @@ const fetchInvoices = async () => {
     })
     invoices.value = data.invoices ?? []
   } catch (error) {
-    console.error('Failed to fetch invoices:', error)
+    
   } finally {
     invoicesLoading.value = false
   }
@@ -562,7 +562,7 @@ const fetchTimelines = async () => {
       headers: { Authorization: `Bearer ${token}` },
     })
   } catch (e) {
-    console.error('Failed to fetch timelines:', e)
+    
   } finally {
     timelinesLoading.value = false
   }

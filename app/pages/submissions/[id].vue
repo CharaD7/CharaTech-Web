@@ -113,7 +113,6 @@ const fetchSubmission = async () => {
     submission.value = data
     error.value = ''
   } catch (err: any) {
-    console.error('Failed to fetch submission:', err)
     error.value = err.data?.message || err.message || 'Failed to load submission'
   } finally {
     loading.value = false

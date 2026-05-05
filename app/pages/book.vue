@@ -196,7 +196,7 @@ const fetchEventTypes = async () => {
     const data = await $fetch('/api/calendly/event-types')
     eventTypes.value = Array.isArray(data?.eventTypes) ? data.eventTypes : []
   } catch (error) {
-    console.error('Failed to fetch event types:', error)
+    
     eventTypes.value = []
   }
 }
@@ -206,7 +206,7 @@ const fetchBookings = async () => {
     const data = await $fetch('/api/calendly/bookings')
     bookings.value = Array.isArray(data?.bookings) ? data.bookings : []
   } catch (error) {
-    console.error('Failed to fetch bookings:', error)
+    
     bookings.value = []
   }
 }
@@ -225,7 +225,7 @@ const openCalendly = async () => {
     window.open(data.link, '_blank')
     showBookingModal.value = false
   } catch (error) {
-    console.error('Failed to get scheduling link:', error)
+    
   } finally {
     loadingLink.value = false
   }

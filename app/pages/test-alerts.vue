@@ -57,6 +57,6 @@ const { showAlert } = useAuth()
 
 // Inject showAlert from global provide
 const globalShowAlert = inject('showAlert', (variant: string, message: string, title?: string) => {
-  console.log(`Alert: ${variant} - ${title || 'No title'} - ${message}`)
+  
 })
 </script>

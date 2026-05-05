@@ -144,7 +144,7 @@ const fetchTeams = async () => {
     const data = await $fetch('/api/linear/teams')
     teams.value = data.teams
   } catch (error) {
-    console.error('Failed to fetch Linear teams:', error)
+    
   }
 }
 
@@ -156,7 +156,7 @@ const fetchIssues = async () => {
     const data = await $fetch(`/api/linear/submission-issues?submissionId=${props.submissionId}`)
     issues.value = data.issues
   } catch (error) {
-    console.error('Failed to fetch Linear issues:', error)
+    
   } finally {
     loading.value = false
   }

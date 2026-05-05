@@ -254,7 +254,7 @@ async function handleServerSideConfirmation(token: string, email: string) {
     confirmedEmail.value = email
     status.value = 'success'
   } catch (err: any) {
-    console.error('Server confirmation error:', err)
+    
     handleConfirmationError(err)
   }
 }
@@ -283,7 +283,7 @@ async function handleHashConfirmation() {
       throw new Error('Could not establish session from confirmation link')
     }
   } catch (err: any) {
-    console.error('Hash confirmation error:', err)
+    
     handleConfirmationError(err)
   }
 }
@@ -317,7 +317,7 @@ async function updateUserEmailVerified(userId: string) {
       })
     }
   } catch (err) {
-    console.warn('Could not update email verification status:', err)
+    
   }
 }
 

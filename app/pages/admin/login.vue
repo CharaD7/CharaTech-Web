@@ -120,7 +120,7 @@ const handleLogin = async () => {
       return
     }
 
-    console.log('Login successful, fetching user data...')
+    
     
     // Wait for auth state to update
     await new Promise(resolve => setTimeout(resolve, 500))
@@ -128,8 +128,8 @@ const handleLogin = async () => {
     // Fetch current user from database
     await userStore.fetchCurrentUser()
     
-    console.log('Current user:', userStore.currentUser)
-    console.log('Is admin:', userStore.isAdmin)
+    
+    
     
     // Check if admin
     if (userStore.isAdmin) {
@@ -142,7 +142,7 @@ const handleLogin = async () => {
       await logout()
     }
   } catch (err: any) {
-    console.error('Login error:', err)
+    
     error.value = err.message || 'An error occurred during login'
     loading.value = false
   }
@@ -158,7 +158,7 @@ const handleLogin = async () => {
 //         error.value = 'Access denied. This is for administrators only.'
 //       }
 //     }).catch(err => {
-//       console.error('Error fetching user:', err)
+//       
 //       error.value = 'Failed to verify admin status'
 //     })
 //   }

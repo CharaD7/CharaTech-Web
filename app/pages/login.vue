@@ -142,7 +142,7 @@ const handleLogin = async () => {
           window.location.replace('/dashboard')
         }
       } catch (apiError: any) {
-        console.error('API Error:', apiError)
+        
         error.value = apiError.data?.message || 'Failed to fetch user data'
         loading.value = false
         return
@@ -152,7 +152,7 @@ const handleLogin = async () => {
       loading.value = false
     }
   } catch (err: any) {
-    console.error('Login error:', err)
+    
     error.value = err.message || 'An error occurred during login'
     loading.value = false
   }

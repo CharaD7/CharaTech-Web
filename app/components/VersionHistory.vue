@@ -153,7 +153,7 @@ const fetchVersions = async () => {
     })
     versions.value = data.versions
   } catch (error) {
-    console.error('Failed to fetch versions:', error)
+    
   } finally {
     loading.value = false
   }
@@ -177,7 +177,7 @@ const createNewVersion = async () => {
     versions.value.unshift(data.version)
     emit('version-created', data.version)
   } catch (error) {
-    console.error('Failed to create version:', error)
+    
   } finally {
     creating.value = false
   }
