@@ -2,8 +2,7 @@
  * CharaTech Intelligent Pricing Engine
  * Evaluates a client's submission and generates detailed, itemised invoice line items.
  */
-
-export const GHS_PER_USD = 15.5 // Approximate exchange rate; admin can override in modal
+import { getExchangeRate } from './exchange-rate'
 
 // ─── Base development costs per project type (USD) ──────────────────────────
 const BASE_DEV_COSTS: Record<string, number> = {
@@ -322,7 +321,7 @@ export interface PricingResult {
 }
 
 // ─── Main Pricing Function ────────────────────────────────────────────────────
-export function generatePricing(submission: {
+export async function generatePricing(submission: {
   projectName: string
   projectType: string[]
   complexity: string
@@ -330,9 +329,9 @@ export function generatePricing(submission: {
   requirements: Record<string, any>
   budget?: string | null
   currency?: string
-}): PricingResult {
+}): Promise<PricingResult> {
   const currency = submission.currency || 'USD'
-  const exchangeRate = currency === 'GHS' ? GHS_PER_USD : 1
+  const exchangeRate = await getExchangeRate(currency)
   const items: PricingLineItem[] = []
 
   // ── 1. Base development cost per project type ──────────────────────────────
@@ -517,17 +516,16 @@ export function generatePricing(submission: {
     ? ` Client indicated budget: ${submission.budget.replace(/_/g, ' ')}.`
     : ''
 
-  return {
-    items,
-    subtotalUSD,
-    suggestedTaxRate,
-    currency,
-    exchangeRate,
-    notes:
-      `Auto-generated estimate for "${submission.projectName}" (${submission.industry}).` +
-      budgetNote +
-      ' All line items are editable. Exchange rate for GHS: ' +
-      GHS_PER_USD +
-      ' GHS/USD.',
-  }
+    return {
+      items,
+      subtotalUSD,
+      suggestedTaxRate,
+      currency,
+      exchangeRate,
+      notes:
+        `Auto-generated estimate for "${submission.projectName}" (${submission.industry}).` +
+        budgetNote +
+        ` All line items are editable. Exchange rate for ${currency}: ` +
+        exchangeRate.toFixed(4) + ` ${currency}/USD.`,
+    }
 }

@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
     // Use the submission's currency if available, otherwise use the provided currency or default to USD
     const invoiceCurrency = submission.currency || currency || 'USD'
 
-    const pricing = generatePricing({
+    const pricing = await generatePricing({
       projectName: submission.projectName,
       projectType: submission.projectType as string[],
       complexity: submission.complexity as string,
