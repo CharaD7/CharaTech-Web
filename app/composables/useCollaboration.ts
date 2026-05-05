@@ -23,7 +23,7 @@ let supabaseInstance: ReturnType<typeof createClient> | null = null
 
 export const useCollaboration = (submissionId: Ref<string>) => {
   const config = useRuntimeConfig()
-  const { user } = useAuth()
+  const { user, getAccessToken } = useAuth()
 
   if (!supabaseInstance) {
     supabaseInstance = createClient(
@@ -41,7 +41,14 @@ export const useCollaboration = (submissionId: Ref<string>) => {
 
   const fetchSession = async () => {
     try {
-      const response = await $fetch(`/api/collab/session/${submissionId.value}`)
+      const token = await getAccessToken()
+      if (!token) {
+        error.value = 'Authentication required'
+        return
+      }
+      const response = await $fetch(`/api/collab/session/${submissionId.value}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
       session.value = (response as any).session
       isInSession.value = true
     } catch {
@@ -57,8 +64,14 @@ export const useCollaboration = (submissionId: Ref<string>) => {
     error.value = null
 
     try {
+      const token = await getAccessToken()
+      if (!token) {
+        error.value = 'Authentication required'
+        return
+      }
       const response = await $fetch('/api/collab/session', {
         method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
         body: {
           submissionId: submissionId.value,
           action: 'join'
@@ -80,8 +93,14 @@ export const useCollaboration = (submissionId: Ref<string>) => {
     isLoading.value = true
 
     try {
+      const token = await getAccessToken()
+      if (!token) {
+        error.value = 'Authentication required'
+        return
+      }
       await $fetch('/api/collab/session', {
         method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
         body: {
           submissionId: submissionId.value,
           action: 'leave'
@@ -102,8 +121,11 @@ export const useCollaboration = (submissionId: Ref<string>) => {
     if (!user.value || !session.value) return
 
     try {
+      const token = await getAccessToken()
+      if (!token) return
       await $fetch(`/api/collab/cursor`, {
         method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
         body: { field, position }
       })
     } catch (err: any) {
