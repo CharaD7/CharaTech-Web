@@ -37,7 +37,7 @@
                 <UBadge
                   :color="getStatusColor(submission.status)"
                   size="lg"
-                  class="font-semibold"
+                  class="font-semibold text-white"
                 >
                   {{ submission.status.replace(/_/g, ' ') }}
                 </UBadge>
@@ -51,7 +51,7 @@
               variant="outline"
               color="white"
               size="sm"
-              class="w-fit border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10"
+              class="w-fit border-white/30 text-white hover:bg-white/10 hover:border-white/50"
             >
               <template #leading>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -273,7 +273,7 @@ const formatBudget = (budget: string | null) => {
 }
 
 const getStatusColor = (status: string) => {
-  const colors: Record<string, string> = {
+  const map: Record<string, string> = {
     PENDING: 'yellow',
     REVIEWING: 'blue',
     QUOTED: 'purple',
@@ -282,7 +282,7 @@ const getStatusColor = (status: string) => {
     IN_PROGRESS: 'cyan',
     COMPLETED: 'emerald',
   }
-  return colors[status] || 'gray'
+  return map[status] || 'gray'
 }
 
 const formatRequirementKey = (key: string) => {
