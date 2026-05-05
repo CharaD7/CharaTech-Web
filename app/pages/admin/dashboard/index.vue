@@ -813,10 +813,13 @@ const confirmDeleteUser = async () => {
 }
 
 const fetchSubmissions = async () => {
+  const headers = await getAuthHeaders()
+  if (!headers) return
+  
   try {
-    const { data } = await useFetch('/api/admin/submissions')
-    if (data.value) {
-      submissions.value = data.value
+    const data = await $fetch('/api/admin/submissions', { headers }) as any
+    if (data) {
+      submissions.value = Array.isArray(data) ? data : (data.submissions || [])
       updateStats()
     }
   } catch (error: any) {
@@ -855,32 +858,6 @@ const getAuthHeaders = async () => {
   return { Authorization: `Bearer ${token}` }
 }
 
-const fetchSubmissions = async () => {
-  const headers = await getAuthHeaders()
-  if (!headers) return
-  
-  try {
-    const data = await $fetch('/api/admin/submissions', { headers }) as any
-    submissions.value = Array.isArray(data) ? data : (data.submissions || [])
-  } catch (error: any) {
-    toast.error(error.data?.message || 'Failed to fetch submissions')
-  }
-}
-
-const fetchUsers = async () => {
-  const headers = await getAuthHeaders()
-  if (!headers) return
-  
-  try {
-    const data = await $fetch('/api/admin/users', { headers }) as any
-    if (data) {
-      users.value = Array.isArray(data) ? data : []
-    }
-  } catch (error: any) {
-    toast.error(error.data?.message || 'Failed to fetch users')
-  }
-}
-
 const clearGeneratedInvoice = () => {
   invoicePreGeneratedItems.value = undefined
   invoicePreGeneratedTaxRate.value = undefined
@@ -897,18 +874,6 @@ const fetchInvoices = async () => {
   } catch (error: any) {
     toast.error(error.data?.message || 'Failed to fetch invoices')
   }
-}
-
-const fetchMessages = async () => {
-  const headers = await getAuthHeaders()
-  if (!headers) return
-  
-  try {
-    conversations.value = await $fetch('/api/admin/messages', { headers }) as any[]
-  } catch (error: any) {
-    toast.error(error.data?.message || 'Failed to fetch messages')
-  }
-}
 }
 
 const openCreateInvoice = async (submission?: any) => {
@@ -1095,6 +1060,17 @@ const getTimelineStatusClass = (status: string) => {
     CANCELLED: 'bg-red-500/20 text-red-300'
   }
   return classes[status] || 'bg-gray-500/20 text-gray-300'
+}
+
+const fetchMessages = async () => {
+  const headers = await getAuthHeaders()
+  if (!headers) return
+  
+  try {
+    conversations.value = await $fetch('/api/admin/messages', { headers }) as any[]
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to fetch messages')
+  }
 }
 
 onMounted(() => {
