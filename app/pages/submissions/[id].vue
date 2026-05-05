@@ -150,11 +150,33 @@
 
         <!-- Requirements -->
         <div class="glass-morphism p-6 sm:p-8 rounded-2xl border border-white/10">
-          <h2 class="text-xl font-bold text-white mb-4">Selected Requirements</h2>
-          <div class="bg-gray-900/50 rounded-xl p-4 border border-white/5">
-            <GlowingScrollbar class="max-h-96">
-              <pre class="text-sm text-white/70">{{ JSON.stringify(submission.requirements, null, 2) }}</pre>
-            </GlowingScrollbar>
+          <h2 class="text-xl font-bold text-white mb-6">Selected Requirements</h2>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div
+              v-for="(value, key) in submission.requirements"
+              :key="key"
+              class="flex items-start gap-3 p-4 bg-white/5 rounded-xl border border-white/5 hover:border-purple-500/30 transition"
+            >
+              <div
+                :class="[
+                  'w-5 h-5 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5',
+                  value ? 'bg-purple-500/20 text-purple-400' : 'bg-white/5 text-white/20'
+                ]"
+              >
+                <svg v-if="value" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                </svg>
+                <svg v-else class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-white">{{ formatRequirementKey(key) }}</div>
+                <div v-if="typeof value === 'string' || typeof value === 'number'" class="text-xs text-white/40 mt-0.5">
+                  {{ value }}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -250,6 +272,15 @@ const getStatusColor = (status: string) => {
 const formatBudget = (budget: string | null) => {
   if (!budget) return 'Not specified'
   return budget.replace(/_/g, ' ').replace('FROM', '$').replace('TO', '-').replace('LESS THAN', '<').replace('ABOVE', '>')
+}
+
+const formatRequirementKey = (key: string) => {
+  return key
+    .replace(/-/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
 }
 
 const formatDate = (date: string | Date) => {
