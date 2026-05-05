@@ -275,12 +275,12 @@ const formatBudget = (budget: string | null) => {
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
     PENDING: 'yellow',
-    REVIEWING': 'blue',
-    QUOTED': 'purple',
-    ACCEPTED': 'green',
-    REJECTED': 'red',
-    IN_PROGRESS': 'cyan',
-    COMPLETED': 'emerald',
+    REVIEWING: 'blue',
+    QUOTED: 'purple',
+    ACCEPTED: 'green',
+    REJECTED: 'red',
+    IN_PROGRESS: 'cyan',
+    COMPLETED: 'emerald',
   }
   return colors[status] || 'gray'
 }
