@@ -1064,12 +1064,17 @@ const getTimelineStatusClass = (status: string) => {
 
 const fetchMessages = async () => {
   const headers = await getAuthHeaders()
-  if (!headers) return
+  if (!headers) {
+    toast.error('Authentication required')
+    return
+  }
   
   try {
     conversations.value = await $fetch('/api/admin/messages', { headers }) as any[]
   } catch (error: any) {
-    toast.error(error.data?.message || 'Failed to fetch messages')
+    const msg = error.data?.message || error.message || 'Failed to fetch messages'
+    toast.error(msg)
+    console.error('fetchMessages error:', error)
   }
 }
 
