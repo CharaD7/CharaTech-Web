@@ -110,6 +110,7 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseSpinner from '@/components/ui/BaseSpinner.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import GlowingScrollbar from '@/components/ui/GlowingScrollbar.vue'
+import { useAuth } from '@/composables/useAuth'
 
 interface SubmissionVersion {
   id: string
@@ -133,6 +134,7 @@ const emit = defineEmits<{
   'version-created': [version: SubmissionVersion]
 }>()
 
+const { getAccessToken } = useAuth()
 const loading = ref(false)
 const creating = ref(false)
 const versions = ref<SubmissionVersion[]>(props.initialVersions || [])
@@ -144,7 +146,11 @@ const fetchVersions = async () => {
 
   loading.value = true
   try {
-    const data = await $fetch(`/api/submissions/${props.submissionId}/versions`)
+    const token = await getAccessToken()
+    if (!token) return
+    const data = await $fetch(`/api/submissions/${props.submissionId}/versions`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     versions.value = data.versions
   } catch (error) {
     console.error('Failed to fetch versions:', error)
@@ -158,8 +164,11 @@ const createNewVersion = async () => {
 
   creating.value = true
   try {
+    const token = await getAccessToken()
+    if (!token) return
     const data = await $fetch(`/api/submissions/${props.submissionId}/versions`, {
       method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
       body: {
         title: `Version ${versions.value.length + 1}`,
         description: 'Manual version save'
