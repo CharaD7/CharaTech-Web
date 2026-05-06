@@ -64,7 +64,7 @@
           </div>
 
           <!-- ═══ BODY (form + preview) ═══ -->
-          <div class="flex min-h-0" style="max-height: calc(90vh - 130px);">
+          <div class="flex min-h-0 overflow-hidden" style="max-height: calc(90vh - 130px);">
 
             <!-- ── LEFT: FORM ── -->
             <GlowingScrollbar class="w-full lg:w-[52%] p-6 space-y-5">
@@ -389,7 +389,7 @@
 
             <!-- ── RIGHT: LIVE PREVIEW ── -->
             <GlowingScrollbar
-              class="hidden lg:flex lg:w-[48%] border-l border-white/8 flex-col bg-black/10 p-5"
+              class="hidden lg:flex lg:w-[48%] border-l border-white/8 flex-col bg-black/10 p-5 overflow-y-auto"
             >
               <!-- Preview label -->
               <div class="flex items-center gap-2 mb-4">

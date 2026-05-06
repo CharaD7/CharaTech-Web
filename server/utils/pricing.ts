@@ -6,24 +6,24 @@ import { getExchangeRate } from './exchange-rate'
 
 // ─── Base development costs per project type (USD) ──────────────────────────
 const BASE_DEV_COSTS: Record<string, number> = {
-  WEB_APPLICATION: 3_000,
-  MOBILE_APPLICATION: 5_000,
-  DESKTOP_APPLICATION: 4_000,
-  API_BACKEND: 2_500,
-  CMS: 2_000,
-  ECOMMERCE_PLATFORM: 5_000,
-  CRM: 6_000,
-  ERP: 10_000,
-  SAAS_PLATFORM: 8_000,
-  DASHBOARD_ANALYTICS: 4_000,
-  BOOKING_SYSTEM: 4_500,
-  PAYMENT_GATEWAY: 3_500,
-  SOCIAL_PLATFORM: 7_000,
-  LEARNING_PLATFORM: 5_500,
-  MARKETPLACE: 8_000,
-  PORTFOLIO_WEBSITE: 1_500,
-  BLOG: 1_200,
-  OTHER: 3_000,
+  WEB_APPLICATION: 6_000,
+  MOBILE_APPLICATION: 10_000,
+  DESKTOP_APPLICATION: 8_000,
+  API_BACKEND: 5_000,
+  CMS: 4_500,
+  ECOMMERCE_PLATFORM: 10_000,
+  CRM: 12_000,
+  ERP: 20_000,
+  SAAS_PLATFORM: 16_000,
+  DASHBOARD_ANALYTICS: 8_000,
+  BOOKING_SYSTEM: 9_000,
+  PAYMENT_GATEWAY: 7_000,
+  SOCIAL_PLATFORM: 14_000,
+  LEARNING_PLATFORM: 11_000,
+  MARKETPLACE: 16_000,
+  PORTFOLIO_WEBSITE: 3_000,
+  BLOG: 2_500,
+  OTHER: 6_000,
 }
 
 // ─── Complexity multipliers ──────────────────────────────────────────────────
@@ -37,87 +37,87 @@ const COMPLEXITY_MULTIPLIER: Record<string, number> = {
 // ─── Requirement feature add-ons (USD each) ──────────────────────────────────
 const FEATURE_COSTS: Record<string, { label: string; cost: number }> = {
   // Auth & Security
-  'email-auth': { label: 'Email / Password Authentication', cost: 400 },
-  'social-auth': { label: 'Social Login (Google, Facebook, etc.)', cost: 600 },
-  'two-factor': { label: 'Two-Factor Authentication (2FA)', cost: 500 },
-  'sso': { label: 'Single Sign-On (SSO)', cost: 1_200 },
-  'role-based': { label: 'Role-Based Access Control (RBAC)', cost: 700 },
-  'user-profiles': { label: 'User Profile Management', cost: 300 },
+  'email-auth': { label: 'Email / Password Authentication', cost: 800 },
+  'social-auth': { label: 'Social Login (Google, Facebook, etc.)', cost: 1_200 },
+  'two-factor': { label: 'Two-Factor Authentication (2FA)', cost: 1_000 },
+  'sso': { label: 'Single Sign-On (SSO)', cost: 2_400 },
+  'role-based': { label: 'Role-Based Access Control (RBAC)', cost: 1_400 },
+  'user-profiles': { label: 'User Profile Management', cost: 600 },
 
   // UI/UX
-  'dark-mode': { label: 'Dark Mode Support', cost: 250 },
-  'accessibility': { label: 'Accessibility (WCAG 2.1 AA)', cost: 600 },
-  'multilingual': { label: 'Multi-language / i18n Support', cost: 900 },
-  'custom-branding': { label: 'Custom Branding & Theming', cost: 700 },
+  'dark-mode': { label: 'Dark Mode Support', cost: 500 },
+  'accessibility': { label: 'Accessibility (WCAG 2.1 AA)', cost: 1_200 },
+  'multilingual': { label: 'Multi-language / i18n Support', cost: 1_800 },
+  'custom-branding': { label: 'Custom Branding & Theming', cost: 1_400 },
 
   // Data Management
-  'search': { label: 'Advanced Search & Filtering', cost: 500 },
-  'import-export': { label: 'Data Import / Export (CSV, Excel, PDF)', cost: 600 },
-  'file-upload': { label: 'File Upload & Cloud Storage', cost: 500 },
+  'search': { label: 'Advanced Search & Filtering', cost: 1_000 },
+  'import-export': { label: 'Data Import / Export (CSV, Excel, PDF)', cost: 1_200 },
+  'file-upload': { label: 'File Upload & Cloud Storage', cost: 1_000 },
 
   // Notifications
-  'email-notif': { label: 'Email Notification System', cost: 400 },
-  'sms-notif': { label: 'SMS Notification Integration', cost: 500 },
-  'push-notif': { label: 'Web / Mobile Push Notifications', cost: 600 },
-  'in-app-notif': { label: 'In-App Notification Centre', cost: 350 },
+  'email-notif': { label: 'Email Notification System', cost: 800 },
+  'sms-notif': { label: 'SMS Notification Integration', cost: 1_000 },
+  'push-notif': { label: 'Web / Mobile Push Notifications', cost: 1_200 },
+  'in-app-notif': { label: 'In-App Notification Centre', cost: 700 },
 
   // Security & Compliance
-  'encryption': { label: 'End-to-End Data Encryption', cost: 800 },
-  'gdpr': { label: 'GDPR Compliance Module', cost: 900 },
-  'audit-logs': { label: 'Audit Logs & Activity Tracking', cost: 500 },
-  'backup': { label: 'Automated Backup & Disaster Recovery', cost: 600 },
-  'ddos': { label: 'DDoS Protection & Rate Limiting', cost: 700 },
+  'encryption': { label: 'End-to-End Data Encryption', cost: 1_600 },
+  'gdpr': { label: 'GDPR Compliance Module', cost: 1_800 },
+  'audit-logs': { label: 'Audit Logs & Activity Tracking', cost: 1_000 },
+  'backup': { label: 'Automated Backup & Disaster Recovery', cost: 1_200 },
+  'ddos': { label: 'DDoS Protection & Rate Limiting', cost: 1_400 },
 
   // Third-Party Integrations
-  'payment': { label: 'Payment Gateway Integration (Stripe / PayPal / MTN Momo)', cost: 900 },
-  'analytics': { label: 'Analytics Integration (Google Analytics / Mixpanel)', cost: 400 },
-  'crm-integration': { label: 'CRM Integration', cost: 800 },
-  'email-marketing': { label: 'Email Marketing Integration (Mailchimp / SendGrid)', cost: 500 },
-  'api-integrations': { label: 'Custom Third-Party API Integration', cost: 700 },
+  'payment': { label: 'Payment Gateway Integration (Stripe / PayPal / MTN Momo)', cost: 1_800 },
+  'analytics': { label: 'Analytics Integration (Google Analytics / Mixpanel)', cost: 800 },
+  'crm-integration': { label: 'CRM Integration', cost: 1_600 },
+  'email-marketing': { label: 'Email Marketing Integration (Mailchimp / SendGrid)', cost: 1_000 },
+  'api-integrations': { label: 'Custom Third-Party API Integration', cost: 1_400 },
 
   // Admin
-  'dashboard': { label: 'Admin Dashboard', cost: 1_200 },
-  'user-management': { label: 'User Management Panel', cost: 600 },
-  'content-management': { label: 'Content Management System (CMS)', cost: 1_000 },
-  'reporting': { label: 'Reports & Analytics Dashboard', cost: 900 },
+  'dashboard': { label: 'Admin Dashboard', cost: 2_400 },
+  'user-management': { label: 'User Management Panel', cost: 1_200 },
+  'content-management': { label: 'Content Management System (CMS)', cost: 2_000 },
+  'reporting': { label: 'Reports & Analytics Dashboard', cost: 1_800 },
 
   // Healthcare-specific
-  'hipaa': { label: 'HIPAA Compliance Implementation', cost: 2_500 },
-  'ehr': { label: 'EHR / EMR System Integration', cost: 2_000 },
-  'appointment': { label: 'Appointment Scheduling System', cost: 1_200 },
-  'telemedicine': { label: 'Telemedicine / Video Consultation Module', cost: 1_800 },
-  'prescription': { label: 'E-Prescription Management', cost: 1_000 },
-  'patient-portal': { label: 'Patient Portal', cost: 1_500 },
+  'hipaa': { label: 'HIPAA Compliance Implementation', cost: 5_000 },
+  'ehr': { label: 'EHR / EMR System Integration', cost: 4_000 },
+  'appointment': { label: 'Appointment Scheduling System', cost: 2_400 },
+  'telemedicine': { label: 'Telemedicine / Video Consultation Module', cost: 3_600 },
+  'prescription': { label: 'E-Prescription Management', cost: 2_000 },
+  'patient-portal': { label: 'Patient Portal', cost: 3_000 },
 
   // Finance-specific
-  'pci-dss': { label: 'PCI-DSS Compliance', cost: 2_000 },
-  'kyc': { label: 'KYC / AML Verification Module', cost: 1_800 },
-  'transactions': { label: 'Transaction Management System', cost: 1_200 },
-  'multi-currency': { label: 'Multi-Currency Support', cost: 700 },
-  'fraud-detection': { label: 'AI Fraud Detection & Prevention', cost: 2_500 },
-  'financial-reporting': { label: 'Financial Reports & Statements', cost: 900 },
+  'pci-dss': { label: 'PCI-DSS Compliance', cost: 4_000 },
+  'kyc': { label: 'KYC / AML Verification Module', cost: 3_600 },
+  'transactions': { label: 'Transaction Management System', cost: 2_400 },
+  'multi-currency': { label: 'Multi-Currency Support', cost: 1_400 },
+  'fraud-detection': { label: 'AI Fraud Detection & Prevention', cost: 5_000 },
+  'financial-reporting': { label: 'Financial Reports & Statements', cost: 1_800 },
 
   // E-Commerce-specific
-  'product-catalog': { label: 'Product Catalogue Management', cost: 800 },
-  'shopping-cart': { label: 'Shopping Cart & Checkout', cost: 700 },
-  'inventory': { label: 'Inventory Management System', cost: 900 },
-  'order-tracking': { label: 'Order Tracking & Management', cost: 600 },
-  'shipping': { label: 'Shipping & Courier Integration', cost: 800 },
-  'discounts': { label: 'Discounts & Coupon Engine', cost: 500 },
+  'product-catalog': { label: 'Product Catalogue Management', cost: 1_600 },
+  'shopping-cart': { label: 'Shopping Cart & Checkout', cost: 1_400 },
+  'inventory': { label: 'Inventory Management System', cost: 1_800 },
+  'order-tracking': { label: 'Order Tracking & Management', cost: 1_200 },
+  'shipping': { label: 'Shipping & Courier Integration', cost: 1_600 },
+  'discounts': { label: 'Discounts & Coupon Engine', cost: 1_000 },
 
   // Education-specific
-  'lms': { label: 'Learning Management System (LMS)', cost: 2_000 },
-  'course-management': { label: 'Course Creation & Management', cost: 1_200 },
-  'video-lessons': { label: 'Video Streaming & Lessons', cost: 1_500 },
-  'quizzes': { label: 'Quiz & Assessment Engine', cost: 800 },
-  'certificates': { label: 'Certificate Generation & Verification', cost: 600 },
-  'live-classes': { label: 'Live Virtual Classroom', cost: 1_800 },
+  'lms': { label: 'Learning Management System (LMS)', cost: 4_000 },
+  'course-management': { label: 'Course Creation & Management', cost: 2_400 },
+  'video-lessons': { label: 'Video Streaming & Lessons', cost: 3_000 },
+  'quizzes': { label: 'Quiz & Assessment Engine', cost: 1_600 },
+  'certificates': { label: 'Certificate Generation & Verification', cost: 1_200 },
+  'live-classes': { label: 'Live Virtual Classroom', cost: 3_600 },
 
   // Logistics-specific
-  'shipment-tracking': { label: 'Real-Time Shipment Tracking', cost: 1_200 },
-  'route-optimization': { label: 'AI Route Optimisation', cost: 2_000 },
-  'fleet-management': { label: 'Fleet Management System', cost: 1_800 },
-  'barcode': { label: 'Barcode / QR Code Scanning', cost: 600 },
+  'shipment-tracking': { label: 'Real-Time Shipment Tracking', cost: 2_400 },
+  'route-optimization': { label: 'AI Route Optimisation', cost: 4_000 },
+  'fleet-management': { label: 'Fleet Management System', cost: 3_600 },
+  'barcode': { label: 'Barcode / QR Code Scanning', cost: 1_200 },
 }
 
 // ─── Service / Infrastructure add-ons ────────────────────────────────────────
@@ -358,7 +358,7 @@ export async function generatePricing(submission: {
      'PORTFOLIO_WEBSITE', 'BLOG'].includes(t)
   )
   if (needsDesign) {
-    const designBase = types.length > 1 ? 1_500 : 800
+    const designBase = types.length > 1 ? 3_000 : 1_600
     const unitPrice = Math.round(designBase * exchangeRate)
     items.push({
       description: 'UI/UX Design (Wireframes, Prototype & Final Design)',
@@ -372,7 +372,7 @@ export async function generatePricing(submission: {
 
   // ── 3. Mobile responsiveness (if not mobile-native) ────────────────────────
   if (submission.requirements?.['responsive'] && !types.includes('MOBILE_APPLICATION')) {
-    const unitPrice = Math.round(600 * exchangeRate)
+    const unitPrice = Math.round(1_200 * exchangeRate)
     items.push({
       description: 'Mobile-Responsive Design & Cross-Browser Testing',
       quantity: 1,
@@ -405,7 +405,7 @@ export async function generatePricing(submission: {
   // ── 5. Default recommended infrastructure (VPS + DB + CDN for non-trivial) ─
   const isSmall = types.every((t) => ['PORTFOLIO_WEBSITE', 'BLOG'].includes(t))
   if (!isSmall) {
-    const hostingCost = Math.round(600 * exchangeRate)
+    const hostingCost = Math.round(1_200 * exchangeRate)
     items.push({
       description: 'VPS Cloud Hosting Setup & Configuration (1 year)',
       quantity: 1,
@@ -414,7 +414,7 @@ export async function generatePricing(submission: {
       category: 'infrastructure',
       editable: true,
     })
-    const dbCost = Math.round(600 * exchangeRate)
+    const dbCost = Math.round(1_200 * exchangeRate)
     items.push({
       description: 'Managed Database Hosting (1 year)',
       quantity: 1,
@@ -424,7 +424,7 @@ export async function generatePricing(submission: {
       editable: true,
     })
   } else {
-    const hostingCost = Math.round(150 * exchangeRate)
+    const hostingCost = Math.round(300 * exchangeRate)
     items.push({
       description: 'Shared Hosting Setup (1 year)',
       quantity: 1,
@@ -436,7 +436,7 @@ export async function generatePricing(submission: {
   }
 
   // Domain is always suggested
-  const domainCost = Math.round(20 * exchangeRate)
+  const domainCost = Math.round(40 * exchangeRate)
   items.push({
     description: 'Domain Name Registration (1 year)',
     quantity: 1,
@@ -447,7 +447,7 @@ export async function generatePricing(submission: {
   })
 
   // SSL
-  const sslCost = Math.round(80 * exchangeRate)
+  const sslCost = Math.round(160 * exchangeRate)
   items.push({
     description: 'SSL Certificate (1 year)',
     quantity: 1,
@@ -461,9 +461,9 @@ export async function generatePricing(submission: {
   const devSubtotal = items
     .filter((i) => i.category === 'development')
     .reduce((s, i) => s + i.unitPrice, 0)
-  const qaCost = Math.round(devSubtotal * 0.12) // 12% of dev cost
+  const qaCost = Math.round(devSubtotal * 0.18) // 18% of dev cost
   items.push({
-    description: 'QA Testing & Bug Fixes (12% of development cost)',
+    description: 'QA Testing & Bug Fixes (18% of development cost)',
     quantity: 1,
     unitPrice: qaCost,
     total: qaCost,
@@ -472,9 +472,9 @@ export async function generatePricing(submission: {
   })
 
   // Project management / deployment
-  const pmCost = Math.round(devSubtotal * 0.08) // 8% of dev cost
+  const pmCost = Math.round(devSubtotal * 0.12) // 12% of dev cost
   items.push({
-    description: 'Project Management & Deployment Setup (8% of development cost)',
+    description: 'Project Management & Deployment Setup (12% of development cost)',
     quantity: 1,
     unitPrice: pmCost,
     total: pmCost,
@@ -490,7 +490,7 @@ export async function generatePricing(submission: {
     LEGAL: 'Legal-sector data privacy & confidentiality controls',
   }
   if (complianceMap[submission.industry]) {
-    const complianceCost = Math.round(1_500 * exchangeRate)
+    const complianceCost = Math.round(3_000 * exchangeRate)
     items.push({
       description: `Industry Compliance: ${complianceMap[submission.industry]}`,
       quantity: 1,
