@@ -383,7 +383,8 @@
           </div>
 
           <!-- Body -->
-          <GlowingScrollbar class="flex-1 p-7 space-y-5">
+          <div class="flex-1 min-h-0">
+            <GlowingScrollbar class="p-7 space-y-5 overflow-y-auto" style="max-height: calc(90vh - 120px);">
             <!-- Due Date + Amount -->
             <div class="grid grid-cols-2 gap-4">
               <div class="bg-white/5 rounded-xl p-4 border border-white/10">
@@ -453,6 +454,7 @@
               </a>
             </div>
           </GlowingScrollbar>
+          </div>
         </div>
       </div>
     </Transition>
