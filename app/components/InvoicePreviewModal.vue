@@ -55,7 +55,6 @@
           <!-- Invoice document (scrollable) -->
           <GlowingScrollbar class="flex-1 p-6">
             <div
-              id="invoice-print-area"
               class="rounded-2xl overflow-hidden border border-white/8"
               style="background: rgba(20,12,45,0.8);"
             >
@@ -413,25 +412,212 @@ const updateStatus = async (status: string) => {
 }
 
 const printInvoice = () => {
-  const el = document.getElementById('invoice-print-area')
-  if (!el) return
+  const inv = props.invoice
+  if (!inv) return
+
+  const parsedItems = (() => {
+    const raw = inv?.items
+    if (!raw) return []
+    if (typeof raw === 'string') { try { return JSON.parse(raw) } catch { return [] } }
+    return Array.isArray(raw) ? raw : []
+  })()
+
+  const curr = inv.currency || 'USD'
+  const symbols: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', GHS: '₵', CAD: 'C$', AUD: 'A$' }
+  const sym = symbols[curr] || '$'
+  const fmt = (n: number) => `${sym}${(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
+  const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'
+
+  const subtotal = inv.amount || 0
+  const tax = inv.taxAmount || 0
+  const total = inv.totalAmount || 0
+  const taxRate = subtotal > 0 ? Math.round((tax / subtotal) * 10000) / 100 : 0
+
+  const itemsHtml = parsedItems.length
+    ? parsedItems.map((item: any, i: number) => `
+        <tr style="${i % 2 !== 0 ? 'background:#f8f6fc;' : ''}">
+          <td style="padding:12px 16px;color:#1f1f2e;font-size:13px;">${item.description || '—'}</td>
+          <td style="padding:12px 16px;text-align:center;color:#6b6b80;font-size:13px;">${item.quantity || 1}</td>
+          <td style="padding:12px 16px;text-align:right;color:#6b6b80;font-size:13px;font-variant-numeric:tabular-nums;">${fmt(item.unitPrice || 0)}</td>
+          <td style="padding:12px 16px;text-align:right;color:#1f1f2e;font-weight:600;font-size:13px;font-variant-numeric:tabular-nums;">${fmt(item.total || 0)}</td>
+        </tr>`).join('')
+    : `<tr><td colspan="4" style="padding:24px;text-align:center;color:#aaa;font-style:italic;font-size:13px;">No items</td></tr>`
+
+  const clientName = inv.client?.fullName || inv.client?.email || 'Client'
+  const clientEmail = inv.client?.email || ''
+  const clientCompany = inv.client?.companyName || ''
+
+  const statusColor: Record<string, string> = {
+    DRAFT: '#6b7280', SENT: '#3b82f6', PAID: '#10b981', OVERDUE: '#ef4444', CANCELLED: '#9ca3af'
+  }
+  const sc = statusColor[inv.status] || '#6b7280'
+
+  const notesHtml = inv.notes ? `
+    <div style="padding:20px 32px;border-top:1px solid #e8e4f0;">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9b8fb0;margin-bottom:6px;font-weight:600;">Notes</div>
+      <div style="color:#4a4a5a;font-size:12px;white-space:pre-wrap;line-height:1.7;">${inv.notes}</div>
+    </div>` : ''
+
+  const milestonesHtml = inv.status !== 'DRAFT' && inv.status !== 'CANCELLED' ? `
+    <div style="padding:20px 32px;border-top:1px solid #e8e4f0;">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9b8fb0;margin-bottom:12px;font-weight:600;">Payment Milestones</div>
+      <div style="display:flex;gap:16px;">
+        <div style="flex:1;padding:14px;border-radius:10px;border:1.5px solid ${inv.advanceApprovedAt ? '#d1fae5' : inv.advancePaidAt ? '#fef3c7' : '#e8e4f0'};background:${inv.advanceApprovedAt ? '#f0fdf4' : inv.advancePaidAt ? '#fffbeb' : '#faf8ff'};">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:13px;font-weight:700;color:#1f1f2e;">60% Advance</span>
+              ${inv.advanceApprovedAt ? '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#d1fae5;color:#059669;font-weight:600;">Confirmed</span>' :
+                inv.advancePaidAt ? '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#fef3c7;color:#d97706;font-weight:600;">Awaiting Review</span>' :
+                '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#f3f4f6;color:#6b7280;font-weight:600;">Pending</span>'}
+            </div>
+            <span style="font-weight:800;color:#7c3aed;font-size:14px;">${fmt(total * 0.6)}</span>
+          </div>
+        </div>
+        <div style="flex:1;padding:14px;border-radius:10px;border:1.5px solid ${inv.finalApprovedAt ? '#d1fae5' : inv.finalPaidAt ? '#fef3c7' : '#e8e4f0'};background:${inv.finalApprovedAt ? '#f0fdf4' : inv.finalPaidAt ? '#fffbeb' : '#faf8ff'};">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:13px;font-weight:700;color:#1f1f2e;">40% Final</span>
+              ${inv.finalApprovedAt ? '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#d1fae5;color:#059669;font-weight:600;">Confirmed</span>' :
+                inv.finalPaidAt ? '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#fef3c7;color:#d97706;font-weight:600;">Awaiting Review</span>' :
+                '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#f3f4f6;color:#6b7280;font-weight:600;">Pending</span>'}
+            </div>
+            <span style="font-weight:800;color:#7c3aed;font-size:14px;">${fmt(total * 0.4)}</span>
+          </div>
+        </div>
+      </div>
+    </div>` : ''
+
+  const paidHtml = inv.paidAt ? `
+    <div style="display:flex;justify-content:space-between;font-size:13px;color:#10b981;">
+      <span>Paid on</span>
+      <span style="font-variant-numeric:tabular-nums;">${fmtDate(inv.paidAt)}</span>
+    </div>` : ''
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${inv.invoiceNumber} — CharaTech</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    @page { margin: 0; size: A4; }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #fff; color: #1f1f2e; }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div style="max-width:800px;margin:0 auto;min-height:100vh;">
+
+    <!-- Header Band -->
+    <div style="background:linear-gradient(135deg,#7c3aed 0%,#a855f7 50%,#db2777 100%);padding:36px 40px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-size:28px;font-weight:900;letter-spacing:-1px;color:#fff;">CHARATECH</div>
+          <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-top:2px;">Software Requirements Platform</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:4px;">Invoice</div>
+          <div style="font-size:22px;font-weight:800;color:#fff;">${inv.invoiceNumber}</div>
+          <div style="margin-top:8px;display:inline-block;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;color:#fff;background:${sc};">${inv.status}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Meta Strip -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid #e8e4f0;background:#faf8ff;">
+      <div style="padding:14px 24px;border-right:1px solid #e8e4f0;">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9b8fb0;margin-bottom:3px;font-weight:600;">Issue Date</div>
+        <div style="font-size:13px;font-weight:600;color:#1f1f2e;">${fmtDate(inv.createdAt)}</div>
+      </div>
+      <div style="padding:14px 24px;border-right:1px solid #e8e4f0;">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9b8fb0;margin-bottom:3px;font-weight:600;">Due Date</div>
+        <div style="font-size:13px;font-weight:600;color:${inv.status === 'OVERDUE' ? '#ef4444' : '#1f1f2e'};">${inv.dueDate ? fmtDate(inv.dueDate) : '—'}</div>
+      </div>
+      <div style="padding:14px 24px;">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9b8fb0;margin-bottom:3px;font-weight:600;">Currency</div>
+        <div style="font-size:13px;font-weight:600;color:#1f1f2e;">${curr}</div>
+      </div>
+    </div>
+
+    <!-- From / Bill To -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #e8e4f0;">
+      <div style="padding:24px 32px;border-right:1px solid #e8e4f0;">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9b8fb0;margin-bottom:8px;font-weight:600;">From</div>
+        <div style="font-size:14px;font-weight:700;color:#1f1f2e;">CharaTech Ltd.</div>
+        <div style="font-size:12px;color:#6b6b80;margin-top:3px;">info@charatech.com</div>
+        <div style="font-size:12px;color:#6b6b80;">chara-tech-web.vercel.app</div>
+      </div>
+      <div style="padding:24px 32px;">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9b8fb0;margin-bottom:8px;font-weight:600;">Bill To</div>
+        <div style="font-size:14px;font-weight:700;color:#1f1f2e;">${clientName}</div>
+        <div style="font-size:12px;color:#6b6b80;margin-top:3px;">${clientEmail}</div>
+        <div style="font-size:12px;color:#6b6b80;">${clientCompany}</div>
+      </div>
+    </div>
+
+    ${inv.submission ? `
+    <div style="padding:12px 32px;border-bottom:1px solid #e8e4f0;background:#faf8ff;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9b8fb0;font-weight:600;">Project:</span>
+      <span style="font-size:13px;font-weight:600;color:#7c3aed;">${inv.submission.projectName || '—'}</span>
+    </div>` : ''}
+
+    <!-- Line Items -->
+    <div style="padding:24px 32px 16px;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:2px solid #e8e4f0;">
+            <th style="text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#9b8fb0;padding-bottom:10px;font-weight:600;">Description</th>
+            <th style="text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#9b8fb0;padding-bottom:10px;font-weight:600;width:60px;">Qty</th>
+            <th style="text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#9b8fb0;padding-bottom:10px;font-weight:600;width:100px;">Unit Price</th>
+            <th style="text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#9b8fb0;padding-bottom:10px;font-weight:600;width:100px;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Totals -->
+    <div style="padding:0 32px 24px;display:flex;justify-content:flex-end;">
+      <div style="width:240px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#6b6b80;margin-bottom:6px;">
+          <span>Subtotal</span>
+          <span style="font-variant-numeric:tabular-nums;">${fmt(subtotal)}</span>
+        </div>
+        ${tax > 0 ? `
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#6b6b80;margin-bottom:6px;">
+          <span>Tax (${taxRate}%)</span>
+          <span style="font-variant-numeric:tabular-nums;">${fmt(tax)}</span>
+        </div>` : ''}
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:12px;border-top:2px solid #e8e4f0;margin-top:8px;">
+          <span style="font-weight:700;font-size:14px;color:#1f1f2e;">Total Due</span>
+          <span style="font-size:26px;font-weight:900;color:#7c3aed;font-variant-numeric:tabular-nums;">${fmt(total)}</span>
+        </div>
+        ${paidHtml}
+      </div>
+    </div>
+
+    ${notesHtml}
+    ${milestonesHtml}
+
+    <!-- Footer -->
+    <div style="padding:20px 40px;text-align:center;border-top:1px solid #e8e4f0;background:linear-gradient(90deg,#f5f0ff 0%,#fdf2f8 100%);">
+      <p style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#9b8fb0;">Thank you for choosing CharaTech · info@charatech.com</p>
+    </div>
+  </div>
+</body>
+</html>`
+
   const win = window.open('', '_blank')!
-  win.document.write(`
-    <html>
-      <head>
-        <title>${props.invoice?.invoiceNumber || 'Invoice'} — CharaTech</title>
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
-          * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          body { font-family: Inter, sans-serif; background: #0c0820; color: white; padding: 32px; }
-        </style>
-      </head>
-      <body>${el.outerHTML}</body>
-    </html>
-  `)
+  win.document.write(html)
   win.document.close()
   win.focus()
-  setTimeout(() => { win.print(); win.close() }, 500)
+  setTimeout(() => { win.print() }, 600)
 }
 </script>
 
