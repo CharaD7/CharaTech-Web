@@ -162,9 +162,9 @@
               </div>
 
               <!-- Notes -->
-              <div v-if="invoice.notes" class="px-6 py-4 border-t border-white/5">
+              <div v-if="displayNotes" class="px-6 py-4 border-t border-white/5">
                 <p class="text-white/30 text-[10px] uppercase tracking-widest mb-2">Notes</p>
-                <p class="text-white/60 text-sm whitespace-pre-wrap leading-relaxed">{{ invoice.notes }}</p>
+                <p class="text-white/60 text-sm whitespace-pre-wrap leading-relaxed">{{ displayNotes }}</p>
               </div>
 
               <!-- Payment Reference (client only) -->
@@ -337,6 +337,14 @@ const actionError = ref('')
 // ── Computed ────────────────────────────────────────────────
 const currency = computed(() => props.invoice?.currency || 'USD')
 
+const displayNotes = computed(() => {
+  const notes = props.invoice?.notes || ''
+  const num = props.invoice?.invoiceNumber || ''
+  return notes
+    .replace(/\[Invoice Number\]/g, num)
+    .replace(/—\s*\[Invoice Number\]/g, num ? `—${num}` : '')
+})
+
 const currencySymbols: Record<string, string> = {
   USD: '$', EUR: '€', GBP: '£', GHS: '₵', CAD: 'C$', AUD: 'A$',
 }
@@ -452,10 +460,14 @@ const printInvoice = () => {
   }
   const sc = statusColor[inv.status] || '#6b7280'
 
-  const notesHtml = inv.notes ? `
+  const processedNotes = (inv.notes || '')
+    .replace(/\[Invoice Number\]/g, inv.invoiceNumber)
+    .replace(/—\s*\[Invoice Number\]/g, inv.invoiceNumber ? `—${inv.invoiceNumber}` : '')
+
+  const notesHtml = processedNotes ? `
     <div style="padding:20px 32px;border-top:1px solid #e8e4f0;">
       <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9b8fb0;margin-bottom:6px;font-weight:600;">Notes</div>
-      <div style="color:#4a4a5a;font-size:12px;white-space:pre-wrap;line-height:1.7;">${inv.notes}</div>
+      <div style="color:#4a4a5a;font-size:12px;white-space:pre-wrap;line-height:1.7;">${processedNotes}</div>
     </div>` : ''
 
   const milestonesHtml = inv.status !== 'DRAFT' && inv.status !== 'CANCELLED' ? `
