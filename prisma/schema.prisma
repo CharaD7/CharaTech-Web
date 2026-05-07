@@ -226,12 +226,62 @@ model Invoice {
   notes        String?
   dueDate      DateTime?
   paidAt       DateTime?
+
+  // Payment milestone tracking
+  advancePaidAt     DateTime?
+  advanceApprovedAt DateTime?
+  finalPaidAt       DateTime?
+  finalApprovedAt   DateTime?
+
+  // Info request from client
+  infoRequestType     String?
+  infoRequestMessage  String?
+  infoRequestResolved Boolean          @default(false)
+
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  paymentProofs PaymentProof[]
 
   @@index([clientId])
   @@index([status])
   @@index([createdAt])
+}
+
+model PaymentProof {
+  id         String        @id @default(uuid())
+  invoiceId  String
+  fileUrl    String
+  fileName   String?
+  fileType   String?
+  fileSize   Int?
+  phase      PaymentPhase
+  status     ProofStatus   @default(PENDING)
+  notes      String?
+  approvedBy String?
+  approvedAt DateTime?
+  uploadedAt DateTime      @default(now())
+
+  invoice    Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([status])
+  @@index([phase])
+}
+
+enum PaymentPhase {
+  ADVANCE_60
+  FINAL_40
+}
+
+enum ProofStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum InvoiceInfoRequestType {
+  MORE_INFO
+  ALTERNATE_ACCOUNT
 }
 
 model ProjectTimeline {

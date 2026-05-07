@@ -70,7 +70,8 @@
             </div>
 
             <div v-show="currentStep === 2">
-              <h2 class="text-2xl font-bold text-white mb-6">Feature Requirements</h2>
+              <h2 class="text-2xl font-bold text-white mb-2">Feature Requirements</h2>
+              <p class="text-white/60 text-sm mb-6">Select the features you need for your project. Each feature has a brief explanation to help you decide.</p>
               
               <GlowingScrollbar class="space-y-6 max-h-[500px] overflow-y-auto pr-2" v-if="requirements.length">
                 <BaseCard
@@ -78,25 +79,48 @@
                   :key="category.id"
                   class="p-6"
                 >
-                  <h3 class="text-xl font-semibold text-white mb-4">
-                    {{ category.title }}
-                  </h3>
-                  <p v-if="category.description" class="text-white/70 text-sm mb-4">
-                    {{ category.description }}
-                  </p>
+                  <div class="flex items-start gap-3 mb-2">
+                    <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 text-sm flex-shrink-0 mt-0.5">
+                      {{ category.title[0] }}
+                    </div>
+                    <div>
+                      <h3 class="text-lg font-semibold text-white">
+                        {{ category.title }}
+                      </h3>
+                      <p v-if="category.description" class="text-white/50 text-sm mt-0.5">
+                        {{ category.description }}
+                      </p>
+                    </div>
+                  </div>
                   
-                  <div class="space-y-4">
+                  <div class="space-y-3 mt-5">
                     <template v-for="item in category.items" :key="item.id">
                       <!-- Checkbox Input -->
-                      <div v-if="item.type === 'checkbox'" class="flex items-start gap-3">
-                        <BaseCheckbox
-                          :model-value="!!formData.requirements[item.id]"
-                          :label="item.label"
-                          :required="item.required"
-                          @update:model-value="formData.requirements[item.id] = $event"
-                        />
-                        <div v-if="item.description" class="text-sm text-white/50 mt-1">
-                          {{ item.description }}
+                      <div v-if="item.type === 'checkbox'" 
+                        :class="[
+                          'rounded-xl p-4 border transition-all duration-200',
+                          formData.requirements[item.id]
+                            ? 'border-purple-500/50 bg-purple-500/10'
+                            : 'border-white/5 bg-white/[0.02] hover:border-white/15'
+                        ]"
+                      >
+                        <div class="flex items-start gap-3">
+                          <BaseCheckbox
+                            :model-value="!!formData.requirements[item.id]"
+                            :label="item.label"
+                            :required="item.required"
+                            @update:model-value="formData.requirements[item.id] = $event"
+                          />
+                        </div>
+                        <div v-if="item.description" class="mt-2 pl-7">
+                          <div class="flex items-start gap-2">
+                            <svg class="w-4 h-4 text-purple-400/60 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p class="text-sm text-white/50 leading-relaxed">
+                              {{ item.description }}
+                            </p>
+                          </div>
                         </div>
                       </div>
 

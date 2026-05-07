@@ -126,7 +126,7 @@
                     <tr
                       v-for="(item, i) in parsedItems"
                       :key="i"
-                      :class="['border-b border-white/5', i % 2 !== 0 ? 'bg-white/[0.01]' : '']"
+                       :class="['border-b border-white/5', (i as number) % 2 !== 0 ? 'bg-white/[0.01]' : '']"
                     >
                       <td class="py-3 text-white/80 pr-4">{{ item.description }}</td>
                       <td class="py-3 text-center text-white/50">{{ item.quantity }}</td>
@@ -168,6 +168,64 @@
                 <p class="text-white/60 text-sm whitespace-pre-wrap leading-relaxed">{{ invoice.notes }}</p>
               </div>
 
+              <!-- Payment Reference (client only) -->
+              <div v-if="mode === 'client' && invoice.submission" class="px-6 py-4 border-t border-white/5 bg-purple-900/10">
+                <p class="text-purple-300 text-[10px] uppercase tracking-widest mb-1.5 font-semibold">Payment Reference</p>
+                <div class="flex items-center gap-2">
+                  <code class="text-white font-mono text-sm select-all flex-1">{{ invoice.submission.projectName }}-{{ invoice.invoiceNumber }}</code>
+                  <button @click="copyPaymentRef" class="text-purple-400 hover:text-purple-300 text-xs px-2 py-1 rounded hover:bg-purple-500/20 transition">
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <!-- Payment Milestones (client only) -->
+              <div v-if="mode === 'client' && invoice.status !== 'DRAFT' && invoice.status !== 'CANCELLED'" class="px-6 py-4 border-t border-white/5 space-y-3">
+                <p class="text-white/30 text-[10px] uppercase tracking-widest font-semibold">Payment Milestones</p>
+                <!-- Advance 60% -->
+                <div :class="['rounded-xl p-3 border transition-all', milestoneClass('advance')]">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-semibold text-white">60% Advance</span>
+                      <span v-if="invoice.advanceApprovedAt" class="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">Confirmed</span>
+                      <span v-else-if="invoice.advancePaidAt" class="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">Awaiting Review</span>
+                    </div>
+                    <span class="text-purple-300 font-bold text-sm">{{ formatCurrency(Number(invoice.totalAmount) * 0.6) }}</span>
+                  </div>
+                  <div v-if="!invoice.advancePaidAt">
+                    <button @click="$emit('upload-proof', 'ADVANCE_60', invoice.totalAmount * 0.6)" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600/30 text-purple-300 hover:bg-purple-600/50 border border-purple-500/30 transition">
+                      Upload Proof
+                    </button>
+                  </div>
+                </div>
+                <!-- Final 40% -->
+                <div :class="['rounded-xl p-3 border transition-all', milestoneClass('final')]">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-semibold text-white">40% Final</span>
+                      <span v-if="invoice.finalApprovedAt" class="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">Confirmed</span>
+                      <span v-else-if="invoice.finalPaidAt" class="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">Awaiting Review</span>
+                    </div>
+                    <span class="text-purple-300 font-bold text-sm">{{ formatCurrency(Number(invoice.totalAmount) * 0.4) }}</span>
+                  </div>
+                  <div v-if="!invoice.finalPaidAt">
+                    <button @click="$emit('upload-proof', 'FINAL_40', invoice.totalAmount * 0.4)" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600/30 text-purple-300 hover:bg-purple-600/50 border border-purple-500/30 transition">
+                      Upload Proof
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Info Request Banner (client only) -->
+              <div v-if="mode === 'client' && invoice.infoRequestType && !invoice.infoRequestResolved" class="px-6 py-4 border-t border-white/5 bg-blue-900/10">
+                <p class="text-blue-300 text-[10px] uppercase tracking-widest mb-1.5 font-semibold">Your Request</p>
+                <p class="text-white/70 text-sm">
+                  {{ invoice.infoRequestType === 'MORE_INFO' ? 'More information' : 'Alternate bank account' }} requested
+                  <span v-if="invoice.infoRequestMessage">— {{ invoice.infoRequestMessage }}</span>
+                </p>
+                <p class="text-white/40 text-xs mt-1">Our team will respond shortly.</p>
+              </div>
+
               <!-- Footer -->
               <div
                 class="px-6 py-4 text-center border-t border-white/5"
@@ -190,8 +248,8 @@
               Invoice · {{ formatCurrency(invoice.totalAmount) }} · {{ invoice.status }}
             </div>
 
-            <div class="flex items-center gap-2">
-              <!-- Cancel invoice -->
+            <!-- Admin actions -->
+            <div v-if="mode === 'admin'" class="flex items-center gap-2">
               <button
                 v-if="['DRAFT','SENT','OVERDUE'].includes(invoice.status)"
                 @click="updateStatus('CANCELLED')"
@@ -200,8 +258,6 @@
               >
                 Cancel Invoice
               </button>
-
-              <!-- Mark Overdue -->
               <button
                 v-if="invoice.status === 'SENT'"
                 @click="updateStatus('OVERDUE')"
@@ -210,8 +266,6 @@
               >
                 Mark Overdue
               </button>
-
-              <!-- Send -->
               <button
                 v-if="invoice.status === 'DRAFT'"
                 @click="updateStatus('SENT')"
@@ -221,8 +275,6 @@
                 <span v-if="actionLoading">Sending…</span>
                 <span v-else>📨 Send to Client</span>
               </button>
-
-              <!-- Mark Paid -->
               <button
                 v-if="['SENT','OVERDUE'].includes(invoice.status)"
                 @click="updateStatus('PAID')"
@@ -233,6 +285,24 @@
                 <span v-if="actionLoading">Updating…</span>
                 <span v-else>✓ Mark as Paid</span>
               </button>
+            </div>
+
+            <!-- Client actions -->
+            <div v-else class="flex items-center gap-2">
+              <button
+                v-if="['SENT','OVERDUE'].includes(invoice.status)"
+                @click="$emit('request-info')"
+                class="px-4 py-2 rounded-xl text-xs font-semibold text-blue-300 hover:text-white transition border border-blue-500/30 hover:border-blue-500 hover:bg-blue-600/20"
+              >
+                Request Info
+              </button>
+              <a
+                href="mailto:hello@charatech.com"
+                class="px-4 py-2 rounded-xl text-xs font-semibold text-white transition flex items-center gap-1.5"
+                style="background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(219,39,119,0.3)); border: 1px solid rgba(168,85,247,0.3);"
+              >
+                Contact CharaTech
+              </a>
             </div>
           </div>
         </div>
@@ -248,12 +318,17 @@ import GlowingScrollbar from '@/components/ui/GlowingScrollbar.vue'
 interface Props {
   show: boolean
   invoice: any | null
+  mode?: 'admin' | 'client'
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  mode: 'admin',
+})
 const emit = defineEmits<{
   close: []
   updated: [invoice: any]
+  'upload-proof': [phase: string, amount: number]
+  'request-info': []
 }>()
 
 const { getAccessToken } = useAuth()
@@ -300,6 +375,20 @@ const statusClass = computed(() => {
   }
   return map[props.invoice?.status] || 'bg-gray-500/20 text-gray-300'
 })
+
+const milestoneClass = (phase: 'advance' | 'final') => {
+  const approved = phase === 'advance' ? props.invoice?.advanceApprovedAt : props.invoice?.finalApprovedAt
+  const paid = phase === 'advance' ? props.invoice?.advancePaidAt : props.invoice?.finalPaidAt
+  if (approved) return 'border-green-500/30 bg-green-500/10'
+  if (paid) return 'border-yellow-500/30 bg-yellow-500/10'
+  return 'border-white/10 bg-white/5'
+}
+
+const copyPaymentRef = async () => {
+  if (!props.invoice?.submission) return
+  const ref = `${props.invoice.submission.projectName}-${props.invoice.invoiceNumber}`
+  await navigator.clipboard.writeText(ref)
+}
 
 // ── Actions ─────────────────────────────────────────────────
 const updateStatus = async (status: string) => {

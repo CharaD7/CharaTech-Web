@@ -400,20 +400,21 @@
                   <td class="px-6 py-4 text-white/60 text-sm">{{ invoice.dueDate ? formatDate(invoice.dueDate) : '—' }}</td>
                   <td class="px-6 py-4" @click.stop>
                     <div class="flex gap-2">
-                      <button
-                        @click="viewInvoice(invoice)"
-                        class="px-3 py-1.5 text-xs rounded-lg bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 transition border border-purple-500/20"
-                      >View</button>
-                      <button
-                        v-if="invoice.status === 'DRAFT'"
-                        @click="quickSendInvoice(invoice)"
-                        class="px-3 py-1.5 text-xs rounded-lg bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 transition border border-blue-500/20"
-                      >Send</button>
-                      <button
-                        v-if="['SENT','OVERDUE'].includes(invoice.status)"
-                        @click="quickMarkPaid(invoice)"
-                        class="px-3 py-1.5 text-xs rounded-lg bg-green-500/15 text-green-300 hover:bg-green-500/25 transition border border-green-500/20"
-                      >Paid</button>
+                      <BaseButton variant="ghost" size="sm" @click="viewInvoice(invoice)" class="!text-purple-300 hover:!bg-purple-500/25">
+                        View
+                      </BaseButton>
+                      <BaseButton v-if="invoice.status !== 'PAID'" variant="ghost" size="sm" @click="editInvoice(invoice)" class="!text-yellow-300 hover:!bg-yellow-500/25">
+                        Edit
+                      </BaseButton>
+                      <BaseButton v-if="invoice.status === 'DRAFT'" variant="ghost" size="sm" @click="quickSendInvoice(invoice)" class="!text-blue-300 hover:!bg-blue-500/25">
+                        Send
+                      </BaseButton>
+                      <BaseButton v-if="['SENT','OVERDUE'].includes(invoice.status)" variant="ghost" size="sm" @click="quickMarkPaid(invoice)" class="!text-green-300 hover:!bg-green-500/25">
+                        Paid
+                      </BaseButton>
+                      <BaseButton variant="ghost" size="sm" @click="deleteInvoice(invoice)" class="!text-red-300 hover:!bg-red-500/25">
+                        Delete
+                      </BaseButton>
                     </div>
                   </td>
                 </tr>
@@ -542,13 +543,16 @@
     :pre-generated-items="invoicePreGeneratedItems"
     :pre-generated-tax-rate="invoicePreGeneratedTaxRate"
     :pre-generated-notes="invoicePreGeneratedNotes"
-    @close="showInvoiceModal = false; invoicePreselectedSubmission = null; clearGeneratedInvoice()"
+    :edit-invoice="invoiceToEdit"
+    @close="showInvoiceModal = false; invoicePreselectedSubmission = null; invoiceToEdit = null; clearGeneratedInvoice()"
     @created="onInvoiceCreated"
+    @updated="onInvoiceUpdated"
   />
 
   <InvoicePreviewModal
     :show="showInvoicePreview"
     :invoice="selectedInvoice"
+    mode="admin"
     @close="showInvoicePreview = false; selectedInvoice = null"
     @updated="onInvoiceUpdated"
   />
@@ -608,6 +612,25 @@
       <div class="flex justify-end gap-3 pt-4">
         <BaseButton variant="secondary" @click="showDeleteModal = false; userToAction = null">Cancel</BaseButton>
         <BaseButton variant="danger" :loading="deletingUser" @click="confirmDeleteUser">Delete User</BaseButton>
+      </div>
+    </div>
+  </BaseModal>
+
+  <!-- Delete Invoice Modal -->
+  <BaseModal :show="showDeleteInvoiceModal" title="Delete Invoice" size="sm" @close="showDeleteInvoiceModal = false; invoiceToDelete = null">
+    <div class="space-y-4">
+      <div class="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+        <span class="text-3xl">⚠️</span>
+        <p class="text-white">
+          Delete invoice <span class="font-semibold">{{ invoiceToDelete?.invoiceNumber }}</span>?
+        </p>
+      </div>
+      <p class="text-red-400 text-sm">
+        This action cannot be undone. All payment proofs and related data will be permanently deleted.
+      </p>
+      <div class="flex justify-end gap-3 pt-4">
+        <BaseButton variant="secondary" @click="showDeleteInvoiceModal = false; invoiceToDelete = null">Cancel</BaseButton>
+        <BaseButton variant="danger" :loading="deletingInvoice" @click="confirmDeleteInvoice">Delete Invoice</BaseButton>
       </div>
     </div>
   </BaseModal>
@@ -677,6 +700,10 @@ const invoicePreGeneratedItems = ref<any[] | undefined>(undefined)
 const invoicePreGeneratedTaxRate = ref<number | undefined>(undefined)
 const invoicePreGeneratedNotes = ref<string | undefined>(undefined)
 const generatingInvoice = ref(false)
+const showDeleteInvoiceModal = ref(false)
+const invoiceToDelete = ref<any>(null)
+const deletingInvoice = ref(false)
+const invoiceToEdit = ref<any>(null)
 
 const filteredSubmissions = computed(() => {
   let result = submissions.value
@@ -937,6 +964,37 @@ const quickMarkPaid = async (invoice: any) => {
   } catch (error: any) {
     toast.error(error.data?.message || 'Failed to mark invoice paid')
   }
+}
+
+const deleteInvoice = (invoice: any) => {
+  invoiceToDelete.value = invoice
+  showDeleteInvoiceModal.value = true
+}
+
+const confirmDeleteInvoice = async () => {
+  if (!invoiceToDelete.value) return
+  deletingInvoice.value = true
+  try {
+    const headers = await getAuthHeaders()
+    await $fetch(`/api/admin/invoices/${invoiceToDelete.value.id}`, {
+      method: 'DELETE',
+      headers,
+    })
+    toast.success('Invoice deleted')
+    await fetchInvoices()
+    showDeleteInvoiceModal.value = false
+    invoiceToDelete.value = null
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to delete invoice')
+  } finally {
+    deletingInvoice.value = false
+  }
+}
+
+const editInvoice = async (invoice: any) => {
+  invoiceToEdit.value = invoice
+  clearGeneratedInvoice()
+  showInvoiceModal.value = true
 }
 
 const currencySymbol = (currency: string) =>

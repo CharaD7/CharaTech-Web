@@ -353,107 +353,115 @@
     </div>
   </div>
 
-  <!-- Invoice View Modal -->
+    <!-- Invoice View Modal -->
+  <InvoicePreviewModal
+    :show="!!selectedInvoice"
+    :invoice="selectedInvoice"
+    mode="client"
+    @close="selectedInvoice = null"
+    @upload-proof="openProofUpload"
+    @request-info="showInfoRequest = true"
+  />
+
+  <!-- Proof Upload Modal -->
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="selectedInvoice" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" @click="selectedInvoice = null" />
+      <div v-if="showProofUpload" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" @click="showProofUpload = false" />
         <div
-          class="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden border border-purple-500/20"
-          style="background: linear-gradient(135deg, rgba(12,8,32,0.98) 0%, rgba(22,8,48,0.98) 100%); box-shadow: 0 0 80px rgba(168,85,247,0.12), 0 0 40px rgba(0,0,0,0.8);"
+          class="relative w-full max-w-md rounded-2xl overflow-hidden border border-purple-500/20"
+          style="background: linear-gradient(135deg, rgba(12,8,32,0.98) 0%, rgba(22,8,48,0.98) 100%);"
         >
-          <!-- Header -->
-          <div
-            class="flex-shrink-0 flex items-center justify-between px-7 py-5 border-b border-purple-500/20"
-            style="background: linear-gradient(90deg, rgba(88,28,135,0.6) 0%, rgba(190,24,93,0.3) 100%);"
-          >
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background: linear-gradient(135deg,#7c3aed,#db2777);">🧾</div>
-              <div>
-                <div class="font-bold text-white">{{ selectedInvoice.invoiceNumber }}</div>
-                <div class="text-white/50 text-xs">{{ selectedInvoice.submission?.projectName }}</div>
-              </div>
+          <div class="px-6 py-4 border-b border-purple-500/20" style="background: linear-gradient(90deg, rgba(88,28,135,0.6) 0%, rgba(190,24,93,0.3) 100%);">
+            <h3 class="font-bold text-white">Upload Payment Proof</h3>
+            <p class="text-white/50 text-xs">{{ proofUploadPhase === 'ADVANCE_60' ? '60% Advance' : '40% Final' }} — {{ currencySymbol(selectedInvoice?.currency || 'USD') }}{{ proofUploadAmount?.toFixed(2) }}</p>
+          </div>
+          <div class="p-6 space-y-4">
+            <div>
+              <label class="block text-xs text-white/50 uppercase tracking-wider mb-2">Proof of Payment</label>
+              <label
+                class="flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed cursor-pointer transition-all hover:border-purple-500/50"
+                :class="proofFile ? 'border-purple-500/50 bg-purple-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10'"
+              >
+                <input type="file" @change="onProofFileSelected" accept="image/*,.pdf" class="hidden" />
+                <span class="text-2xl mb-1">📎</span>
+                <span class="text-white/60 text-sm">{{ proofFile ? proofFile.name : 'Click or drag to upload' }}</span>
+                <span class="text-white/30 text-xs mt-0.5">PNG, JPG, or PDF (max 5MB)</span>
+              </label>
             </div>
-            <div class="flex items-center gap-3">
-              <span :class="['px-3 py-1 rounded-full text-xs font-semibold', getInvoiceStatusClass(selectedInvoice.status)]">
-                {{ selectedInvoice.status }}
-              </span>
-              <button @click="selectedInvoice = null" class="text-white/40 hover:text-white text-2xl leading-none transition">×</button>
+            <div v-if="uploadingProof" class="text-center">
+              <BaseSpinner size="md" class="mx-auto" />
+              <p class="text-white/50 text-sm mt-2">Uploading...</p>
+            </div>
+            <div class="flex gap-3 pt-2">
+              <BaseButton variant="secondary" size="sm" @click="showProofUpload = false" class="flex-1">
+                Cancel
+              </BaseButton>
+              <BaseButton variant="primary" size="sm" @click="submitPaymentProof" :disabled="!proofFile || uploadingProof" class="flex-1">
+                Submit Proof
+              </BaseButton>
             </div>
           </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 
-          <!-- Body -->
-          <div class="flex-1 min-h-0">
-            <GlowingScrollbar class="p-7 space-y-5 overflow-y-auto" style="max-height: calc(90vh - 120px);">
-            <!-- Due Date + Amount -->
-            <div class="grid grid-cols-2 gap-4">
-              <div class="bg-white/5 rounded-xl p-4 border border-white/10">
-                <div class="text-white/40 text-xs uppercase tracking-wider mb-1">Due Date</div>
-                <div :class="['font-semibold', isOverdue(selectedInvoice) ? 'text-red-400' : 'text-white']">
-                  {{ selectedInvoice.dueDate ? formatDate(selectedInvoice.dueDate) : 'Upon receipt' }}
-                </div>
-              </div>
-              <div class="bg-white/5 rounded-xl p-4 border border-white/10">
-                <div class="text-white/40 text-xs uppercase tracking-wider mb-1">Total Amount</div>
-                <div class="text-2xl font-bold text-purple-300">
-                  {{ currencySymbol(selectedInvoice.currency) }}{{ Number(selectedInvoice.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}
-                  <span class="text-white/30 text-sm">{{ selectedInvoice.currency }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Line Items -->
+  <!-- Info Request Modal -->
+  <Teleport to="body">
+    <Transition name="modal">
+      <div v-if="showInfoRequest" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" @click="showInfoRequest = false" />
+        <div
+          class="relative w-full max-w-md rounded-2xl overflow-hidden border border-purple-500/20"
+          style="background: linear-gradient(135deg, rgba(12,8,32,0.98) 0%, rgba(22,8,48,0.98) 100%);"
+        >
+          <div class="px-6 py-4 border-b border-purple-500/20" style="background: linear-gradient(90deg, rgba(88,28,135,0.6) 0%, rgba(190,24,93,0.3) 100%);">
+            <h3 class="font-bold text-white">Request Information</h3>
+            <p class="text-white/50 text-xs">Need more details or alternate payment method?</p>
+          </div>
+          <div class="p-6 space-y-4">
             <div>
-              <div class="text-white/40 text-xs uppercase tracking-wider mb-3">Line Items</div>
-              <div class="space-y-1.5">
-                <div
-                  v-for="(item, i) in (selectedInvoice.items || [])"
-                  :key="i"
-                  class="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/5"
+              <label class="block text-xs text-white/50 uppercase tracking-wider mb-2">Request Type</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  @click="infoRequestType = 'MORE_INFO'"
+                  :class="[
+                    'px-3 py-2.5 rounded-xl text-sm font-medium transition border',
+                    infoRequestType === 'MORE_INFO'
+                      ? 'border-purple-500/50 bg-purple-500/20 text-purple-300'
+                      : 'border-white/10 bg-white/5 text-white/50 hover:border-white/20'
+                  ]"
                 >
-                  <div class="flex-1 text-white text-sm">{{ item.description }}</div>
-                  <div class="text-white/40 text-xs tabular-nums w-10 text-center">×{{ item.quantity }}</div>
-                  <div class="text-purple-300 font-semibold text-sm tabular-nums">
-                    {{ currencySymbol(selectedInvoice.currency) }}{{ Number(item.total).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}
-                  </div>
-                </div>
+                  ❓ More Info
+                </button>
+                <button
+                  @click="infoRequestType = 'ALTERNATE_ACCOUNT'"
+                  :class="[
+                    'px-3 py-2.5 rounded-xl text-sm font-medium transition border',
+                    infoRequestType === 'ALTERNATE_ACCOUNT'
+                      ? 'border-purple-500/50 bg-purple-500/20 text-purple-300'
+                      : 'border-white/10 bg-white/5 text-white/50 hover:border-white/20'
+                  ]"
+                >
+                  🏦 Alternate Account
+                </button>
               </div>
             </div>
-
-            <!-- Totals -->
-            <div class="border border-white/10 rounded-xl overflow-hidden">
-              <div class="flex justify-between px-4 py-2.5 text-sm">
-                <span class="text-white/60">Subtotal</span>
-                <span class="text-white tabular-nums">{{ currencySymbol(selectedInvoice.currency) }}{{ Number(selectedInvoice.amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</span>
-              </div>
-              <div v-if="selectedInvoice.taxAmount" class="flex justify-between px-4 py-2.5 text-sm border-t border-white/10">
-                <span class="text-white/60">Tax / Levy</span>
-                <span class="text-purple-300 tabular-nums">{{ currencySymbol(selectedInvoice.currency) }}{{ Number(selectedInvoice.taxAmount).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</span>
-              </div>
-              <div class="flex justify-between px-4 py-3 bg-purple-500/10 border-t border-purple-500/20">
-                <span class="font-bold text-white">Total Due</span>
-                <span class="font-bold text-pink-300 text-lg tabular-nums">{{ currencySymbol(selectedInvoice.currency) }}{{ Number(selectedInvoice.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2 }) }}</span>
-              </div>
+            <BaseTextarea
+              v-model="infoRequestMessage"
+              placeholder="Describe what you need..."
+              :rows="3"
+              class="w-full"
+            />
+            <div class="flex gap-3 pt-2">
+              <BaseButton variant="secondary" size="sm" @click="showInfoRequest = false" class="flex-1">
+                Cancel
+              </BaseButton>
+              <BaseButton variant="primary" size="sm" @click="submitInfoRequest" :disabled="!infoRequestType || submittingInfoRequest" class="flex-1">
+                Submit Request
+              </BaseButton>
             </div>
-
-            <!-- Notes -->
-            <div v-if="selectedInvoice.notes" class="bg-white/5 rounded-xl p-4 border border-white/10">
-              <div class="text-white/40 text-xs uppercase tracking-wider mb-2">Notes</div>
-              <p class="text-white/70 text-sm leading-relaxed">{{ selectedInvoice.notes }}</p>
-            </div>
-
-            <!-- Contact CTA -->
-            <div class="text-center pt-2">
-              <p class="text-white/40 text-xs mb-3">Questions about this invoice?</p>
-              <a
-                href="mailto:hello@charatech.com"
-                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition"
-                style="background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(219,39,119,0.3)); border: 1px solid rgba(168,85,247,0.3);"
-              >
-                ✉️ Contact CharaTech
-              </a>
-            </div>
-          </GlowingScrollbar>
           </div>
         </div>
       </div>
@@ -463,6 +471,11 @@
 
 <script setup lang="ts">
 import type { Submission } from '~/types'
+import GlowingScrollbar from '~/components/ui/GlowingScrollbar.vue'
+import InvoicePreviewModal from '~/components/InvoicePreviewModal.vue'
+import BaseButton from '~/components/ui/BaseButton.vue'
+import BaseSpinner from '~/components/ui/BaseSpinner.vue'
+import BaseTextarea from '~/components/ui/BaseTextarea.vue'
 
 definePageMeta({
   layout: 'default',
@@ -477,6 +490,7 @@ if (userStore.currentUser?.role === 'ADMIN') {
   await navigateTo('/admin/dashboard')
 }
 
+const toast = useAppToast()
 const activeTab = ref('submissions')
 const tabs = [
   { id: 'submissions', label: 'Submissions', icon: '📋' },
@@ -520,6 +534,15 @@ watch(() => user.value, (newUser) => {
 const invoices = ref<any[]>([])
 const invoicesLoading = ref(false)
 const selectedInvoice = ref<any>(null)
+const showProofUpload = ref(false)
+const showInfoRequest = ref(false)
+const proofUploadPhase = ref('')
+const proofUploadAmount = ref(0)
+const proofFile = ref<File | null>(null)
+const uploadingProof = ref(false)
+const infoRequestType = ref('')
+const infoRequestMessage = ref('')
+const submittingInfoRequest = ref(false)
 
 const fetchInvoices = async () => {
   invoicesLoading.value = true
@@ -537,7 +560,19 @@ const fetchInvoices = async () => {
   }
 }
 
-const viewInvoice = (inv: any) => { selectedInvoice.value = inv }
+const viewInvoice = async (inv: any) => {
+  try {
+    const token = await getAccessToken()
+    if (!token) return
+    const data = await $fetch<{ success: boolean; invoice: any }>(`/api/invoices/${inv.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    selectedInvoice.value = data.invoice
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to load invoice details')
+    selectedInvoice.value = inv
+  }
+}
 
 const unpaidCount = computed(() =>
   invoices.value.filter((i) => ['SENT', 'OVERDUE'].includes(i.status)).length
@@ -602,6 +637,94 @@ const getInvoiceStatusClass = (status: string) => {
 
 const formatDate = (date: string | Date) =>
   new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+
+const copyPaymentRef = async () => {
+  if (!selectedInvoice.value) return
+  const ref = `${selectedInvoice.value.submission?.projectName}-${selectedInvoice.value.invoiceNumber}`
+  await navigator.clipboard.writeText(ref)
+  toast.success('Payment reference copied')
+}
+
+const openProofUpload = (phase: string, amount: number) => {
+  proofUploadPhase.value = phase
+  proofUploadAmount.value = amount
+  proofFile.value = null
+  showProofUpload.value = true
+}
+
+const onProofFileSelected = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files?.[0]) {
+    proofFile.value = target.files[0]
+  }
+}
+
+const submitPaymentProof = async () => {
+  if (!proofFile.value || !selectedInvoice.value) return
+  uploadingProof.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', proofFile.value)
+    const token = await getAccessToken()
+    const uploadResult = await $fetch<{ url: string }>('/api/upload', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    })
+    await $fetch(`/api/invoices/${selectedInvoice.value.id}/proof`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: {
+        proofUrl: uploadResult.url,
+        fileName: proofFile.value.name,
+        fileType: proofFile.value.type,
+        fileSize: proofFile.value.size,
+        phase: proofUploadPhase.value,
+      },
+    })
+    toast.success('Payment proof submitted for review')
+    showProofUpload.value = false
+    await fetchInvoices()
+    if (selectedInvoice.value) {
+      const data = await $fetch<{ success: boolean; invoice: any }>(`/api/invoices/${selectedInvoice.value.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      selectedInvoice.value = data.invoice
+    }
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to submit proof')
+  } finally {
+    uploadingProof.value = false
+  }
+}
+
+const submitInfoRequest = async () => {
+  if (!infoRequestType.value || !selectedInvoice.value) return
+  submittingInfoRequest.value = true
+  try {
+    const token = await getAccessToken()
+    await $fetch(`/api/invoices/${selectedInvoice.value.id}/info-request`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: {
+        requestType: infoRequestType.value,
+        message: infoRequestMessage.value || null,
+      },
+    })
+    toast.success('Request submitted')
+    showInfoRequest.value = false
+    infoRequestType.value = ''
+    infoRequestMessage.value = ''
+    const data = await $fetch<{ success: boolean; invoice: any }>(`/api/invoices/${selectedInvoice.value.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    selectedInvoice.value = data.invoice
+  } catch (error: any) {
+    toast.error(error.data?.message || 'Failed to submit request')
+  } finally {
+    submittingInfoRequest.value = false
+  }
+}
 </script>
 
 <style scoped>
