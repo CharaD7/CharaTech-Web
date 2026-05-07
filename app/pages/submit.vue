@@ -39,9 +39,10 @@
 
                 <BaseCheckboxGroup
                   v-model="formData.projectTypes"
+                  v-model:modelFeatures="formData.projectFeatures"
                   :options="projectTypeOptions"
                   label="Project Types"
-                  hint="Select all that apply"
+                  hint="Select all that apply. Hover over the ⓘ icon for details on each type."
                   required
                 />
 
@@ -614,6 +615,7 @@ const formData = reactive({
   projectName: '',
   industry: '' as Industry,
   projectTypes: [] as ProjectType[],
+  projectFeatures: {} as Record<string, string[]>,
   complexity: '' as ComplexityLevel,
   budget: undefined as BudgetRange | undefined,
   timeline: '',
@@ -685,7 +687,237 @@ const handlePrevStep = () => {
 }
 
 const industryOptions = Object.values(Industry).map(v => ({ value: v, label: v.replace(/_/g, ' ') }))
-const projectTypeOptions = Object.values(ProjectType).map(v => ({ value: v, label: v.replace(/_/g, ' ') }))
+const projectTypeOptions = [
+  {
+    value: ProjectType.WEB_APPLICATION,
+    label: 'Web Application',
+    description: 'Full-featured web app with backend, database, and interactive UI — accessible from any browser.',
+    features: [
+      { value: 'user_auth', label: 'User Authentication' },
+      { value: 'admin_dashboard', label: 'Admin Dashboard' },
+      { value: 'api_integration', label: 'Third-party API Integration' },
+      { value: 'database', label: 'Database & Storage' },
+      { value: 'real_time', label: 'Real-time Features' },
+      { value: 'responsive', label: 'Responsive Design' },
+    ],
+  },
+  {
+    value: ProjectType.MOBILE_APPLICATION,
+    label: 'Mobile Application',
+    description: 'Native or cross-platform mobile app for iOS and/or Android with full device integration.',
+    features: [
+      { value: 'push_notifications', label: 'Push Notifications' },
+      { value: 'offline_mode', label: 'Offline Mode' },
+      { value: 'geolocation', label: 'Geolocation & Maps' },
+      { value: 'camera', label: 'Camera & Media' },
+      { value: 'biometrics', label: 'Biometric Auth' },
+      { value: 'in_app_purchases', label: 'In-app Purchases' },
+    ],
+  },
+  {
+    value: ProjectType.DESKTOP_APPLICATION,
+    label: 'Desktop Application',
+    description: 'Cross-platform desktop app for Windows, macOS, and Linux with native OS integration.',
+    features: [
+      { value: 'file_system', label: 'File System Access' },
+      { value: 'offline_first', label: 'Offline-first Architecture' },
+      { value: 'os_notifications', label: 'OS-level Notifications' },
+      { value: 'auto_updates', label: 'Auto-update System' },
+      { value: 'printing', label: 'Printing & Export' },
+    ],
+  },
+  {
+    value: ProjectType.API_BACKEND,
+    label: 'API / Backend',
+    description: 'Scalable server-side API powering your frontend apps with business logic and data management.',
+    features: [
+      { value: 'rest_graphql', label: 'REST & GraphQL APIs' },
+      { value: 'auth_sso', label: 'Auth & SSO' },
+      { value: 'rate_limiting', label: 'Rate Limiting & Caching' },
+      { value: 'webhooks', label: 'Webhooks & Events' },
+      { value: 'documentation', label: 'API Documentation' },
+      { value: 'monitoring', label: 'Monitoring & Logging' },
+    ],
+  },
+  {
+    value: ProjectType.CMS,
+    label: 'CMS (Content Management System)',
+    description: 'Easy-to-use content management system for non-technical teams to publish and manage digital content.',
+    features: [
+      { value: 'wysiwyg_editor', label: 'WYSIWYG Editor' },
+      { value: 'media_library', label: 'Media Library' },
+      { value: 'roles_permissions', label: 'Roles & Permissions' },
+      { value: 'seo_tools', label: 'SEO Tools' },
+      { value: 'versioning', label: 'Version History' },
+      { value: 'multi_lang', label: 'Multi-language Support' },
+    ],
+  },
+  {
+    value: ProjectType.ECOMMERCE_PLATFORM,
+    label: 'E-commerce Platform',
+    description: 'Full online store with product management, cart, checkout, and payment processing.',
+    features: [
+      { value: 'product_catalog', label: 'Product Catalog' },
+      { value: 'shopping_cart', label: 'Shopping Cart & Checkout' },
+      { value: 'payment_gateway', label: 'Payment Gateway' },
+      { value: 'inventory', label: 'Inventory Management' },
+      { value: 'order_tracking', label: 'Order Tracking' },
+      { value: 'reviews', label: 'Reviews & Ratings' },
+    ],
+  },
+  {
+    value: ProjectType.CRM,
+    label: 'CRM (Customer Relationship Management)',
+    description: 'Manage customer interactions, leads, sales pipelines, and support tickets in one place.',
+    features: [
+      { value: 'contact_mgmt', label: 'Contact Management' },
+      { value: 'pipeline_tracking', label: 'Pipeline & Deal Tracking' },
+      { value: 'email_integration', label: 'Email Integration' },
+      { value: 'task_mgmt', label: 'Task Management' },
+      { value: 'reporting', label: 'Reports & Analytics' },
+      { value: 'automation', label: 'Workflow Automation' },
+    ],
+  },
+  {
+    value: ProjectType.ERP,
+    label: 'ERP (Enterprise Resource Planning)',
+    description: 'End-to-end business management system covering finance, HR, inventory, procurement, and more.',
+    features: [
+      { value: 'finance', label: 'Finance & Accounting' },
+      { value: 'hr_mgmt', label: 'HR Management' },
+      { value: 'inventory', label: 'Inventory & Supply Chain' },
+      { value: 'procurement', label: 'Procurement' },
+      { value: 'reporting', label: 'Business Intelligence' },
+      { value: 'compliance', label: 'Compliance & Audit' },
+    ],
+  },
+  {
+    value: ProjectType.SAAS_PLATFORM,
+    label: 'SaaS Platform',
+    description: 'Subscription-based cloud platform with multi-tenant architecture, billing, and user management.',
+    features: [
+      { value: 'multi_tenant', label: 'Multi-tenant Architecture' },
+      { value: 'subscriptions', label: 'Subscription & Billing' },
+      { value: 'user_mgmt', label: 'User & Team Management' },
+      { value: 'analytics', label: 'Usage Analytics' },
+      { value: 'onboarding', label: 'Onboarding Flows' },
+      { value: 'scalability', label: 'Horizontal Scalability' },
+    ],
+  },
+  {
+    value: ProjectType.DASHBOARD_ANALYTICS,
+    label: 'Dashboard & Analytics',
+    description: 'Data visualization dashboard with interactive charts, real-time metrics, and export capabilities.',
+    features: [
+      { value: 'charts', label: 'Interactive Charts & Graphs' },
+      { value: 'real_time', label: 'Real-time Data Streams' },
+      { value: 'export', label: 'CSV/PDF Export' },
+      { value: 'custom_widgets', label: 'Custom Widgets' },
+      { value: 'drill_down', label: 'Drill-down Exploration' },
+      { value: 'alerts', label: 'Threshold Alerts' },
+    ],
+  },
+  {
+    value: ProjectType.BOOKING_SYSTEM,
+    label: 'Booking System',
+    description: 'Appointment and reservation system with calendar, availability management, and automated reminders.',
+    features: [
+      { value: 'calendar', label: 'Calendar View' },
+      { value: 'availability', label: 'Availability Management' },
+      { value: 'reminders', label: 'Email/SMS Reminders' },
+      { value: 'payments', label: 'Online Payments' },
+      { value: 'staff_mgmt', label: 'Staff Management' },
+      { value: 'waitlist', label: 'Waitlist' },
+    ],
+  },
+  {
+    value: ProjectType.PAYMENT_GATEWAY,
+    label: 'Payment Gateway',
+    description: 'Secure payment processing system supporting multiple payment methods, currencies, and recurring billing.',
+    features: [
+      { value: 'multiple_providers', label: 'Multiple Payment Providers' },
+      { value: 'recurring', label: 'Recurring Billing' },
+      { value: 'fraud_detection', label: 'Fraud Detection' },
+      { value: 'invoice_gen', label: 'Invoice Generation' },
+      { value: 'multi_currency', label: 'Multi-currency Support' },
+      { value: 'refunds', label: 'Refund Management' },
+    ],
+  },
+  {
+    value: ProjectType.SOCIAL_PLATFORM,
+    label: 'Social Platform',
+    description: 'Community-driven platform with user profiles, feeds, messaging, and content sharing.',
+    features: [
+      { value: 'profiles', label: 'User Profiles' },
+      { value: 'news_feed', label: 'News Feed' },
+      { value: 'messaging', label: 'Real-time Messaging' },
+      { value: 'notifications', label: 'Notifications' },
+      { value: 'content_moderation', label: 'Content Moderation' },
+      { value: 'groups', label: 'Groups & Communities' },
+    ],
+  },
+  {
+    value: ProjectType.LEARNING_PLATFORM,
+    label: 'Learning Platform',
+    description: 'Online education platform with courses, assessments, progress tracking, and certification.',
+    features: [
+      { value: 'course_builder', label: 'Course Builder' },
+      { value: 'assessments', label: 'Quizzes & Assessments' },
+      { value: 'progress', label: 'Progress Tracking' },
+      { value: 'certificates', label: 'Certification' },
+      { value: 'live_classes', label: 'Live Classes' },
+      { value: 'forums', label: 'Discussion Forums' },
+    ],
+  },
+  {
+    value: ProjectType.MARKETPLACE,
+    label: 'Marketplace',
+    description: 'Multi-vendor platform connecting buyers and sellers with listings, transactions, and reviews.',
+    features: [
+      { value: 'vendor_dashboard', label: 'Vendor Dashboard' },
+      { value: 'listings', label: 'Product Listings' },
+      { value: 'escrow', label: 'Escrow Payments' },
+      { value: 'ratings', label: 'Ratings & Reviews' },
+      { value: 'disputes', label: 'Dispute Resolution' },
+      { value: 'shipping', label: 'Shipping Integration' },
+    ],
+  },
+  {
+    value: ProjectType.PORTFOLIO_WEBSITE,
+    label: 'Portfolio Website',
+    description: 'Personal or business showcase site to display work, skills, and achievements with a polished design.',
+    features: [
+      { value: 'gallery', label: 'Project Gallery' },
+      { value: 'blog', label: 'Integrated Blog' },
+      { value: 'contact_form', label: 'Contact Form' },
+      { value: 'analytics', label: 'Visitor Analytics' },
+      { value: 'seo', label: 'SEO Optimization' },
+      { value: 'animations', label: 'Scroll Animations' },
+    ],
+  },
+  {
+    value: ProjectType.BLOG,
+    label: 'Blog',
+    description: 'Content-focused publishing platform with categories, tags, comments, and RSS feeds.',
+    features: [
+      { value: 'editor', label: 'Rich Text Editor' },
+      { value: 'categories', label: 'Categories & Tags' },
+      { value: 'comments', label: 'Comments System' },
+      { value: 'rss', label: 'RSS Feed' },
+      { value: 'newsletter', label: 'Newsletter Integration' },
+      { value: 'analytics', label: 'Content Analytics' },
+    ],
+  },
+  {
+    value: ProjectType.OTHER,
+    label: 'Other',
+    description: 'A different type of project not listed above. Describe your needs in the project brief.',
+    features: [
+      { value: 'consultation', label: 'Free Consultation Call' },
+      { value: 'custom_quote', label: 'Custom Quote' },
+    ],
+  },
+]
 const complexityOptions = Object.values(ComplexityLevel).map(v => ({ value: v, label: v }))
 const budgetOptions = Object.values(BudgetRange).map(v => ({ value: v, label: v.replace(/_/g, ' ') }))
 
