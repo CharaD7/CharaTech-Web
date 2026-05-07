@@ -28,6 +28,7 @@ pnpm-debug.log*
 .vscode
 *.swp
 *.swo
+nul
 *~
 
 # Local env files
