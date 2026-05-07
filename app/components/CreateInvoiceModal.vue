@@ -676,7 +676,9 @@ watch(() => props.editInvoice, (inv) => {
     form.currency = inv.currency
     form.taxRate = inv.taxAmount && inv.amount ? Math.round((inv.taxAmount / inv.amount) * 100 * 100) / 100 : 0
     form.dueDate = inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : ''
-    form.notes = inv.notes || ''
+    form.notes = (inv.notes || '')
+      .replace(/\[Invoice Number\]/g, inv.invoiceNumber)
+      .replace(/—\s*\[Invoice Number\]/g, inv.invoiceNumber ? `—${inv.invoiceNumber}` : '')
     form.paymentTerms = 'NET_30'
     const rawItems = typeof inv.items === 'string' ? JSON.parse(inv.items) : inv.items
     if (Array.isArray(rawItems) && rawItems.length) {
