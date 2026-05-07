@@ -371,14 +371,15 @@
                     class="flex-1 px-4 py-2 bg-gray-900/80 backdrop-blur-sm border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     @keyup.enter="addMedia"
                   />
-                  <select
+                  <BaseSelect
                     v-model="newMediaType"
-                    class="px-4 py-2 bg-gray-900/80 backdrop-blur-sm border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="image">Image</option>
-                    <option value="video">Video</option>
-                    <option value="link">Link</option>
-                  </select>
+                    :options="[
+                      { value: 'image', label: 'Image' },
+                      { value: 'video', label: 'Video' },
+                      { value: 'link', label: 'Link' }
+                    ]"
+                    selectClass="px-4 py-2"
+                  />
                   <button
                     type="button"
                     @click="addMedia"

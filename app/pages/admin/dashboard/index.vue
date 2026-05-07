@@ -247,30 +247,32 @@
               class="px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
             />
             
-            <select
+            <BaseSelect
               v-model="filters.status"
-              class="px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-purple-500 outline-none transition"
-            >
-              <option value="" class="bg-gray-900">All Status</option>
-              <option value="PENDING" class="bg-gray-900">Pending</option>
-              <option value="REVIEWING" class="bg-gray-900">Reviewing</option>
-              <option value="QUOTED" class="bg-gray-900">Quoted</option>
-              <option value="ACCEPTED" class="bg-gray-900">Accepted</option>
-              <option value="IN_PROGRESS" class="bg-gray-900">In Progress</option>
-              <option value="COMPLETED" class="bg-gray-900">Completed</option>
-            </select>
+              :options="[
+                { value: '', label: 'All Status' },
+                { value: 'PENDING', label: 'Pending' },
+                { value: 'REVIEWING', label: 'Reviewing' },
+                { value: 'QUOTED', label: 'Quoted' },
+                { value: 'ACCEPTED', label: 'Accepted' },
+                { value: 'IN_PROGRESS', label: 'In Progress' },
+                { value: 'COMPLETED', label: 'Completed' }
+              ]"
+              selectClass="bg-white/10 border-white/20"
+            />
 
-            <select
+            <BaseSelect
               v-model="filters.industry"
-              class="px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-purple-500 outline-none transition"
-            >
-              <option value="" class="bg-gray-900">All Industries</option>
-              <option value="HEALTHCARE" class="bg-gray-900">Healthcare</option>
-              <option value="FINANCE" class="bg-gray-900">Finance</option>
-              <option value="ECOMMERCE" class="bg-gray-900">E-commerce</option>
-              <option value="EDUCATION" class="bg-gray-900">Education</option>
-              <option value="TECHNOLOGY" class="bg-gray-900">Technology</option>
-            </select>
+              :options="[
+                { value: '', label: 'All Industries' },
+                { value: 'HEALTHCARE', label: 'Healthcare' },
+                { value: 'FINANCE', label: 'Finance' },
+                { value: 'ECOMMERCE', label: 'E-commerce' },
+                { value: 'EDUCATION', label: 'Education' },
+                { value: 'TECHNOLOGY', label: 'Technology' }
+              ]"
+              selectClass="bg-white/10 border-white/20"
+            />
 
             <button
               @click="exportData"

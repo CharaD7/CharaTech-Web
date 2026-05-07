@@ -80,26 +80,13 @@
                 <div class="p-5 space-y-4">
                   <!-- Submission selector -->
                   <div>
-                    <label class="block text-xs text-white/50 uppercase tracking-wider mb-1.5">Link to Submission <span class="text-red-400">*</span></label>
-                    <div class="relative">
-                      <select
-                        v-model="form.submissionId"
-                        class="w-full px-4 py-3 rounded-xl text-white text-sm outline-none transition-all duration-200 appearance-none pr-10"
-                        :style="neuInput"
-                        :class="{ 'ring-2 ring-purple-500/60': form.submissionId }"
-                      >
-                        <option value="" class="bg-gray-900">— Select a submission —</option>
-                        <option
-                          v-for="sub in submissions"
-                          :key="sub.id"
-                          :value="sub.id"
-                          class="bg-gray-900"
-                        >
-                          {{ sub.projectName }} · {{ sub.user?.email }}
-                        </option>
-                      </select>
-                      <div class="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none">▾</div>
-                    </div>
+                    <BaseSelect
+                      v-model="form.submissionId"
+                      :options="submissionOptions"
+                      label="Link to Submission"
+                      placeholder="— Select a submission —"
+                      required
+                    />
                   </div>
 
                   <!-- Auto-filled client info -->
@@ -258,22 +245,11 @@
                   <div class="grid grid-cols-2 gap-4">
                     <!-- Currency -->
                     <div>
-                      <label class="block text-xs text-white/50 uppercase tracking-wider mb-1.5">Currency</label>
-                      <div class="relative">
-                        <select
-                          v-model="form.currency"
-                          class="w-full px-4 py-3 rounded-xl text-white text-sm outline-none transition-all duration-200 appearance-none pr-10"
-                          :style="neuInput"
-                        >
-                          <option value="USD" class="bg-gray-900">USD — US Dollar ($)</option>
-                          <option value="EUR" class="bg-gray-900">EUR — Euro (€)</option>
-                          <option value="GBP" class="bg-gray-900">GBP — British Pound (£)</option>
-                          <option value="GHS" class="bg-gray-900">GHS — Ghana Cedi (₵)</option>
-                          <option value="CAD" class="bg-gray-900">CAD — Canadian Dollar (C$)</option>
-                          <option value="AUD" class="bg-gray-900">AUD — Australian Dollar (A$)</option>
-                        </select>
-                        <div class="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none">▾</div>
-                      </div>
+                      <BaseSelect
+                        v-model="form.currency"
+                        :options="currencyOptions"
+                        label="Currency"
+                      />
                     </div>
                     <!-- Tax Rate -->
                     <div>
@@ -350,21 +326,11 @@
 
                   <!-- Payment terms -->
                   <div>
-                    <label class="block text-xs text-white/50 uppercase tracking-wider mb-1.5">Payment Terms</label>
-                    <div class="relative">
-                      <select
-                        v-model="form.paymentTerms"
-                        class="w-full px-4 py-3 rounded-xl text-white text-sm outline-none transition-all duration-200 appearance-none pr-10"
-                        :style="neuInput"
-                      >
-                        <option value="IMMEDIATE" class="bg-gray-900">Due Immediately</option>
-                        <option value="NET_7" class="bg-gray-900">Net 7 Days</option>
-                        <option value="NET_14" class="bg-gray-900">Net 14 Days</option>
-                        <option value="NET_30" class="bg-gray-900">Net 30 Days</option>
-                        <option value="NET_60" class="bg-gray-900">Net 60 Days</option>
-                      </select>
-                      <div class="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none">▾</div>
-                    </div>
+                    <BaseSelect
+                      v-model="form.paymentTerms"
+                      :options="paymentTermsOptions"
+                      label="Payment Terms"
+                    />
                   </div>
                 </div>
               </div>
@@ -756,6 +722,30 @@ watch(() => props.preGeneratedItems, (generated) => {
 const selectedSub = computed(() =>
   props.submissions.find((s) => s.id === form.submissionId) ?? null
 )
+
+const submissionOptions = computed(() =>
+  props.submissions.map(s => ({
+    value: s.id,
+    label: `${s.projectName} · ${s.user?.email}`
+  }))
+)
+
+const currencyOptions = [
+  { value: 'USD', label: 'USD — US Dollar ($)' },
+  { value: 'EUR', label: 'EUR — Euro (€)' },
+  { value: 'GBP', label: 'GBP — British Pound (£)' },
+  { value: 'GHS', label: 'GHS — Ghana Cedi (₵)' },
+  { value: 'CAD', label: 'CAD — Canadian Dollar (C$)' },
+  { value: 'AUD', label: 'AUD — Australian Dollar (A$)' },
+]
+
+const paymentTermsOptions = [
+  { value: 'IMMEDIATE', label: 'Due Immediately' },
+  { value: 'NET_7', label: 'Net 7 Days' },
+  { value: 'NET_14', label: 'Net 14 Days' },
+  { value: 'NET_30', label: 'Net 30 Days' },
+  { value: 'NET_60', label: 'Net 60 Days' },
+]
 
 const subtotal = computed(() =>
   items.value.reduce((sum, item) => sum + (item.total || 0), 0)
