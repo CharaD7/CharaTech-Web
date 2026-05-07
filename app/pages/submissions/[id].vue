@@ -87,6 +87,76 @@
           </div>
         </div>
 
+        <!-- Project Brief -->
+        <div v-if="submission.projectBrief" class="glass-morphism p-6 sm:p-8 rounded-2xl border border-white/10">
+          <h2 class="text-xl font-bold text-white mb-4">Project Brief</h2>
+          <div class="p-4 bg-white/5 rounded-xl border border-white/10">
+            <p class="text-white/80 leading-relaxed whitespace-pre-wrap">{{ submission.projectBrief }}</p>
+          </div>
+        </div>
+
+        <!-- Audio Brief -->
+        <div v-if="submission.audioBrief" class="glass-morphism p-6 sm:p-8 rounded-2xl border border-purple-500/30 bg-purple-500/5">
+          <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <span>🎤</span> Audio Recording
+          </h2>
+          <div class="p-4 bg-white/5 rounded-xl border border-white/10">
+            <p v-if="submission.audioFileName" class="text-white/40 text-xs mb-3">File: {{ submission.audioFileName }}</p>
+            <audio controls class="w-full max-w-md rounded-lg" :src="submission.audioBrief">
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        </div>
+
+        <!-- Attachments / Media -->
+        <div v-if="submission.attachments?.length" class="glass-morphism p-6 sm:p-8 rounded-2xl border border-white/10">
+          <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <span>📎</span> Attachments ({{ submission.attachments.length }})
+          </h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div
+              v-for="att in submission.attachments"
+              :key="att.id"
+              class="group relative bg-white/5 rounded-xl border border-white/10 overflow-hidden hover:border-purple-500/40 transition"
+            >
+              <!-- Image -->
+              <a v-if="att.type === 'IMAGE'" :href="att.fileUrl" target="_blank" class="block">
+                <img
+                  :src="att.fileUrl"
+                  :alt="att.fileName || 'Attachment'"
+                  class="w-full h-32 object-cover"
+                  @error="(e: any) => e.target.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23666%22%3E%3Cpath d=%22M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z%22/%3E%3C/svg%3E'"
+                />
+                <div class="p-2 text-xs text-white/50 truncate">{{ att.fileName || 'Image' }}</div>
+              </a>
+              <!-- Video -->
+              <a v-else-if="att.type === 'VIDEO'" :href="att.fileUrl" target="_blank" class="block">
+                <div class="relative h-32 bg-black/50 flex items-center justify-center">
+                  <video
+                    v-if="att.thumbnail"
+                    :src="att.thumbnail"
+                    class="w-full h-full object-cover opacity-60"
+                    muted
+                  />
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <svg class="w-10 h-10 text-white/70" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="p-2 text-xs text-white/50 truncate">{{ att.fileName || 'Video' }}</div>
+              </a>
+              <!-- Link -->
+              <a v-else :href="att.fileUrl" target="_blank" class="block p-3">
+                <div class="flex items-center gap-2 text-sm">
+                  <span class="text-purple-400">🔗</span>
+                  <span class="text-white/70 truncate flex-1">{{ att.fileName || att.fileUrl }}</span>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+
         <!-- Project Types -->
         <div v-if="submission.projectTypes?.length" class="glass-morphism p-6 rounded-2xl border border-white/10">
           <h2 class="text-xl font-bold text-white mb-4">Project Types</h2>
@@ -160,7 +230,8 @@
         <!-- Requirements -->
         <div class="glass-morphism p-6 sm:p-8 rounded-2xl border border-white/10">
           <h2 class="text-xl font-bold text-white mb-6">Selected Requirements</h2>
-          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div v-if="!Object.keys(submission.requirements || {}).length" class="text-white/40 text-sm">No specific requirements selected.</div>
+          <div v-else class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div
               v-for="(value, key) in submission.requirements"
               :key="key"

@@ -3,8 +3,9 @@ import crypto from 'crypto'
 const CALENDLY_API_URL = 'https://api.calendly.com'
 
 function getCalendlyHeaders() {
-  const accessToken = process.env.CALENDLY_ACCESS_TOKEN
-  
+  const config = useRuntimeConfig()
+  const accessToken = config.calendlyAccessToken
+
   if (!accessToken) {
     throw createError({
       statusCode: 500,
@@ -25,6 +26,7 @@ interface CalendlyEventType {
   description?: string
   color: string
   active: boolean
+  scheduling_url: string
 }
 
 interface CalendlyEvent {
@@ -75,7 +77,15 @@ export async function getCalendlyEventTypes(): Promise<CalendlyEventType[]> {
   }
 
   const data = await response.json()
-  return data.collection.filter((et: any) => et.active)
+  return data.collection.filter((et: any) => et.active).map((et: any) => ({
+    uri: et.uri,
+    name: et.name,
+    duration: et.duration,
+    description: et.description,
+    color: et.color,
+    active: et.active,
+    scheduling_url: et.scheduling_url,
+  }))
 }
 
 export async function getCalendlyScheduledEvents(options?: {
@@ -83,7 +93,7 @@ export async function getCalendlyScheduledEvents(options?: {
   count?: number
 }): Promise<CalendlyEvent[]> {
   const params = new URLSearchParams()
-  
+
   if (options?.user) {
     params.append('user', options.user)
   }
@@ -150,13 +160,6 @@ export function parseCalendlyWebhook(body: any): {
   }
 }
 
-export function createCalendlySchedulingLink(eventTypeUri: string, userUri?: string): string {
-  const baseUrl = 'https://calendly.com'
-  const params = new URLSearchParams()
-  
-  if (userUri) {
-    params.append('embed_domain', process.env.NUXT_PUBLIC_APP_URL?.replace('https://', '') || '')
-  }
-  
-  return `${baseUrl}/${eventTypeUri.split('/').pop()}${params.toString() ? '?' + params.toString() : ''}`
+export function createCalendlySchedulingLink(eventTypeSchedulingUrl: string): string {
+  return eventTypeSchedulingUrl
 }

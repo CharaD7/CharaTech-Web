@@ -13,7 +13,7 @@
       <div>
         <BaseCard class="p-6">
           <h2 class="text-xl font-bold text-white mb-4">Available Consultations</h2>
-          
+
           <div v-if="!eventTypes.length" class="text-center py-8 text-white/50">
             <div class="text-4xl mb-3">📅</div>
             <p>No booking slots available</p>
@@ -49,7 +49,7 @@
       <div>
         <BaseCard class="p-6">
           <h2 class="text-xl font-bold text-white mb-4">Your Bookings</h2>
-          
+
           <div v-if="!bookings.length" class="text-center py-8 text-white/50">
             <div class="text-4xl mb-3">📋</div>
             <p>No upcoming bookings</p>
@@ -63,23 +63,42 @@
               class="glass-morphism p-4 rounded-lg border border-white/10"
             >
               <div class="flex items-start justify-between">
-                <div>
-                  <h3 class="text-white font-semibold">{{ booking.eventName }}</h3>
+                <div class="min-w-0 flex-1">
+                  <h3 class="text-white font-semibold truncate">{{ booking.eventName }}</h3>
                   <p class="text-sm text-white/50 mt-1">
                     {{ formatDateTime(booking.startTime) }}
                   </p>
                   <BaseBadge :variant="getBookingStatusVariant(booking.status)" size="sm" class="mt-2">
                     {{ booking.status }}
                   </BaseBadge>
+                  <div v-if="booking.location" class="mt-2">
+                    <a
+                      :href="booking.location"
+                      target="_blank"
+                      class="text-sm text-purple-400 hover:text-purple-300 transition"
+                    >
+                      Join Meeting ↗
+                    </a>
+                  </div>
                 </div>
-                <a
-                  v-if="booking.location"
-                  :href="booking.location"
-                  target="_blank"
-                  class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition"
-                >
-                  Join
-                </a>
+                <div class="flex flex-col gap-1.5 ml-3 flex-shrink-0">
+                  <a
+                    v-if="booking.rescheduleUrl"
+                    :href="booking.rescheduleUrl"
+                    target="_blank"
+                    class="px-3 py-1.5 text-xs bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 rounded-lg transition text-center whitespace-nowrap"
+                  >
+                    Reschedule
+                  </a>
+                  <a
+                    v-if="booking.cancelUrl"
+                    :href="booking.cancelUrl"
+                    target="_blank"
+                    class="px-3 py-1.5 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg transition text-center whitespace-nowrap"
+                  >
+                    Cancel
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -153,6 +172,7 @@ interface EventType {
   name: string
   duration: number
   description?: string
+  scheduling_url: string
 }
 
 interface Booking {
@@ -162,6 +182,8 @@ interface Booking {
   endTime: string
   status: string
   location?: string
+  cancelUrl?: string
+  rescheduleUrl?: string
 }
 
 definePageMeta({
@@ -196,7 +218,6 @@ const fetchEventTypes = async () => {
     const data = await $fetch('/api/calendly/event-types')
     eventTypes.value = Array.isArray(data?.eventTypes) ? data.eventTypes : []
   } catch (error) {
-    
     eventTypes.value = []
   }
 }
@@ -206,7 +227,6 @@ const fetchBookings = async () => {
     const data = await $fetch('/api/calendly/bookings')
     bookings.value = Array.isArray(data?.bookings) ? data.bookings : []
   } catch (error) {
-    
     bookings.value = []
   }
 }
@@ -221,11 +241,10 @@ const openCalendly = async () => {
 
   loadingLink.value = true
   try {
-    const data = await $fetch(`/api/calendly/scheduling-link?eventTypeUri=${encodeURIComponent(selectedEvent.value.uri)}`)
+    const data = await $fetch(`/api/calendly/scheduling-link?schedulingUrl=${encodeURIComponent(selectedEvent.value.scheduling_url)}`)
     window.open(data.link, '_blank')
     showBookingModal.value = false
   } catch (error) {
-    
   } finally {
     loadingLink.value = false
   }

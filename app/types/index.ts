@@ -143,6 +143,9 @@ export interface Submission {
   budget?: BudgetRange
   timeline?: string
   requirements: Record<string, any>
+  projectBrief?: string
+  audioBrief?: string
+  audioFileName?: string
   additionalNotes?: string
   dialogflowSessionId?: string
   aiConversation?: any
@@ -150,9 +153,23 @@ export interface Submission {
   currency?: string
   country?: string
   media?: MediaAttachment[]
+  attachments?: Attachment[]
   reviewedAt?: Date
   reviewedBy?: string
   adminNotes?: string
   createdAt: Date
   updatedAt: Date
+}
+
+export interface Attachment {
+  id: string
+  submissionId: string
+  type: 'IMAGE' | 'VIDEO' | 'LINK' | 'FILE'
+  fileName?: string
+  fileUrl: string
+  fileType?: string
+  fileSize?: number
+  thumbnail?: string
+  description?: string
+  createdAt: Date
 }

@@ -3,6 +3,11 @@ export default defineEventHandler(async (event) => {
 
   const submissions = await prisma.submission.findMany({
     where: { userId: user.id },
+    include: {
+      attachments: {
+        orderBy: { createdAt: 'desc' }
+      }
+    },
     orderBy: { createdAt: 'desc' },
   })
 

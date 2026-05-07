@@ -293,23 +293,42 @@
             @click="selectSubmission(submission)"
           >
             <div class="flex items-start justify-between">
-              <div class="flex-1">
+              <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-3 mb-2">
-                  <h3 class="text-xl font-bold text-white">{{ submission.projectName }}</h3>
+                  <h3 class="text-xl font-bold text-white truncate">{{ submission.projectName }}</h3>
                   <span
                     :class="[
-                      'px-3 py-1 rounded-full text-xs font-semibold',
+                      'px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0',
                       getStatusClass(submission.status)
                     ]"
                   >
                     {{ submission.status }}
                   </span>
                 </div>
-                <p class="text-white/60 mb-3">{{ submission.user.email }}</p>
+                <p class="text-white/60 mb-2">{{ submission.user.email }}</p>
                 <div class="flex gap-4 text-sm text-white/50">
                   <span>🏢 {{ submission.industry }}</span>
                   <span>⚡ {{ submission.complexity }}</span>
                   <span>📅 {{ formatDate(submission.createdAt) }}</span>
+                </div>
+
+                <!-- Project Brief Preview -->
+                <div v-if="submission.projectBrief" class="mt-2 text-sm text-white/40 line-clamp-2">
+                  <span class="text-white/30 font-medium">Brief:</span> {{ submission.projectBrief }}
+                </div>
+
+                <!-- Audio & Media Indicators -->
+                <div v-if="submission.audioBrief || submission.attachments?.length" class="flex flex-wrap gap-1.5 mt-2">
+                  <span v-if="submission.audioBrief" class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/15 text-purple-300 rounded text-xs border border-purple-500/20">
+                    🎤 Audio
+                  </span>
+                  <span
+                    v-for="(group, type) in mediaCounts(submission.attachments)"
+                    :key="type"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 bg-white/5 text-white/50 rounded text-xs border border-white/10"
+                  >
+                    {{ type === 'IMAGE' ? '🖼️' : type === 'VIDEO' ? '🎬' : '🔗' }} {{ group }}
+                  </span>
                 </div>
               </div>
               <div class="flex gap-2">
@@ -1080,11 +1099,17 @@ const downloadCSV = (csv: string, filename: string) => {
 }
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
+  if (!date) return '—'
+  return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+const mediaCounts = (attachments: any[] | undefined) => {
+  if (!attachments?.length) return {}
+  const counts: Record<string, number> = {}
+  attachments.forEach(a => {
+    counts[a.type] = (counts[a.type] || 0) + 1
   })
+  return counts
 }
 
 const getStatusClass = (status: string) => {

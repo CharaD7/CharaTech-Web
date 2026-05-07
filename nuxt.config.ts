@@ -30,6 +30,8 @@ export default defineNuxtConfig({
     supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY,
     ollamaApiKey: process.env.OLLAMA_API_KEY,
     adminSupabaseUid: process.env.ADMIN_SUPABASE_UID,
+    calendlyAccessToken: process.env.CALENDLY_ACCESS_TOKEN,
+    calendlyWebhookSigningKey: process.env.CALENDLY_WEBHOOK_SIGNING_KEY,
     
     // Public keys (exposed to client)
     public: {

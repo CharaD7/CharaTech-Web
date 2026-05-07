@@ -13,6 +13,9 @@ export default defineEventHandler(async (event) => {
           companyName: true,
         },
       },
+      attachments: {
+        orderBy: { createdAt: 'desc' }
+      },
     },
   })
 

@@ -112,11 +112,31 @@
                 {{ submission.status }}
               </span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm text-white/70 mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm text-white/70 mb-3">
               <div><span class="font-medium text-white">Complexity:</span> {{ submission.complexity }}</div>
               <div><span class="font-medium text-white">Budget:</span> {{ submission.budget || 'Not specified' }}</div>
               <div><span class="font-medium text-white">Submitted:</span> {{ formatDate(submission.createdAt) }}</div>
             </div>
+
+            <!-- Project Brief Preview -->
+            <div v-if="submission.projectBrief" class="mb-3 text-sm text-white/50 line-clamp-2">
+              <span class="text-white/40 font-medium">Brief:</span> {{ submission.projectBrief }}
+            </div>
+
+            <!-- Audio & Media Indicators -->
+            <div v-if="submission.audioBrief || submission.attachments?.length" class="flex flex-wrap gap-2 mb-3">
+              <span v-if="submission.audioBrief" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-500/15 text-purple-300 rounded-full text-xs border border-purple-500/20">
+                🎤 Audio Recording
+              </span>
+              <span
+                v-for="(group, type) in mediaCounts(submission.attachments)"
+                :key="type"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/5 text-white/60 rounded-full text-xs border border-white/10"
+              >
+                {{ type === 'IMAGE' ? '🖼️' : type === 'VIDEO' ? '🎬' : '🔗' }} {{ group }} {{ type === 'IMAGE' ? 'image' : type === 'VIDEO' ? 'video' : 'link' }}{{ group > 1 ? 's' : '' }}
+              </span>
+            </div>
+
             <NuxtLink :to="`/submissions/${submission.id}`" class="inline-block">
               <button class="px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-lg hover:bg-purple-700 transition">
                 View Details →
@@ -650,6 +670,15 @@ const getInvoiceStatusClass = (status: string) => {
 
 const formatDate = (date: string | Date) =>
   new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+
+const mediaCounts = (attachments: any[] | undefined) => {
+  if (!attachments?.length) return {}
+  const counts: Record<string, number> = {}
+  attachments.forEach(a => {
+    counts[a.type] = (counts[a.type] || 0) + 1
+  })
+  return counts
+}
 
 const copyPaymentRef = async () => {
   if (!selectedInvoice.value) return
