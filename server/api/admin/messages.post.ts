@@ -1,15 +1,20 @@
+/** POST /api/admin/messages
+ * Admin sends a message to client. Supports file attachments.
+ */
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireAdmin(event)
 
-    const { receiverId, submissionId, subject, content } = await readBody(event)
+    const { receiverId, submissionId, subject, content, fileUrl, fileName } = await readBody(event)
 
-    if (!receiverId || !content) {
+    if (!receiverId || (!content?.trim() && !fileUrl)) {
       throw createError({
         statusCode: 400,
-        message: 'Receiver ID and content are required'
+        message: 'Receiver ID and content or file are required'
       })
     }
+
+    const messageContent = content?.trim() || (fileUrl ? `📎 ${fileName || 'File attached'}` : '')
 
     const message = await prisma.message.create({
       data: {
@@ -17,7 +22,9 @@ export default defineEventHandler(async (event) => {
         receiverId,
         submissionId,
         subject,
-        content
+        content: messageContent,
+        fileUrl: fileUrl || null,
+        fileName: fileName || null,
       }
     })
 
@@ -31,7 +38,7 @@ export default defineEventHandler(async (event) => {
           <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
             <h2>${subject || 'New message from CharaTech'}</h2>
             <p>Hi ${client.fullName || 'there'},</p>
-            <p>${content}</p>
+            <p>${messageContent}</p>
             <hr style="border:none;border-top:1px solid #eee;margin:20px 0"/>
             <p style="color:#888;font-size:12px">Log in to your CharaTech dashboard to reply.</p>
           </div>
@@ -45,7 +52,7 @@ export default defineEventHandler(async (event) => {
         type: 'MESSAGE_RECEIVED',
         channel: ['EMAIL', 'IN_APP'],
         subject: subject || 'New message from CharaTech',
-        message: content.length > 120 ? content.slice(0, 120) + '…' : content,
+        message: messageContent.length > 120 ? messageContent.slice(0, 120) + '…' : messageContent,
         metadata: { messageId: message.id, submissionId: submissionId || null },
         sentAt: new Date(),
       }

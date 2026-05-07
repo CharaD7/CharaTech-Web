@@ -483,12 +483,14 @@ definePageMeta({
 })
 
 const userStore = useUserStore()
-const { user, getAccessToken } = useAuth()
+const { user, getAccessToken, authReady } = useAuth()
 
-// Redirect admins to admin dashboard
-if (userStore.currentUser?.role === 'ADMIN') {
-  await navigateTo('/admin/dashboard')
-}
+// Redirect admins to admin dashboard once user data is loaded
+watch(() => userStore.currentUser, (u) => {
+  if (u?.role === 'ADMIN') {
+    navigateTo('/admin/dashboard')
+  }
+}, { immediate: true })
 
 const toast = useAppToast()
 const activeTab = ref('submissions')
@@ -581,7 +583,18 @@ const unpaidCount = computed(() =>
 const isOverdue = (inv: any) =>
   inv.status === 'OVERDUE' || (inv.status === 'SENT' && inv.dueDate && new Date(inv.dueDate) < new Date())
 
-onMounted(() => {
+onMounted(async () => {
+  // Wait for auth to be ready
+  if (!authReady.value) {
+    await new Promise<void>((resolve) => {
+      const check = () => { if (authReady.value) resolve(); else setTimeout(check, 50) }
+      check()
+    })
+  }
+  // Fetch user profile if not already loaded
+  if (!userStore.currentUser) {
+    await userStore.fetchCurrentUser()
+  }
   fetchInvoices()
   fetchTimelines()
 })

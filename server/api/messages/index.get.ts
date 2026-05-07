@@ -1,22 +1,25 @@
 /** GET /api/messages
- * Client: retrieve own message thread with admin (including bot replies).
+ * Client: retrieve own message thread with any admin (including bot replies).
  * Marks incoming messages as read.
  */
 export default defineEventHandler(async (event) => {
   const user = await requireAuth(event)
 
-  // Find the first admin user
-  const admin = await prisma.user.findFirst({
+  // Find ALL admin users
+  const admins = await prisma.user.findMany({
     where: { role: 'ADMIN' },
     select: { id: true, fullName: true },
   })
-  if (!admin) return { messages: [], adminId: null, isAiHandled: true }
+  if (!admins.length) return { messages: [], adminIds: [], isAiHandled: true }
+
+  const adminIds = admins.map(a => a.id)
 
   const messages = await prisma.message.findMany({
     where: {
+      deleted: false,
       OR: [
-        { senderId: user.id, receiverId: admin.id },
-        { senderId: admin.id, receiverId: user.id },
+        { senderId: user.id, receiverId: { in: adminIds } },
+        { senderId: { in: adminIds }, receiverId: user.id },
       ],
     },
     orderBy: { createdAt: 'asc' },
@@ -24,11 +27,11 @@ export default defineEventHandler(async (event) => {
 
   // Mark admin/bot messages as read
   await prisma.message.updateMany({
-    where: { receiverId: user.id, read: false },
+    where: { receiverId: user.id, senderId: { in: adminIds }, read: false },
     data: { read: true, readAt: new Date() },
   })
 
-  const isAiHandled = !messages.some(m => m.senderId === admin.id && !m.isBot)
+  const isAiHandled = !messages.some(m => adminIds.includes(m.senderId) && !m.isBot)
 
-  return { messages, adminId: admin.id, adminName: admin.fullName || 'CharaTech Support', isAiHandled }
+  return { messages, adminIds, adminName: admins[0]?.fullName || 'CharaTech Support', isAiHandled }
 })

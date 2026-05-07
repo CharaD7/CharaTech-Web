@@ -5,19 +5,20 @@ export const useUserStore = defineStore('user', {
   state: () => ({
     currentUser: null as User | null,
     loading: false,
+    initialized: false,
   }),
 
   actions: {
     async fetchCurrentUser() {
-      if (import.meta.server) {
-        return
-      }
+      if (import.meta.server) return
+      if (this.initialized && this.currentUser) return
 
       const { getAccessToken: getAccessTokenFn } = useAuth()
       const token = await getAccessTokenFn()
      
       if (!token) {
         this.currentUser = null
+        this.initialized = true
         return
       }
 
@@ -35,7 +36,10 @@ export const useUserStore = defineStore('user', {
         }
 
         this.currentUser = response.data?.value as User
+        this.initialized = true
       } catch (error) {
+        this.currentUser = null
+        this.initialized = true
         throw error
       } finally {
         this.loading = false
@@ -43,16 +47,12 @@ export const useUserStore = defineStore('user', {
     },
 
     async updateUser(updates: Partial<User>) {
-      if (import.meta.server) {
-        return
-      }
+      if (import.meta.server) return
 
       const { getAccessToken: getAccessTokenFn } = useAuth()
       const token = await getAccessTokenFn()
      
-      if (!token) {
-        return
-      }
+      if (!token) return
 
       this.loading = true
 
@@ -75,6 +75,7 @@ export const useUserStore = defineStore('user', {
 
     clearUser() {
       this.currentUser = null
+      this.initialized = false
     },
   },
 

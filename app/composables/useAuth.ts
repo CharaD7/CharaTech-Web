@@ -1,22 +1,35 @@
 import { ref } from 'vue'
 
+const _initialized = ref(false)
+const _authReady = ref(false)
+
 export const useAuth = () => {
   const { supabase } = useSupabase()
   const user = useState<any>('supabase-user', () => null)
-  const isInitialized = ref(false)
 
   const initAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    user.value = session?.user || null
-    isInitialized.value = true
+    if (_initialized.value) return
+    _initialized.value = true
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      user.value = session?.user || null
+    } catch {
+      user.value = null
+    } finally {
+      _authReady.value = true
+    }
 
     supabase.auth.onAuthStateChange((_event, session) => {
       user.value = session?.user || null
+      _authReady.value = true
     })
   }
 
-  if (import.meta.client && !isInitialized.value) {
+  if (import.meta.client && !_initialized.value) {
     initAuth()
+  } else if (import.meta.server) {
+    _authReady.value = true
   }
 
   const register = async (email: string, password: string, fullName?: string) => {
@@ -24,13 +37,9 @@ export const useAuth = () => {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: { full_name: fullName }
-        }
+        options: { data: { full_name: fullName } }
       })
-      if (error) {
-        return { success: false, error: error.message }
-      }
+      if (error) return { success: false, error: error.message }
       user.value = data.user
       return { success: true, user: data.user, session: data.session }
     } catch (error: any) {
@@ -44,9 +53,7 @@ export const useAuth = () => {
         email,
         password,
       })
-      if (error) {
-        return { success: false, error: error.message }
-      }
+      if (error) return { success: false, error: error.message }
       user.value = data.user
       return { success: true, user: data.user, session: data.session }
     } catch (error: any) {
@@ -75,6 +82,7 @@ export const useAuth = () => {
 
   return {
     user,
+    authReady: _authReady,
     register,
     login,
     logout,

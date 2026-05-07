@@ -200,9 +200,13 @@ model Message {
   submissionId String?
   subject      String?
   content      String
+  fileUrl      String?
+  fileName     String?
   isBot        Boolean     @default(false)
   read         Boolean     @default(false)
   readAt       DateTime?
+  editedAt     DateTime?
+  deleted      Boolean     @default(false)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -210,6 +214,7 @@ model Message {
   @@index([receiverId])
   @@index([submissionId])
   @@index([createdAt])
+  @@index([deleted])
 }
 
 model Invoice {

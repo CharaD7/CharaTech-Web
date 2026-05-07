@@ -11,7 +11,7 @@
           <ClientOnly>
             <!-- Desktop Menu -->
             <div class="hidden md:flex items-center gap-4">
-              <template v-if="user">
+              <template v-if="authReady && user">
                 <NuxtLink 
                   to="/book"
                   class="text-white hover:text-purple-300 transition text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/5 flex items-center gap-2"
@@ -32,7 +32,7 @@
                   Logout
                 </button>
               </template>
-              <template v-else>
+              <template v-else-if="authReady">
                 <NuxtLink 
                   to="/login"
                   class="px-4 py-2 text-white hover:text-purple-300 rounded-lg hover:bg-white/5 transition font-medium text-sm"
@@ -45,6 +45,12 @@
                 >
                   Get Started
                 </NuxtLink>
+              </template>
+              <template v-else>
+                <div class="flex items-center gap-3">
+                  <div class="w-20 h-8 bg-white/10 rounded-lg animate-pulse" />
+                  <div class="w-24 h-8 bg-white/10 rounded-lg animate-pulse" />
+                </div>
               </template>
             </div>
 
@@ -76,7 +82,7 @@
           :class="isMobileMenuOpen ? 'max-h-[500px] pt-4 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'"
         >
           <div class="flex flex-col gap-2 pb-2">
-            <template v-if="user">
+            <template v-if="authReady && user">
               <NuxtLink 
                 to="/book"
                 @click="isMobileMenuOpen = false"
@@ -99,7 +105,7 @@
                 Logout
               </button>
             </template>
-            <template v-else>
+            <template v-else-if="authReady">
               <NuxtLink 
                 to="/login"
                 @click="isMobileMenuOpen = false"
@@ -148,6 +154,7 @@
 <script setup lang="ts">
 const auth = useAuth()
 const user = computed(() => auth?.user?.value || null)
+const authReady = computed(() => auth?.authReady?.value || false)
 const userStore = useUserStore()
 const router = useRouter()
 

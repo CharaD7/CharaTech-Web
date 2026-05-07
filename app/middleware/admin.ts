@@ -1,8 +1,18 @@
-export default defineNuxtRouteMiddleware(async (to, from) => {
-  if (import.meta.server) {
-    return
+export default defineNuxtRouteMiddleware(async (to) => {
+  if (import.meta.server) return
+  
+  // Wait for auth to initialize
+  const { authReady } = useAuth()
+  if (!authReady.value) {
+    await new Promise<void>((resolve) => {
+      const check = () => {
+        if (authReady.value) resolve()
+        else setTimeout(check, 50)
+      }
+      check()
+    })
   }
- 
+
   const userStore = useUserStore()
   const { supabase } = useSupabase()
   
@@ -16,18 +26,18 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     if (!userStore.currentUser) {
       try {
         await userStore.fetchCurrentUser()
-      } catch (error) {
+      } catch {
         return navigateTo('/admin/login')
       }
     }
-  } catch (error) {
+  } catch {
     return navigateTo('/admin/login')
   }
-   
+  
   if (!userStore.currentUser) {
     return navigateTo('/admin/login')
   }
-   
+  
   if (userStore.currentUser.role !== 'ADMIN') {
     return navigateTo('/login')
   }

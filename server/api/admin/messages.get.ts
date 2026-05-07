@@ -1,14 +1,26 @@
 /**
  * GET /api/admin/messages
- * Returns all conversations grouped by client, with last message and unread count.
+ * Returns ALL conversations grouped by client, with last message and unread count.
+ * Shows conversations from ALL admins.
  */
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireAdmin(event)
 
+    // Get ALL admin IDs
+    const allAdmins = await prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { id: true },
+    })
+    const adminIds = allAdmins.map(a => a.id)
+
     const messages = await prisma.message.findMany({
       where: {
-        OR: [{ receiverId: user.id }, { senderId: user.id }],
+        deleted: false,
+        OR: [
+          { receiverId: { in: adminIds } },
+          { senderId: { in: adminIds } },
+        ],
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -23,7 +35,8 @@ export default defineEventHandler(async (event) => {
     }>()
 
     for (const msg of messages) {
-      const clientId = msg.senderId === user.id ? msg.receiverId : msg.senderId
+      const isAdminSender = adminIds.includes(msg.senderId)
+      const clientId = isAdminSender ? msg.receiverId : msg.senderId
       if (!conversationMap.has(clientId)) {
         conversationMap.set(clientId, {
           clientId,
@@ -34,9 +47,9 @@ export default defineEventHandler(async (event) => {
         })
       }
       const conv = conversationMap.get(clientId)!
-      if (!msg.read && msg.receiverId === user.id) conv.unreadCount++
-      // If admin has ever sent a non-bot reply, conversation is human-handled
-      if (msg.senderId === user.id && !msg.isBot) conv.isAiHandled = false
+      if (!msg.read && adminIds.includes(msg.receiverId)) conv.unreadCount++
+      // If ANY admin has ever sent a non-bot reply, conversation is human-handled
+      if (isAdminSender && !msg.isBot) conv.isAiHandled = false
     }
 
     // Enrich with user info

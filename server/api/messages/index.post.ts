@@ -1,34 +1,43 @@
 /** POST /api/messages
  * Client sends a message to admin.
- * If admin has never replied (AI mode), auto-responds via Ollama with a fallback.
+ * If no admin has ever replied (AI mode), auto-responds via Ollama with a fallback.
  */
 import { chatWithAI } from '~~/server/utils/openai'
 
 export default defineEventHandler(async (event) => {
   const user = await requireAuth(event)
-  const { content } = await readBody(event)
+  const { content, fileUrl, fileName } = await readBody(event)
 
-  if (!content?.trim()) throw createError({ statusCode: 400, message: 'Message content required' })
+  if (!content?.trim() && !fileUrl) throw createError({ statusCode: 400, message: 'Message content or file required' })
 
-  const admin = await prisma.user.findFirst({
+  // Find ALL admins — pick the first one as the "system admin" for AI replies
+  const admins = await prisma.user.findMany({
     where: { role: 'ADMIN' },
     select: { id: true },
   })
-  if (!admin) throw createError({ statusCode: 500, message: 'No admin configured' })
+  if (!admins.length) throw createError({ statusCode: 500, message: 'No admin configured' })
+
+  // Use the first admin as the primary recipient (any admin can see/reply)
+  const primaryAdminId = admins[0].id
+  const adminIds = admins.map(a => a.id)
+
+  const messageContent = content?.trim() || (fileUrl ? `📎 ${fileName || 'File attached'}` : '')
 
   // Save client message
   const message = await prisma.message.create({
     data: {
       senderId: user.id,
-      receiverId: admin.id,
-      content: content.trim(),
+      receiverId: primaryAdminId,
+      content: messageContent,
+      fileUrl: fileUrl || null,
+      fileName: fileName || null,
       isBot: false,
     },
   })
 
-  // Detect AI mode: admin has never sent a human (non-bot) reply to this client
+  // Detect AI mode: NO admin has ever sent a human (non-bot) reply to this client
   const adminHasReplied = await prisma.message.findFirst({
-    where: { senderId: admin.id, receiverId: user.id, isBot: false },
+    where: { senderId: { in: adminIds }, receiverId: user.id, isBot: false },
   })
 
   let botReply: any = null
@@ -41,8 +50,7 @@ export default defineEventHandler(async (event) => {
       const config = useRuntimeConfig()
       const ollamaApiKey = config.ollamaApiKey as string | undefined
       if (ollamaApiKey) {
-        // Attempt Ollama
-        const result = await chatWithAI(content.trim())
+        const result = await chatWithAI(content?.trim() || '')
         if (result.success && result.response) {
           botContent = result.response
         }
@@ -53,21 +61,21 @@ export default defineEventHandler(async (event) => {
 
     botReply = await prisma.message.create({
       data: {
-        senderId: admin.id,
+        senderId: primaryAdminId,
         receiverId: user.id,
         content: botContent,
         isBot: true,
       },
     })
   } else {
-    // Human mode — notify admin of new message
+    // Human mode — notify the primary admin of new message
     await prisma.notification.create({
       data: {
-        userId: admin.id,
+        userId: primaryAdminId,
         type: 'STATUS_UPDATE',
         channel: ['IN_APP'],
         subject: 'New message from client',
-        message: `${user.email || 'A client'} sent: ${content.trim().slice(0, 80)}${content.length > 80 ? '…' : ''}`,
+        message: `${user.email || 'A client'} sent: ${messageContent.slice(0, 80)}${messageContent.length > 80 ? '…' : ''}`,
       },
     })
   }

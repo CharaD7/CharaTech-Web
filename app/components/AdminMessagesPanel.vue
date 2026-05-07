@@ -3,7 +3,7 @@ import GlowingScrollbar from '@/components/ui/GlowingScrollbar.vue'
 
 const toast = useAppToast()
 const { user, getAccessToken } = useAuth()
-const { subscribe, broadcast, unsubscribe } = useRealtimeMessages()
+const { subscribe, broadcast, broadcastTyping, startPolling, stopPolling, unsubscribe } = useRealtimeMessages()
 
 const conversations = ref<any[]>([])
 const selectedClientId = ref<string | null>(null)
@@ -15,8 +15,13 @@ const sending = ref(false)
 const isAiHandled = ref(true)
 const selectedClient = ref<any>(null)
 const adminId = ref<string | null>(null)
-
+const allAdminIds = ref<string[]>([])
+const otherTyping = ref(false)
+const deletingMessage = ref<string | null>(null)
 const messagesEnd = ref<HTMLElement | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+const attachingFile = ref(false)
+let typingTimeout: ReturnType<typeof setTimeout> | null = null
 
 const QUICK_REPLIES = [
   '✅ Thanks for reaching out! I\'ll review your request and get back to you shortly.',
@@ -43,6 +48,52 @@ const scrollToBottom = () => {
   nextTick(() => messagesEnd.value?.scrollIntoView({ behavior: 'smooth' }))
 }
 
+const deleteMessage = async (msg: any) => {
+  deletingMessage.value = msg.id
+  try {
+    const headers = await authHeaders()
+    await $fetch(`/api/admin/messages/${msg.id}`, {
+      method: 'DELETE',
+      headers,
+    })
+    const idx = messages.value.findIndex(m => m.id === msg.id)
+    if (idx >= 0) { messages.value[idx].deleted = true; messages.value[idx].content = '[Message deleted by admin]' }
+  } catch (e: any) {
+    toast.error(e.data?.message || 'Failed to delete message')
+  } finally {
+    deletingMessage.value = null
+  }
+}
+
+const handleFileSelect = async (e: Event) => {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  attachingFile.value = true
+  try {
+    const token = await getAccessToken()
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('folder', 'chat-attachments')
+
+    const result = await $fetch<{ url: string; fileName: string }>('/api/upload', {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    })
+
+    newMessage.value = result.fileName
+    ;(newMessage as any)._fileUrl = result.url
+    ;(newMessage as any)._fileName = result.fileName
+  } catch {
+    toast.error('Failed to upload file')
+  } finally {
+    attachingFile.value = false
+    if (input) input.value = ''
+  }
+}
+
 // ─── Auth headers ───────────────────────────────────────────────────────────
 async function authHeaders() {
   const token = await getAccessToken()
@@ -62,14 +113,8 @@ async function fetchConversations() {
   }
 }
 
-async function selectConversation(clientId: string) {
-  selectedClientId.value = clientId
+async function fetchThread(clientId: string) {
   loadingThread.value = true
-  messages.value = []
-
-  const conv = conversations.value.find(c => c.clientId === clientId)
-  if (conv) conv.unreadCount = 0
-
   try {
     const headers = await authHeaders()
     const data = await $fetch<any>(`/api/admin/messages/${clientId}`, { headers })
@@ -77,6 +122,7 @@ async function selectConversation(clientId: string) {
     isAiHandled.value = data.isAiHandled ?? true
     selectedClient.value = data.client
     adminId.value = data.adminId
+    allAdminIds.value = data.allAdminIds || [data.adminId]
   } catch (e: any) {
     toast.error(e.data?.message || 'Failed to load conversation')
   } finally {
@@ -85,12 +131,26 @@ async function selectConversation(clientId: string) {
   }
 }
 
+async function selectConversation(clientId: string) {
+  selectedClientId.value = clientId
+  messages.value = []
+
+  const conv = conversations.value.find(c => c.clientId === clientId)
+  if (conv) conv.unreadCount = 0
+
+  await fetchThread(clientId)
+}
+
 // ─── Send message ───────────────────────────────────────────────────────────
 async function sendMessage() {
-  if (!newMessage.value.trim() || sending.value || !selectedClientId.value) return
-
+  const fileUrl = (newMessage as any)._fileUrl
+  const fileName = (newMessage as any)._fileName
   const content = newMessage.value.trim()
+  if ((!content && !fileUrl) || sending.value || !selectedClientId.value) return
+
   newMessage.value = ''
+  delete (newMessage as any)._fileUrl
+  delete (newMessage as any)._fileName
   sending.value = true
 
   // Optimistic
@@ -99,7 +159,9 @@ async function sendMessage() {
     id: tempId,
     senderId: user.value?.id,
     receiverId: selectedClientId.value,
-    content,
+    content: content || `📎 ${fileName}`,
+    fileUrl,
+    fileName,
     isBot: false,
     createdAt: new Date().toISOString(),
   })
@@ -110,7 +172,7 @@ async function sendMessage() {
     const data = await $fetch<any>('/api/admin/messages', {
       method: 'POST',
       headers,
-      body: { receiverId: selectedClientId.value, content },
+      body: { receiverId: selectedClientId.value, content, fileUrl, fileName },
     })
 
     const idx = messages.value.findIndex(m => m.id === tempId)
@@ -119,7 +181,7 @@ async function sendMessage() {
     isAiHandled.value = false
 
     const conv = conversations.value.find(c => c.clientId === selectedClientId.value)
-    if (conv) { conv.lastMessage = content; conv.lastMessageAt = new Date().toISOString() }
+    if (conv) { conv.lastMessage = content || `📎 ${fileName}`; conv.lastMessageAt = new Date().toISOString() }
 
     if (data.message) await broadcast(data.message)
   } catch (e: any) {
@@ -140,31 +202,49 @@ function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
 }
 
+const handleTyping = () => {
+  if (!selectedClientId.value) return
+  broadcastTyping({ senderId: user.value?.id || '', receiverId: selectedClientId.value })
+  if (typingTimeout) clearTimeout(typingTimeout)
+  typingTimeout = setTimeout(() => { otherTyping.value = false }, 3000)
+}
+
 // ─── Realtime ──────────────────────────────────────────────────────────────
 onMounted(async () => {
   await fetchConversations()
   if (!user.value) return
 
-  // Admin subscribes to their own channel to receive client broadcasts
-  subscribe(user.value.id, (msg) => {
-    // If this message is in the currently open thread, append it
-    if (msg.senderId === selectedClientId.value) {
-      messages.value.push(msg)
-      scrollToBottom()
+  subscribe(
+    user.value.id,
+    (msg) => {
+      if (msg.senderId === selectedClientId.value) {
+        messages.value.push(msg)
+        scrollToBottom()
+      }
+      const conv = conversations.value.find(c => c.clientId === msg.senderId)
+      if (conv) {
+        conv.lastMessage = msg.content
+        conv.lastMessageAt = msg.createdAt
+        if (msg.senderId !== selectedClientId.value) conv.unreadCount = (conv.unreadCount || 0) + 1
+      } else {
+        fetchConversations()
+      }
+    },
+    () => {
+      otherTyping.value = true
+      if (typingTimeout) clearTimeout(typingTimeout)
+      typingTimeout = setTimeout(() => { otherTyping.value = false }, 3000)
     }
-    // Update or insert conversation
-    const conv = conversations.value.find(c => c.clientId === msg.senderId)
-    if (conv) {
-      conv.lastMessage = msg.content
-      conv.lastMessageAt = msg.createdAt
-      if (msg.senderId !== selectedClientId.value) conv.unreadCount = (conv.unreadCount || 0) + 1
-    } else {
-      fetchConversations() // New conversation — refresh list
-    }
-  })
+  )
+
+  // Poll for offline messages
+  startPolling(fetchConversations, 30000)
 })
 
-onUnmounted(() => unsubscribe())
+onUnmounted(() => {
+  stopPolling()
+  unsubscribe()
+})
 </script>
 
 <template>
@@ -200,7 +280,6 @@ onUnmounted(() => unsubscribe())
           ]"
         >
           <div class="flex items-start gap-3">
-            <!-- Avatar -->
             <div class="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-sm font-bold text-white shadow-inner">
               {{ conv.clientName.charAt(0).toUpperCase() }}
             </div>
@@ -249,7 +328,6 @@ onUnmounted(() => unsubscribe())
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <!-- AI / Human badge -->
             <div :class="[
               'px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1',
               isAiHandled ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' : 'bg-green-500/20 text-green-300 border border-green-500/30'
@@ -268,27 +346,64 @@ onUnmounted(() => unsubscribe())
 
           <template v-else>
             <div v-for="msg in messages" :key="msg.id"
-              :class="['flex gap-2', msg.senderId === adminId ? 'justify-end' : 'justify-start']">
+              :class="['flex gap-2 group', msg.senderId === adminId ? 'justify-end' : 'justify-start']">
 
-              <!-- Client avatar (left messages) -->
-              <div v-if="msg.senderId !== adminId"
+              <!-- Client avatar -->
+              <div v-if="!allAdminIds.includes(msg.senderId)"
                 class="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-xs font-bold text-white self-end">
                 {{ selectedClient?.name?.charAt(0)?.toUpperCase() || 'C' }}
               </div>
 
               <div :class="[
-                'max-w-[72%] px-3.5 py-2 rounded-2xl text-sm leading-relaxed',
-                msg.senderId === adminId
-                  ? msg.isBot
-                    ? 'bg-indigo-900/60 border border-indigo-500/30 text-indigo-100 rounded-br-sm italic'
-                    : 'bg-gradient-to-br from-purple-600 to-violet-600 text-white rounded-br-sm shadow-md shadow-purple-900/40'
-                  : 'bg-white/8 text-white rounded-bl-sm border border-white/8'
+                'max-w-[72%] px-3.5 py-2 rounded-2xl text-sm leading-relaxed relative',
+                msg.deleted
+                  ? 'bg-white/5 text-white/30 rounded-br-sm italic'
+                  : msg.senderId === adminId
+                    ? msg.isBot
+                      ? 'bg-indigo-900/60 border border-indigo-500/30 text-indigo-100 rounded-br-sm italic'
+                      : 'bg-gradient-to-br from-purple-600 to-violet-600 text-white rounded-br-sm shadow-md shadow-purple-900/40'
+                    : 'bg-white/8 text-white rounded-bl-sm border border-white/8'
               ]">
-                <div v-if="msg.isBot" class="text-xs text-indigo-300/70 mb-0.5 not-italic font-medium">🤖 Auto-reply</div>
-                <div class="break-words">{{ msg.content }}</div>
-                <div :class="['text-xs mt-1 opacity-50', msg.senderId === adminId ? 'text-right' : '']">
-                  {{ formatTime(msg.createdAt) }}
+                <div v-if="msg.isBot && !msg.deleted" class="text-xs text-indigo-300/70 mb-0.5 not-italic font-medium">🤖 Auto-reply</div>
+
+                <template v-if="!msg.deleted">
+                  <div v-if="msg.fileUrl" class="mb-1">
+                    <a :href="msg.fileUrl" target="_blank"
+                      class="text-xs text-purple-300 hover:text-purple-200 underline flex items-center gap-1">
+                      📎 {{ msg.fileName || 'Attachment' }}
+                    </a>
+                  </div>
+                  <div class="break-words">{{ msg.content }}</div>
+                  <div :class="['text-xs mt-1 opacity-50 flex items-center gap-1', msg.senderId === adminId ? 'text-right justify-end' : '']">
+                    {{ formatTime(msg.createdAt) }}
+                    <span v-if="msg.read && msg.senderId === adminId" class="text-green-300/60" title="Read">✓✓</span>
+                  </div>
+                </template>
+                <template v-else>
+                  {{ msg.content }}
+                </template>
+
+                <!-- Delete button on hover -->
+                <div v-if="!msg.deleted"
+                  class="absolute top-0 right-0 -mt-7 hidden group-hover:flex items-center gap-1 bg-gray-900/80 rounded-lg px-1 py-0.5 shadow-lg">
+                  <button @click="deleteMessage(msg)" :disabled="deletingMessage === msg.id"
+                    class="text-xs text-white/50 hover:text-red-400 p-0.5 disabled:opacity-40" title="Delete">
+                    <div v-if="deletingMessage === msg.id" class="w-3 h-3 rounded-full border border-current border-t-transparent animate-spin" />
+                    <span v-else>🗑</span>
+                  </button>
                 </div>
+              </div>
+            </div>
+
+            <!-- Typing indicator -->
+            <div v-if="otherTyping" class="flex justify-start gap-2">
+              <div class="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-xs font-bold text-white self-end">
+                {{ selectedClient?.name?.charAt(0)?.toUpperCase() || 'C' }}
+              </div>
+              <div class="bg-white/10 border border-white/10 rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5">
+                <div v-for="i in 3" :key="i"
+                  class="w-2 h-2 rounded-full bg-white/50"
+                  :style="`animation: bounce 1.2s ease-in-out ${(i-1)*0.2}s infinite`" />
               </div>
             </div>
           </template>
@@ -314,16 +429,25 @@ onUnmounted(() => unsubscribe())
         <!-- Input -->
         <div class="px-4 py-3 border-t border-white/10 flex gap-2 items-end flex-shrink-0"
           style="background: rgba(15,10,30,0.6)">
+          <input ref="fileInput" type="file" class="hidden" @change="handleFileSelect" accept="image/*,video/*,.pdf,.doc,.docx" />
+          <button @click="fileInput?.click()" :disabled="attachingFile"
+            class="flex-shrink-0 h-10 w-10 rounded-xl text-white/40 hover:text-white/70 flex items-center justify-center disabled:opacity-40 transition-all">
+            <div v-if="attachingFile" class="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+            </svg>
+          </button>
           <textarea
             v-model="newMessage"
             @keydown="handleKeydown"
+            @input="handleTyping"
             placeholder="Reply to client… (Enter to send, Shift+Enter for newline)"
             rows="2"
             class="flex-1 resize-none bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-purple-500/60 transition-all"
           />
           <button
             @click="sendMessage"
-            :disabled="!newMessage.trim() || sending"
+            :disabled="(!newMessage.trim() && !(newMessage as any)._fileUrl) || sending"
             class="flex-shrink-0 h-10 px-4 rounded-xl bg-gradient-to-br from-purple-600 to-violet-600 text-white text-sm font-semibold flex items-center gap-2 disabled:opacity-40 hover:from-purple-500 hover:to-violet-500 transition-all shadow-lg shadow-purple-900/30"
           >
             <span v-if="!sending">Send</span>
@@ -343,5 +467,10 @@ onUnmounted(() => unsubscribe())
   background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 </style>
