@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
       notes,
       dueDate,
       status: requestedStatus,
+      milestones,
     } = body
 
     if (!submissionId || !clientId || !amount || !items) {
@@ -46,7 +47,8 @@ export default defineEventHandler(async (event) => {
         status: requestedStatus || 'DRAFT',
         items: JSON.parse(JSON.stringify(items)),
         notes: processedNotes,
-        dueDate: dueDate ? new Date(dueDate) : null
+        dueDate: dueDate ? new Date(dueDate) : null,
+        milestones: milestones ? JSON.parse(JSON.stringify(milestones)) : undefined,
       }
     })
 

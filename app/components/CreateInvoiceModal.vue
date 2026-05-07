@@ -114,6 +114,61 @@
                       </div>
                     </div>
                   </Transition>
+
+                  <!-- Submission Summary (collapsible) -->
+                  <Transition name="fade-slide">
+                    <div v-if="selectedSub" class="mt-3">
+                      <button
+                        @click="showSubmissionSummary = !showSubmissionSummary"
+                        class="flex items-center gap-2 w-full px-4 py-2.5 rounded-lg transition text-xs font-medium"
+                        :class="showSubmissionSummary ? 'bg-purple-500/10 text-purple-300 border border-purple-500/20' : 'bg-white/5 text-white/50 hover:text-white/70 border border-white/10'"
+                      >
+                        <span>📋</span>
+                        <span>Submission Summary</span>
+                        <svg class="w-3.5 h-3.5 ml-auto transition-transform duration-200" :class="{ 'rotate-180': showSubmissionSummary }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+
+                      <div v-if="showSubmissionSummary" class="mt-3 space-y-3">
+                        <!-- Project Brief -->
+                        <div v-if="selectedSub.projectBrief" class="p-3 rounded-lg bg-white/5 border border-white/10">
+                          <p class="text-white/30 text-xs uppercase tracking-wider mb-1.5">Project Brief</p>
+                          <p class="text-white/70 text-sm leading-relaxed whitespace-pre-wrap line-clamp-6">{{ selectedSub.projectBrief }}</p>
+                        </div>
+
+                        <!-- Audio Brief -->
+                        <div v-if="selectedSub.audioBrief" class="p-3 rounded-lg bg-white/5 border border-white/10">
+                          <p class="text-white/30 text-xs uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                            <span>🎤</span> Audio Recording
+                            <span v-if="selectedSub.audioFileName" class="text-white/20 font-normal">({{ selectedSub.audioFileName }})</span>
+                          </p>
+                          <audio controls class="w-full max-w-sm rounded" :src="selectedSub.audioBrief">
+                            Your browser does not support the audio element.
+                          </audio>
+                        </div>
+
+                        <!-- Attachments -->
+                        <div v-if="selectedSub.attachments?.length" class="p-3 rounded-lg bg-white/5 border border-white/10">
+                          <p class="text-white/30 text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <span>📎</span> Attachments ({{ selectedSub.attachments.length }})
+                          </p>
+                          <div class="flex flex-wrap gap-2">
+                            <a
+                              v-for="att in selectedSub.attachments"
+                              :key="att.id"
+                              :href="att.fileUrl"
+                              target="_blank"
+                              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition text-xs"
+                            >
+                              <span>{{ att.type === 'IMAGE' ? '🖼️' : att.type === 'VIDEO' ? '🎬' : '🔗' }}</span>
+                              <span class="text-white/70 truncate max-w-[120px]">{{ att.fileName || att.type }}</span>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Transition>
                 </div>
               </div>
 
@@ -213,9 +268,8 @@
                       <button
                         @click="removeItem(i)"
                         class="w-8 h-8 rounded-lg flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-500/10 transition opacity-0 group-hover:opacity-100"
-                        title="Remove item"
                       >
-                        ×
+                        <BaseTooltip text="Remove item">×</BaseTooltip>
                       </button>
                     </div>
                   </TransitionGroup>
@@ -249,6 +303,7 @@
                         v-model="form.currency"
                         :options="currencyOptions"
                         label="Currency"
+                        placeholder="Select currency"
                       />
                     </div>
                     <!-- Tax Rate -->
@@ -615,6 +670,7 @@ const activeSubmitStatus = ref<'DRAFT' | 'SENT' | null>(null)
 const generateNotes = (projectName?: string, invoiceNumber?: string) => {
   const project = projectName || '[Project Name]'
   const ref = invoiceNumber ? `${project}-${invoiceNumber}` : `${project}—[Invoice Number]`
+
   return (
     'PROJECT AGREEMENT & PAYMENT TERMS\n\n' +
     'PROJECT: ' + project + '\n\n' +
@@ -649,13 +705,22 @@ const generateNotes = (projectName?: string, invoiceNumber?: string) => {
   )
 }
 
+const showSubmissionSummary = ref(false)
+
 const form = reactive({
   submissionId: '',
-  currency: 'GHS',
+  currency: '',
   taxRate: 0,
   dueDate: '',
   paymentTerms: 'NET_30',
   notes: generateNotes(),
+})
+
+// Auto-set currency from selected submission
+watch(() => selectedSub.value, (sub) => {
+  if (sub?.currency && !props.editInvoice) {
+    form.currency = sub.currency
+  }
 })
 
 const items = ref<LineItem[]>([
@@ -710,7 +775,9 @@ watch(() => props.show, (val) => {
       form.notes = generateNotes(props.preselectedSubmission.projectName)
     }
     setDueDate(30)
-    form.currency = 'GHS'
+    if (props.preselectedSubmission?.currency && !props.editInvoice) {
+      form.currency = props.preselectedSubmission.currency
+    }
   }
 })
 
@@ -937,7 +1004,7 @@ const close = () => {
   emit('close')
   setTimeout(() => {
     form.submissionId = ''
-    form.currency = 'GHS'
+    form.currency = ''
     form.taxRate = 0
     form.dueDate = ''
     form.paymentTerms = 'NET_30'

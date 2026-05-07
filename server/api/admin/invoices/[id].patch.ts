@@ -117,10 +117,41 @@ export default defineEventHandler(async (event) => {
     if (!id) throw createError({ statusCode: 400, message: 'Invoice ID required' })
 
     const body = await readBody(event)
-    const { status, approveProof, proofId, proofNotes, resolveInfoRequest } = body
+    const { status, approveProof, proofId, proofNotes, resolveInfoRequest, markMilestone, unmarkMilestone } = body
 
     const invoice = await prisma.invoice.findUnique({ where: { id } })
     if (!invoice) throw createError({ statusCode: 404, message: 'Invoice not found' })
+
+    // Handle milestone mark as paid
+    if (markMilestone) {
+      const milestoneField = markMilestone === 'ADVANCE_60' ? 'advancePaidAt' : markMilestone === 'FINAL_40' ? 'finalPaidAt' : null
+      if (!milestoneField) throw createError({ statusCode: 400, message: 'Invalid milestone phase' })
+      await prisma.invoice.update({
+        where: { id },
+        data: { [milestoneField]: new Date() },
+      })
+      return { success: true, message: `Milestone ${markMilestone} marked as paid` }
+    }
+
+    // Handle milestone unmark
+    if (unmarkMilestone) {
+      const milestonePaidField = unmarkMilestone === 'ADVANCE_60' ? 'advancePaidAt' : unmarkMilestone === 'FINAL_40' ? 'finalPaidAt' : null
+      const milestoneApprovedField = unmarkMilestone === 'ADVANCE_60' ? 'advanceApprovedAt' : unmarkMilestone === 'FINAL_40' ? 'finalApprovedAt' : null
+      if (!milestonePaidField) throw createError({ statusCode: 400, message: 'Invalid milestone phase' })
+      await prisma.invoice.update({
+        where: { id },
+        data: {
+          [milestonePaidField]: null,
+          [milestoneApprovedField!]: null,
+        },
+      })
+      // Also reset associated payment proofs to PENDING
+      await prisma.paymentProof.updateMany({
+        where: { invoiceId: id, phase: unmarkMilestone as any },
+        data: { status: 'PENDING', approvedAt: null, approvedBy: null },
+      })
+      return { success: true, message: `Milestone ${unmarkMilestone} reverted` }
+    }
 
     // Handle proof approval
     if (approveProof && proofId) {

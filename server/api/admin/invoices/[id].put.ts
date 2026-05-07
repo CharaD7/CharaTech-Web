@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const body = await readBody(event)
-    const { submissionId, clientId, amount, taxAmount, currency, items, notes, dueDate, status, paymentTerms } = body
+    const { submissionId, clientId, amount, taxAmount, currency, items, notes, dueDate, status, paymentTerms, milestones } = body
 
     const updates: any = {}
     if (submissionId !== undefined) {
@@ -37,6 +37,7 @@ export default defineEventHandler(async (event) => {
       processedNotes = processedNotes.replace(/—\s*\[Invoice Number\]/g, `—${existing.invoiceNumber}`)
       updates.notes = processedNotes
     }
+    if (milestones !== undefined) updates.milestones = JSON.parse(JSON.stringify(milestones))
     if (dueDate !== undefined) updates.dueDate = dueDate ? new Date(dueDate) : null
     if (status !== undefined) {
       const valid = ['DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED']

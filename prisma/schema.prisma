@@ -237,6 +237,7 @@ model Invoice {
   advanceApprovedAt DateTime?
   finalPaidAt       DateTime?
   finalApprovedAt   DateTime?
+  milestones        Json?         // Configurable payout structure, e.g. [{phase:"ADVANCE_60",label:"Advance",percentage:60},{phase:"FINAL_40",label:"Final",percentage:40}]
 
   // Info request from client
   infoRequestType     String?
@@ -260,6 +261,7 @@ model PaymentProof {
   fileType   String?
   fileSize   Int?
   phase      PaymentPhase
+  phaseLabel String?       // Human-readable label for the milestone phase
   status     ProofStatus   @default(PENDING)
   notes      String?
   approvedBy String?

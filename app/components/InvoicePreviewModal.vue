@@ -167,6 +167,57 @@
                 <p class="text-white/60 text-sm whitespace-pre-wrap leading-relaxed">{{ displayNotes }}</p>
               </div>
 
+              <!-- Submission Summary -->
+              <div v-if="invoice.submission" class="px-6 py-4 border-t border-white/5">
+                <button
+                  @click="showSummary = !showSummary"
+                  class="flex items-center gap-2 w-full text-left transition"
+                >
+                  <span class="text-white/30 text-[10px] uppercase tracking-widest font-semibold">Submission Summary</span>
+                  <svg class="w-3.5 h-3.5 text-white/30 ml-auto transition-transform duration-200" :class="{ 'rotate-180': showSummary }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                <div v-if="showSummary" class="mt-3 space-y-3">
+                  <!-- Project Brief -->
+                  <div v-if="invoice.submission.projectBrief" class="p-3 rounded-lg bg-white/5 border border-white/10">
+                    <p class="text-white/30 text-[10px] uppercase tracking-widest mb-1.5">Project Brief</p>
+                    <p class="text-white/60 text-sm leading-relaxed whitespace-pre-wrap">{{ invoice.submission.projectBrief }}</p>
+                  </div>
+
+                  <!-- Audio Brief -->
+                  <div v-if="invoice.submission.audioBrief" class="p-3 rounded-lg bg-white/5 border border-white/10">
+                    <p class="text-white/30 text-[10px] uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                      <span>🎤</span> Audio Recording
+                      <span v-if="invoice.submission.audioFileName" class="text-white/20 font-normal">({{ invoice.submission.audioFileName }})</span>
+                    </p>
+                    <audio controls class="w-full max-w-sm rounded" :src="invoice.submission.audioBrief">
+                      Your browser does not support the audio element.
+                    </audio>
+                  </div>
+
+                  <!-- Attachments -->
+                  <div v-if="invoice.submission.attachments?.length" class="p-3 rounded-lg bg-white/5 border border-white/10">
+                    <p class="text-white/30 text-[10px] uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                      <span>📎</span> Attachments ({{ invoice.submission.attachments.length }})
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                      <a
+                        v-for="att in invoice.submission.attachments"
+                        :key="att.id"
+                        :href="att.fileUrl"
+                        target="_blank"
+                        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition text-xs"
+                      >
+                        <span>{{ att.type === 'IMAGE' ? '🖼️' : att.type === 'VIDEO' ? '🎬' : '🔗' }}</span>
+                        <span class="text-white/60 truncate max-w-[120px]">{{ att.fileName || att.type }}</span>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <!-- Payment Reference (client only) -->
               <div v-if="mode === 'client' && invoice.submission" class="px-6 py-4 border-t border-white/5 bg-purple-900/10">
                 <p class="text-purple-300 text-[10px] uppercase tracking-widest mb-1.5 font-semibold">Payment Reference</p>
@@ -179,37 +230,68 @@
               </div>
 
               <!-- Payment Milestones (client only) -->
-              <div v-if="mode === 'client' && invoice.status !== 'DRAFT' && invoice.status !== 'CANCELLED'" class="px-6 py-4 border-t border-white/5 space-y-3">
+              <div v-if="milestones.length > 0 && invoice.status !== 'DRAFT' && invoice.status !== 'CANCELLED'" class="px-6 py-4 border-t border-white/5 space-y-3">
                 <p class="text-white/30 text-[10px] uppercase tracking-widest font-semibold">Payment Milestones</p>
-                <!-- Advance 60% -->
-                <div :class="['rounded-xl p-3 border transition-all', milestoneClass('advance')]">
+                <div
+                  v-for="ms in milestones"
+                  :key="ms.phase"
+                  :class="['rounded-xl p-3 border transition-all', milestoneClass(ms)]"
+                >
                   <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
-                      <span class="text-sm font-semibold text-white">60% Advance</span>
-                      <span v-if="invoice.advanceApprovedAt" class="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">Confirmed</span>
-                      <span v-else-if="invoice.advancePaidAt" class="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">Awaiting Review</span>
+                      <span class="text-sm font-semibold text-white">{{ ms.label }}</span>
+                      <span v-if="isMilestoneApproved(ms)" class="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">Confirmed</span>
+                      <span v-else-if="isMilestonePaid(ms)" class="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">Awaiting Review</span>
                     </div>
-                    <span class="text-purple-300 font-bold text-sm">{{ formatCurrency(Number(invoice.totalAmount) * 0.6) }}</span>
+                    <span class="text-purple-300 font-bold text-sm">{{ formatCurrency(milestoneAmount(ms)) }}</span>
                   </div>
-                  <div v-if="!invoice.advancePaidAt">
-                    <button @click="$emit('upload-proof', 'ADVANCE_60', invoice.totalAmount * 0.6)" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600/30 text-purple-300 hover:bg-purple-600/50 border border-purple-500/30 transition">
+                  <div v-if="!isMilestonePaid(ms)">
+                    <button @click="$emit('upload-proof', ms.phase, milestoneAmount(ms))" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600/30 text-purple-300 hover:bg-purple-600/50 border border-purple-500/30 transition">
                       Upload Proof
                     </button>
                   </div>
                 </div>
-                <!-- Final 40% -->
-                <div :class="['rounded-xl p-3 border transition-all', milestoneClass('final')]">
-                  <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                      <span class="text-sm font-semibold text-white">40% Final</span>
-                      <span v-if="invoice.finalApprovedAt" class="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">Confirmed</span>
-                      <span v-else-if="invoice.finalPaidAt" class="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">Awaiting Review</span>
-                    </div>
-                    <span class="text-purple-300 font-bold text-sm">{{ formatCurrency(Number(invoice.totalAmount) * 0.4) }}</span>
+              </div>
+
+              <!-- Admin Milestone Controls -->
+              <div v-if="mode === 'admin' && milestones.length > 0" class="px-6 py-4 border-t border-white/5 space-y-3">
+                <p class="text-white/30 text-[10px] uppercase tracking-widest font-semibold">Milestone Management</p>
+                <div
+                  v-for="ms in milestones"
+                  :key="ms.phase"
+                  class="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10"
+                >
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm text-white/80">{{ ms.label }}</span>
+                    <span
+                      v-if="isMilestoneApproved(ms)"
+                      class="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-300"
+                    >Approved</span>
+                    <span
+                      v-else-if="isMilestonePaid(ms)"
+                      class="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300"
+                    >Paid (unverified)</span>
+                    <span
+                      v-else
+                      class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/40"
+                    >Pending</span>
                   </div>
-                  <div v-if="!invoice.finalPaidAt">
-                    <button @click="$emit('upload-proof', 'FINAL_40', invoice.totalAmount * 0.4)" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600/30 text-purple-300 hover:bg-purple-600/50 border border-purple-500/30 transition">
-                      Upload Proof
+                  <div class="flex gap-1.5">
+                    <button
+                      v-if="!isMilestonePaid(ms)"
+                      @click="markMilestonePaid(ms.phase)"
+                      :disabled="actionLoading"
+                      class="px-2.5 py-1 rounded-lg text-xs font-medium bg-green-600/30 text-green-300 hover:bg-green-600/50 border border-green-500/30 transition"
+                    >
+                      Mark Paid
+                    </button>
+                    <button
+                      v-if="isMilestonePaid(ms) || isMilestoneApproved(ms)"
+                      @click="unmarkMilestone(ms.phase)"
+                      :disabled="actionLoading"
+                      class="px-2.5 py-1 rounded-lg text-xs font-medium bg-red-500/20 text-red-300 hover:bg-red-500/40 border border-red-500/30 transition"
+                    >
+                      Unmark
                     </button>
                   </div>
                 </div>
@@ -333,6 +415,7 @@ const emit = defineEmits<{
 const { getAccessToken } = useAuth()
 const actionLoading = ref(false)
 const actionError = ref('')
+const showSummary = ref(false)
 
 // ── Computed ────────────────────────────────────────────────
 const currency = computed(() => props.invoice?.currency || 'USD')
@@ -383,11 +466,30 @@ const statusClass = computed(() => {
   return map[props.invoice?.status] || 'bg-gray-500/20 text-gray-300'
 })
 
-const milestoneClass = (phase: 'advance' | 'final') => {
-  const approved = phase === 'advance' ? props.invoice?.advanceApprovedAt : props.invoice?.finalApprovedAt
-  const paid = phase === 'advance' ? props.invoice?.advancePaidAt : props.invoice?.finalPaidAt
-  if (approved) return 'border-green-500/30 bg-green-500/10'
-  if (paid) return 'border-yellow-500/30 bg-yellow-500/10'
+const milestones = computed(() => {
+  const raw = props.invoice?.milestones
+  if (Array.isArray(raw) && raw.length > 0) return raw
+  return [
+    { phase: 'ADVANCE_60', label: 'Advance Payment', percentage: 60 },
+    { phase: 'FINAL_40', label: 'Final Payment', percentage: 40 },
+  ]
+})
+
+const isMilestonePaid = (ms: any) => {
+  const field = ms.phase === 'ADVANCE_60' ? 'advancePaidAt' : ms.phase === 'FINAL_40' ? 'finalPaidAt' : null
+  return field ? !!props.invoice?.[field] : false
+}
+
+const isMilestoneApproved = (ms: any) => {
+  const field = ms.phase === 'ADVANCE_60' ? 'advanceApprovedAt' : ms.phase === 'FINAL_40' ? 'finalApprovedAt' : null
+  return field ? !!props.invoice?.[field] : false
+}
+
+const milestoneAmount = (ms: any) => Number(props.invoice?.totalAmount || 0) * ((ms.percentage || 0) / 100)
+
+const milestoneClass = (ms: any) => {
+  if (isMilestoneApproved(ms)) return 'border-green-500/30 bg-green-500/10'
+  if (isMilestonePaid(ms)) return 'border-yellow-500/30 bg-yellow-500/10'
   return 'border-white/10 bg-white/5'
 }
 
@@ -414,6 +516,49 @@ const updateStatus = async (status: string) => {
     emit('updated', result.invoice)
   } catch (err: any) {
     actionError.value = err?.data?.message || err.message || 'Failed to update invoice.'
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+const markMilestonePaid = async (phase: string) => {
+  actionLoading.value = true
+  actionError.value = ''
+  try {
+    const token = await getAccessToken()
+    await $fetch(`/api/admin/invoices/${props.invoice.id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+      body: { markMilestone: phase },
+    })
+    // Refetch invoice to get updated state
+    const updated = await $fetch(`/api/invoices/${props.invoice.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    emit('updated', (updated as any).invoice)
+  } catch (err: any) {
+    actionError.value = err?.data?.message || err.message || 'Failed to mark milestone.'
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+const unmarkMilestone = async (phase: string) => {
+  actionLoading.value = true
+  actionError.value = ''
+  try {
+    const token = await getAccessToken()
+    await $fetch(`/api/admin/invoices/${props.invoice.id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+      body: { unmarkMilestone: phase },
+    })
+    const updated = await $fetch(`/api/invoices/${props.invoice.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    emit('updated', (updated as any).invoice)
+  } catch (err: any) {
+    actionError.value = err?.data?.message || err.message || 'Failed to unmark milestone.'
   } finally {
     actionLoading.value = false
   }
@@ -470,32 +615,42 @@ const printInvoice = () => {
       <div style="color:#4a4a5a;font-size:12px;white-space:pre-wrap;line-height:1.7;">${processedNotes}</div>
     </div>` : ''
 
-  const milestonesHtml = inv.status !== 'DRAFT' && inv.status !== 'CANCELLED' ? `
+  const milestones = (() => {
+    const raw = inv.milestones
+    if (Array.isArray(raw) && raw.length > 0) return raw
+    return [
+      { phase: 'ADVANCE_60', label: 'Advance Payment', percentage: 60 },
+      { phase: 'FINAL_40', label: 'Final Payment', percentage: 40 },
+    ]
+  })()
+
+  const isMsPaid = (ms: any) => ms.phase === 'ADVANCE_60' ? !!inv.advancePaidAt : ms.phase === 'FINAL_40' ? !!inv.finalPaidAt : false
+  const isMsApproved = (ms: any) => ms.phase === 'ADVANCE_60' ? !!inv.advanceApprovedAt : ms.phase === 'FINAL_40' ? !!inv.finalApprovedAt : false
+
+  const milestonesHtml = inv.status !== 'DRAFT' && inv.status !== 'CANCELLED' && milestones.length > 0 ? `
     <div style="padding:20px 32px;border-top:1px solid #e8e4f0;">
       <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9b8fb0;margin-bottom:12px;font-weight:600;">Payment Milestones</div>
-      <div style="display:flex;gap:16px;">
-        <div style="flex:1;padding:14px;border-radius:10px;border:1.5px solid ${inv.advanceApprovedAt ? '#d1fae5' : inv.advancePaidAt ? '#fef3c7' : '#e8e4f0'};background:${inv.advanceApprovedAt ? '#f0fdf4' : inv.advancePaidAt ? '#fffbeb' : '#faf8ff'};">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        ${milestones.map((ms: any) => {
+          const msPaid = isMsPaid(ms)
+          const msApproved = isMsApproved(ms)
+          const borderColor = msApproved ? '#d1fae5' : msPaid ? '#fef3c7' : '#e8e4f0'
+          const bgColor = msApproved ? '#f0fdf4' : msPaid ? '#fffbeb' : '#faf8ff'
+          const badge = msApproved ? '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#d1fae5;color:#059669;font-weight:600;">Confirmed</span>' :
+            msPaid ? '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#fef3c7;color:#d97706;font-weight:600;">Awaiting Review</span>' :
+            '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#f3f4f6;color:#6b7280;font-weight:600;">Pending</span>'
+          const msAmount = total * ((ms.percentage || 0) / 100)
+          return `
+        <div style="flex:1;min-width:160px;padding:14px;border-radius:10px;border:1.5px solid ${borderColor};background:${bgColor};">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
             <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:13px;font-weight:700;color:#1f1f2e;">60% Advance</span>
-              ${inv.advanceApprovedAt ? '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#d1fae5;color:#059669;font-weight:600;">Confirmed</span>' :
-                inv.advancePaidAt ? '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#fef3c7;color:#d97706;font-weight:600;">Awaiting Review</span>' :
-                '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#f3f4f6;color:#6b7280;font-weight:600;">Pending</span>'}
+              <span style="font-size:13px;font-weight:700;color:#1f1f2e;">${ms.label}</span>
+              ${badge}
             </div>
-            <span style="font-weight:800;color:#7c3aed;font-size:14px;">${fmt(total * 0.6)}</span>
+            <span style="font-weight:800;color:#7c3aed;font-size:14px;">${fmt(msAmount)}</span>
           </div>
-        </div>
-        <div style="flex:1;padding:14px;border-radius:10px;border:1.5px solid ${inv.finalApprovedAt ? '#d1fae5' : inv.finalPaidAt ? '#fef3c7' : '#e8e4f0'};background:${inv.finalApprovedAt ? '#f0fdf4' : inv.finalPaidAt ? '#fffbeb' : '#faf8ff'};">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:13px;font-weight:700;color:#1f1f2e;">40% Final</span>
-              ${inv.finalApprovedAt ? '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#d1fae5;color:#059669;font-weight:600;">Confirmed</span>' :
-                inv.finalPaidAt ? '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#fef3c7;color:#d97706;font-weight:600;">Awaiting Review</span>' :
-                '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#f3f4f6;color:#6b7280;font-weight:600;">Pending</span>'}
-            </div>
-            <span style="font-weight:800;color:#7c3aed;font-size:14px;">${fmt(total * 0.4)}</span>
-          </div>
-        </div>
+        </div>`
+        }).join('')}
       </div>
     </div>` : ''
 
@@ -615,6 +770,30 @@ const printInvoice = () => {
     </div>
 
     ${notesHtml}
+
+    <!-- Submission Summary (print) -->
+    ${inv.submission ? `
+    <div style="padding:20px 32px;border-top:1px solid #e8e4f0;">
+      <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9b8fb0;margin-bottom:10px;font-weight:600;">Submission Summary</div>
+      ${inv.submission.projectBrief ? `
+      <div style="margin-bottom:10px;">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#b0a8c0;margin-bottom:4px;">Project Brief</div>
+        <div style="color:#4a4a5a;font-size:11px;white-space:pre-wrap;line-height:1.6;">${inv.submission.projectBrief}</div>
+      </div>` : ''}
+      ${inv.submission.audioBrief ? `
+      <div style="margin-bottom:10px;">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#b0a8c0;margin-bottom:4px;">Audio Recording${inv.submission.audioFileName ? ` (${inv.submission.audioFileName})` : ''}</div>
+        <div style="font-size:11px;color:#7c3aed;">Audio file available in the online preview.</div>
+      </div>` : ''}
+      ${inv.submission.attachments?.length ? `
+      <div>
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:#b0a8c0;margin-bottom:4px;">Attachments (${inv.submission.attachments.length})</div>
+        <div style="font-size:11px;color:#4a4a5a;">
+          ${inv.submission.attachments.map((a: any) => `<div style="padding:2px 0;">${a.type === 'IMAGE' ? '🖼️' : a.type === 'VIDEO' ? '🎬' : '🔗'} ${a.fileName || a.type}</div>`).join('')}
+        </div>
+      </div>` : ''}
+    </div>` : ''}
+
     ${milestonesHtml}
 
     <!-- Footer -->

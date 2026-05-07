@@ -7,13 +7,17 @@ export default defineEventHandler(async (event) => {
       orderBy: { createdAt: 'desc' },
     })
 
-    // Enrich with submission project name
+    // Enrich with submission info
     const submissionIds = invoices.map((i) => i.submissionId).filter(Boolean)
     const submissions =
       submissionIds.length > 0
         ? await prisma.submission.findMany({
             where: { id: { in: submissionIds } },
-            select: { id: true, projectName: true, industry: true, complexity: true },
+            include: {
+              attachments: {
+                orderBy: { createdAt: 'desc' }
+              }
+            },
           })
         : []
     const subMap = Object.fromEntries(submissions.map((s) => [s.id, s]))

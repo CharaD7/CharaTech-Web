@@ -18,7 +18,11 @@ export default defineEventHandler(async (event) => {
     const submission = invoice.submissionId
       ? await prisma.submission.findUnique({
           where: { id: invoice.submissionId },
-          select: { id: true, projectName: true, industry: true, complexity: true, projectType: true },
+          include: {
+            attachments: {
+              orderBy: { createdAt: 'desc' }
+            }
+          },
         })
       : null
 
