@@ -41,6 +41,9 @@ model Submission {
   budget              BudgetRange?
   timeline            String?
   requirements        Json
+  projectBrief        String?
+  audioBrief          String?
+  audioFileName       String?
   additionalNotes     String?
   dialogflowSessionId String?
   aiConversation      Json?

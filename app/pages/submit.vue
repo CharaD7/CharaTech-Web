@@ -222,17 +222,120 @@
             </div>
 
             <div v-show="currentStep === 3">
-              <h2 class="text-2xl font-bold text-white mb-6">Additional Information & Media</h2>
+              <h2 class="text-2xl font-bold text-white mb-6">Project Brief & Media</h2>
               
-              <BaseTextarea
-                v-model="formData.additionalNotes"
-                label="Additional Notes or Special Requirements"
-                placeholder="Tell us anything else you'd like us to know about your project..."
-                :rows="6"
-              />
+              <!-- Project Brief Section (Mandatory) -->
+              <div class="mb-8">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-red-400">*</span>
+                  <h3 class="text-lg font-semibold text-white">Project Brief Description</h3>
+                </div>
+                <p class="text-white/60 text-sm mb-4">
+                  Please provide a clear description of your project requirements. What are your goals? What problem does this project solve? Who are the target users?
+                </p>
+                <p class="text-purple-300/70 text-xs mb-4 italic">
+                  💡 Tip: You can also include YouTube links or URL references to similar projects, inspiration, or examples that illustrate your vision.
+                </p>
+                
+                <BaseTextarea
+                  v-model="formData.projectBrief"
+                  placeholder="Describe your project in detail..."
+                  :rows="6"
+                  :error="validationErrors.projectBrief"
+                />
+                
+                <!-- Validation message -->
+                <div v-if="!formData.projectBrief && !audioFile" class="mt-2 text-amber-400/80 text-xs flex items-center gap-1">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  You must provide either a written brief or an audio recording below.
+                </div>
+              </div>
 
+              <!-- Audio Recording Section (Alternative to written brief) -->
+              <div class="mb-8 p-4 rounded-xl border border-purple-500/20" style="background: rgba(168,85,247,0.05);">
+                <div class="flex items-center gap-2 mb-2">
+                  <span>🎙️</span>
+                  <h3 class="text-lg font-semibold text-white">Audio Recording</h3>
+                </div>
+                <p class="text-white/60 text-sm mb-4">
+                  Prefer to speak? Record your project requirements as an audio file. This serves as an alternative to the written brief above.
+                </p>
+                
+                <div class="flex flex-col sm:flex-row items-center gap-3">
+                  <!-- Record Button -->
+                  <button
+                    type="button"
+                    @click="toggleRecording"
+                    :class="[
+                      'px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2',
+                      isRecording 
+                        ? 'bg-red-500/20 border border-red-500/50 text-red-300 animate-pulse' 
+                        : 'bg-purple-500/20 border border-purple-500/50 text-purple-300 hover:bg-purple-500/30'
+                    ]"
+                  >
+                    <svg v-if="!isRecording" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m0 0a7 7 0 017-7m0 0a7 7 0 017 7m0 0h.01" />
+                    </svg>
+                    <svg v-else class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="8" />
+                    </svg>
+                    {{ isRecording ? 'Stop Recording' : 'Record Audio' }}
+                  </button>
+
+                  <!-- Upload Audio File -->
+                  <input
+                    ref="audioFileInput"
+                    type="file"
+                    accept="audio/*"
+                    class="hidden"
+                    @change="handleAudioFileUpload"
+                  />
+                  <button
+                    type="button"
+                    @click="$refs.audioFileInput?.click()"
+                    class="px-4 py-3 rounded-xl text-sm font-medium transition border border-white/10 text-white/60 hover:text-white hover:bg-white/5 flex items-center gap-2"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m0 0l4 4" />
+                    </svg>
+                    Upload Audio
+                  </button>
+                </div>
+
+                <!-- Recording Timer -->
+                <div v-if="isRecording" class="mt-3 text-white/50 text-sm font-mono">
+                  Recording: {{ recordingTime }}
+                </div>
+
+                <!-- Audio File Info -->
+                <div v-if="audioFile" class="mt-4 p-3 rounded-lg bg-white/5 border border-white/10 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="text-2xl">🎵</span>
+                    <div>
+                      <p class="text-white text-sm font-medium">{{ audioFile.name }}</p>
+                      <p class="text-white/40 text-xs">{{ (audioFile.size / 1024).toFixed(1) }} KB</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    @click="removeAudioFile"
+                    class="p-1.5 rounded-lg text-white/30 hover:text-red-400 hover:bg-red-500/10 transition"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Audio Preview -->
+                <audio v-if="audioPreviewUrl" controls class="mt-3 w-full" :src="audioPreviewUrl" />
+              </div>
+
+              <!-- Supporting Media (URLs, Images, Videos) -->
               <div class="mt-6">
-                <h3 class="text-lg font-semibold text-white mb-4">Supporting Media</h3>
+                <h3 class="text-lg font-semibold text-white mb-4">Supporting Media & References</h3>
                 <p class="text-white/60 text-sm mb-4">Add images, videos, or links to support your project idea</p>
                 
                 <!-- Media Input -->
@@ -347,6 +450,10 @@
                   </svg>
                   <p class="text-sm">No media added yet</p>
                 </div>
+              </div>
+
+              <div v-if="validationErrors.step3" class="mt-4 p-3 bg-red-500/20 border border-red-400/50 rounded-lg text-red-300 text-sm">
+                {{ validationErrors.step3 }}
               </div>
             </div>
 
@@ -486,6 +593,7 @@ const formData = reactive({
   budget: undefined as BudgetRange | undefined,
   timeline: '',
   requirements: {} as Record<string, any>,
+  projectBrief: '',
   additionalNotes: '',
 })
 
@@ -503,6 +611,12 @@ const validationRules = {
       })
     })
     return errors
+  },
+  3: () => {
+    if (!formData.projectBrief && !audioFile.value) {
+      return ['A project brief (written or audio recording) is required']
+    }
+    return []
   }
 }
 
@@ -520,6 +634,11 @@ const validateStep = (step: number): boolean => {
     const step2Errors = validationRules[2]()
     if (step2Errors.length > 0) {
       validationErrors.value.step2 = 'Required fields: ' + step2Errors.join(', ')
+    }
+  } else if (step === 3) {
+    const step3Errors = validationRules[3]()
+    if (step3Errors.length > 0) {
+      validationErrors.value.step3 = step3Errors.join(', ')
     }
   }
   
@@ -601,6 +720,94 @@ const handleImageError = (event: Event) => {
   target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2399%2F99%2F99"%3E%3Cpath d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"%2F%3E%3C%2Fsvg%3E'
 }
 
+// Audio recording logic
+const isRecording = ref(false)
+const audioFile = ref<File | null>(null)
+const audioPreviewUrl = ref<string | null>(null)
+const audioFileInput = ref<HTMLInputElement | null>(null)
+const mediaRecorder = ref<MediaRecorder | null>(null)
+const audioChunks = ref<Blob[]>([])
+const recordingTimer = ref<ReturnType<typeof setInterval> | null>(null)
+const recordingSeconds = ref(0)
+
+const recordingTime = computed(() => {
+  const mins = Math.floor(recordingSeconds.value / 60).toString().padStart(2, '0')
+  const secs = (recordingSeconds.value % 60).toString().padStart(2, '0')
+  return `${mins}:${secs}`
+})
+
+const toggleRecording = async () => {
+  if (isRecording.value) {
+    stopRecording()
+  } else {
+    await startRecording()
+  }
+}
+
+const startRecording = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    const recorder = new MediaRecorder(stream)
+    mediaRecorder.value = recorder
+    audioChunks.value = []
+
+    recorder.ondataavailable = (e) => {
+      audioChunks.value.push(e.data)
+    }
+
+    recorder.onstop = () => {
+      const audioBlob = new Blob(audioChunks.value, { type: 'audio/webm' })
+      audioFile.value = new File([audioBlob], `recording-${Date.now()}.webm`, { type: 'audio/webm' })
+      audioPreviewUrl.value = URL.createObjectURL(audioBlob)
+      stream.getTracks().forEach(t => t.stop())
+    }
+
+    recorder.start()
+    isRecording.value = true
+    recordingSeconds.value = 0
+    recordingTimer.value = setInterval(() => {
+      recordingSeconds.value++
+    }, 1000)
+  } catch (err) {
+    toast.error('Could not access microphone. Please check permissions.')
+  }
+}
+
+const stopRecording = () => {
+  if (mediaRecorder.value && isRecording.value) {
+    mediaRecorder.value.stop()
+    isRecording.value = false
+    if (recordingTimer.value) {
+      clearInterval(recordingTimer.value)
+      recordingTimer.value = null
+    }
+  }
+}
+
+const handleAudioFileUpload = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  if (!file.type.startsWith('audio/')) {
+    toast.error('Please select an audio file')
+    return
+  }
+
+  audioFile.value = file
+  audioPreviewUrl.value = URL.createObjectURL(file)
+  target.value = ''
+}
+
+const removeAudioFile = () => {
+  audioFile.value = null
+  if (audioPreviewUrl.value) {
+    URL.revokeObjectURL(audioPreviewUrl.value)
+    audioPreviewUrl.value = null
+  }
+  recordingSeconds.value = 0
+}
+
 const aiMessages = ref<Array<{ type: 'user' | 'ai', text: string }>>([
   { type: 'ai', text: 'Hi! I\'m here to help you with your requirements. Feel free to ask me anything!' }
 ])
@@ -669,6 +876,16 @@ const handleSubmit = async () => {
       throw new Error('Failed to get authentication token')
     }
     
+    // Convert audio file to base64 if present
+    let audioBase64 = null
+    if (audioFile.value) {
+      const reader = new FileReader()
+      audioBase64 = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.readAsDataURL(audioFile.value!)
+      })
+    }
+    
     await $fetch('/api/submissions', {
       method: 'POST',
       headers: {
@@ -676,6 +893,8 @@ const handleSubmit = async () => {
       },
       body: {
         ...formData,
+        audioBrief: audioBase64,
+        audioFileName: audioFile.value?.name || null,
         aiConversation: aiMessages.value,
         currency: userLocation.value?.currency || 'USD',
         country: userLocation.value?.country,
