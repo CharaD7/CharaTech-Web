@@ -30,7 +30,13 @@ export default defineEventHandler(async (event) => {
     if (taxAmount !== undefined) updates.taxAmount = taxAmount ? parseFloat(taxAmount) : null
     if (currency !== undefined) updates.currency = currency
     if (items !== undefined) updates.items = JSON.parse(JSON.stringify(items))
-    if (notes !== undefined) updates.notes = notes
+    if (notes !== undefined) {
+      // Replace any remaining placeholder with the actual invoice number
+      let processedNotes = notes
+      processedNotes = processedNotes.replace(/\[Invoice Number\]/g, existing.invoiceNumber)
+      processedNotes = processedNotes.replace(/—\s*\[Invoice Number\]/g, `—${existing.invoiceNumber}`)
+      updates.notes = processedNotes
+    }
     if (dueDate !== undefined) updates.dueDate = dueDate ? new Date(dueDate) : null
     if (status !== undefined) {
       const valid = ['DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED']

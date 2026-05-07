@@ -26,6 +26,12 @@ export default defineEventHandler(async (event) => {
     const invoiceCount = await prisma.invoice.count()
     const invoiceNumber = `INV-${new Date().getFullYear()}-${String(invoiceCount + 1).padStart(5, '0')}`
 
+    // Replace placeholder invoice number in notes with the actual generated number
+    let processedNotes = notes || ''
+    processedNotes = processedNotes.replace(/\[Invoice Number\]/g, invoiceNumber)
+    // Also handle em-dash variant
+    processedNotes = processedNotes.replace(/—\s*\[Invoice Number\]/g, `—${invoiceNumber}`)
+
     const totalAmount = parseFloat(amount) + (parseFloat(taxAmount) || 0)
 
     const invoice = await prisma.invoice.create({
@@ -39,7 +45,7 @@ export default defineEventHandler(async (event) => {
         totalAmount,
         status: requestedStatus || 'DRAFT',
         items: JSON.parse(JSON.stringify(items)),
-        notes,
+        notes: processedNotes,
         dueDate: dueDate ? new Date(dueDate) : null
       }
     })
