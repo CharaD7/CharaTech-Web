@@ -260,7 +260,7 @@ model PaymentProof {
   fileName   String?
   fileType   String?
   fileSize   Int?
-  phase      PaymentPhase
+  phase      String
   phaseLabel String?       // Human-readable label for the milestone phase
   status     ProofStatus   @default(PENDING)
   notes      String?
@@ -273,11 +273,6 @@ model PaymentProof {
   @@index([invoiceId])
   @@index([status])
   @@index([phase])
-}
-
-enum PaymentPhase {
-  ADVANCE_60
-  FINAL_40
 }
 
 enum ProofStatus {

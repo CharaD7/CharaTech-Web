@@ -1,6 +1,17 @@
 const VALID_STATUSES = ['DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELLED']
-const VALID_PHASES = ['ADVANCE_60', 'FINAL_40']
 const VALID_PROOF_STATUSES = ['APPROVED', 'REJECTED']
+
+function findMilestoneIndex(ms: any[], phase: string): number {
+  return ms.findIndex((m: any) => m.id === phase || m.phase === phase)
+}
+
+function updateMilestoneInArray(ms: any[], phase: string, updates: Record<string, any>) {
+  const idx = findMilestoneIndex(ms, phase)
+  if (idx === -1) return null
+  const updated = [...ms]
+  updated[idx] = { ...updated[idx], ...updates }
+  return updated
+}
 
 const buildInvoiceEmail = (invoice: any, client: any) => {
   const sym: Record<string, string> = { USD: '$', EUR: '€', GBP: '£', GHS: '₵', CAD: 'C$', AUD: 'A$' }
@@ -117,40 +128,71 @@ export default defineEventHandler(async (event) => {
     if (!id) throw createError({ statusCode: 400, message: 'Invoice ID required' })
 
     const body = await readBody(event)
-    const { status, approveProof, proofId, proofNotes, resolveInfoRequest, markMilestone, unmarkMilestone } = body
+    const { status, approveProof, proofId, proofNotes, resolveInfoRequest, markMilestone, unmarkMilestone, approveMilestone } = body
 
     const invoice = await prisma.invoice.findUnique({ where: { id } })
     if (!invoice) throw createError({ statusCode: 404, message: 'Invoice not found' })
 
+    // Helper: get update data for marking a milestone paid
+    const getMarkPaidData = (phase: string) => {
+      const ms = invoice.milestones as any[]
+      if (Array.isArray(ms) && ms.length > 0) {
+        const updated = updateMilestoneInArray(ms, phase, { paidAt: new Date().toISOString() })
+        if (!updated) throw createError({ statusCode: 400, message: `Milestone "${phase}" not found` })
+        return { milestones: updated }
+      }
+      // Legacy: use hardcoded columns
+      const field = phase === 'ADVANCE_60' ? 'advancePaidAt' : phase === 'FINAL_40' ? 'finalPaidAt' : null
+      if (!field) throw createError({ statusCode: 400, message: 'Invalid milestone phase' })
+      return { [field]: new Date() }
+    }
+
+    // Helper: get update data for unmarking a milestone
+    const getUnmarkData = (phase: string) => {
+      const ms = invoice.milestones as any[]
+      if (Array.isArray(ms) && ms.length > 0) {
+        const updated = updateMilestoneInArray(ms, phase, { paidAt: null, approvedAt: null })
+        if (!updated) throw createError({ statusCode: 400, message: `Milestone "${phase}" not found` })
+        return { milestones: updated }
+      }
+      const paidField = phase === 'ADVANCE_60' ? 'advancePaidAt' : phase === 'FINAL_40' ? 'finalPaidAt' : null
+      const approvedField = phase === 'ADVANCE_60' ? 'advanceApprovedAt' : phase === 'FINAL_40' ? 'finalApprovedAt' : null
+      if (!paidField) throw createError({ statusCode: 400, message: 'Invalid milestone phase' })
+      return { [paidField]: null, [approvedField!]: null }
+    }
+
     // Handle milestone mark as paid
     if (markMilestone) {
-      const milestoneField = markMilestone === 'ADVANCE_60' ? 'advancePaidAt' : markMilestone === 'FINAL_40' ? 'finalPaidAt' : null
-      if (!milestoneField) throw createError({ statusCode: 400, message: 'Invalid milestone phase' })
-      await prisma.invoice.update({
-        where: { id },
-        data: { [milestoneField]: new Date() },
-      })
-      return { success: true, message: `Milestone ${markMilestone} marked as paid` }
+      const data = getMarkPaidData(markMilestone)
+      await prisma.invoice.update({ where: { id }, data })
+      return { success: true, message: `Milestone "${markMilestone}" marked as paid` }
+    }
+
+    // Handle milestone approve
+    if (approveMilestone) {
+      const ms = invoice.milestones as any[]
+      if (Array.isArray(ms) && ms.length > 0) {
+        const updated = updateMilestoneInArray(ms, approveMilestone, { approvedAt: new Date().toISOString() })
+        if (!updated) throw createError({ statusCode: 400, message: `Milestone "${approveMilestone}" not found` })
+        await prisma.invoice.update({ where: { id }, data: { milestones: updated } })
+      } else {
+        const field = approveMilestone === 'ADVANCE_60' ? 'advanceApprovedAt' : approveMilestone === 'FINAL_40' ? 'finalApprovedAt' : null
+        if (!field) throw createError({ statusCode: 400, message: 'Invalid milestone phase' })
+        await prisma.invoice.update({ where: { id }, data: { [field]: new Date() } })
+      }
+      return { success: true, message: `Milestone "${approveMilestone}" approved` }
     }
 
     // Handle milestone unmark
     if (unmarkMilestone) {
-      const milestonePaidField = unmarkMilestone === 'ADVANCE_60' ? 'advancePaidAt' : unmarkMilestone === 'FINAL_40' ? 'finalPaidAt' : null
-      const milestoneApprovedField = unmarkMilestone === 'ADVANCE_60' ? 'advanceApprovedAt' : unmarkMilestone === 'FINAL_40' ? 'finalApprovedAt' : null
-      if (!milestonePaidField) throw createError({ statusCode: 400, message: 'Invalid milestone phase' })
-      await prisma.invoice.update({
-        where: { id },
-        data: {
-          [milestonePaidField]: null,
-          [milestoneApprovedField!]: null,
-        },
-      })
+      const data = getUnmarkData(unmarkMilestone)
+      await prisma.invoice.update({ where: { id }, data })
       // Also reset associated payment proofs to PENDING
       await prisma.paymentProof.updateMany({
-        where: { invoiceId: id, phase: unmarkMilestone as any },
+        where: { invoiceId: id, phase: unmarkMilestone },
         data: { status: 'PENDING', approvedAt: null, approvedBy: null },
       })
-      return { success: true, message: `Milestone ${unmarkMilestone} reverted` }
+      return { success: true, message: `Milestone "${unmarkMilestone}" reverted` }
     }
 
     // Handle proof approval
@@ -176,11 +218,19 @@ export default defineEventHandler(async (event) => {
 
       // Track milestone approval on invoice
       if (approveProof === 'APPROVED') {
-        const milestoneField = proof.phase === 'ADVANCE_60' ? 'advanceApprovedAt' : 'finalApprovedAt'
-        await prisma.invoice.update({
-          where: { id },
-          data: { [milestoneField]: new Date() },
-        })
+        const ms = invoice.milestones as any[]
+        if (Array.isArray(ms) && ms.length > 0) {
+          const updated = updateMilestoneInArray(ms, proof.phase, { approvedAt: new Date().toISOString() })
+          if (updated) {
+            await prisma.invoice.update({ where: { id }, data: { milestones: updated } })
+          }
+        } else {
+          const milestoneField = proof.phase === 'ADVANCE_60' ? 'advanceApprovedAt' : 'finalApprovedAt'
+          await prisma.invoice.update({
+            where: { id },
+            data: { [milestoneField]: new Date() },
+          })
+        }
       }
 
       return { success: true, invoice, proof: updatedProof }

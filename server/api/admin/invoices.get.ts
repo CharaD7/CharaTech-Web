@@ -5,6 +5,7 @@ export default defineEventHandler(async (event) => {
     const invoices = await prisma.invoice.findMany({
       orderBy: { createdAt: 'desc' },
       take: 100,
+      include: { paymentProofs: { orderBy: { uploadedAt: 'desc' } } },
     })
 
     const clientIds = [...new Set(invoices.map((i) => i.clientId))]

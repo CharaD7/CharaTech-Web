@@ -386,7 +386,7 @@
   <!-- Proof Upload Modal -->
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="showProofUpload" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div v-if="showProofUpload" class="fixed inset-0 z-[99999] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-md" @click="showProofUpload = false" />
         <div
           class="relative w-full max-w-md rounded-2xl overflow-hidden border border-purple-500/20"
@@ -394,7 +394,7 @@
         >
           <div class="px-6 py-4 border-b border-purple-500/20" style="background: linear-gradient(90deg, rgba(88,28,135,0.6) 0%, rgba(190,24,93,0.3) 100%);">
             <h3 class="font-bold text-white">Upload Payment Proof</h3>
-            <p class="text-white/50 text-xs">{{ proofUploadPhase === 'ADVANCE_60' ? '60% Advance' : '40% Final' }} — {{ currencySymbol(selectedInvoice?.currency || 'USD') }}{{ proofUploadAmount?.toFixed(2) }}</p>
+            <p class="text-white/50 text-xs">{{ proofUploadLabel }} — {{ currencySymbol(selectedInvoice?.currency || 'USD') }}{{ proofUploadAmount?.toFixed(2) }}</p>
           </div>
           <div class="p-6 space-y-4">
             <div>
@@ -430,7 +430,7 @@
   <!-- Info Request Modal -->
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="showInfoRequest" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div v-if="showInfoRequest" class="fixed inset-0 z-[99999] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-md" @click="showInfoRequest = false" />
         <div
           class="relative w-full max-w-md rounded-2xl overflow-hidden border border-purple-500/20"
@@ -560,6 +560,14 @@ const showProofUpload = ref(false)
 const showInfoRequest = ref(false)
 const proofUploadPhase = ref('')
 const proofUploadAmount = ref(0)
+const proofUploadLabel = computed(() => {
+  const ms = selectedInvoice.value?.milestones
+  if (Array.isArray(ms)) {
+    const match = ms.find((m: any) => m.id === proofUploadPhase.value || m.phase === proofUploadPhase.value)
+    if (match) return match.label
+  }
+  return proofUploadPhase.value === 'ADVANCE_60' ? '60% Advance' : proofUploadPhase.value === 'FINAL_40' ? '40% Final' : proofUploadPhase.value
+})
 const proofFile = ref<File | null>(null)
 const uploadingProof = ref(false)
 const infoRequestType = ref('')

@@ -5,7 +5,10 @@ export default defineEventHandler(async (event) => {
 
     if (!id) throw createError({ statusCode: 400, message: 'Invoice ID required' })
 
-    const invoice = await prisma.invoice.findUnique({ where: { id } })
+    const invoice = await prisma.invoice.findUnique({
+      where: { id },
+      include: { paymentProofs: { orderBy: { uploadedAt: 'desc' } } },
+    })
 
     if (!invoice) throw createError({ statusCode: 404, message: 'Invoice not found' })
 

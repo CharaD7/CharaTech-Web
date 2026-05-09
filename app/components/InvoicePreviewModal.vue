@@ -234,21 +234,21 @@
                 <p class="text-white/30 text-[10px] uppercase tracking-widest font-semibold">Payment Milestones</p>
                 <div
                   v-for="ms in milestones"
-                  :key="ms.phase"
+                  :key="ms.id"
                   :class="['rounded-xl p-3 border transition-all', milestoneClass(ms)]"
                 >
                   <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
                       <span class="text-sm font-semibold text-white">{{ ms.label }}</span>
-                      <span v-if="isMilestoneApproved(ms)" class="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-300">Confirmed</span>
-                      <span v-else-if="isMilestonePaid(ms)" class="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">Awaiting Review</span>
+                      <BaseBadge v-if="isMilestoneApproved(ms)" variant="success" size="sm">Confirmed</BaseBadge>
+                      <BaseBadge v-else-if="isMilestonePaid(ms)" variant="warning" size="sm">Awaiting Review</BaseBadge>
                     </div>
                     <span class="text-purple-300 font-bold text-sm">{{ formatCurrency(milestoneAmount(ms)) }}</span>
                   </div>
                   <div v-if="!isMilestonePaid(ms)">
-                    <button @click="$emit('upload-proof', ms.phase, milestoneAmount(ms))" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600/30 text-purple-300 hover:bg-purple-600/50 border border-purple-500/30 transition">
+                    <BaseButton size="sm" variant="primary" @click="$emit('upload-proof', ms.id, milestoneAmount(ms))">
                       Upload Proof
-                    </button>
+                    </BaseButton>
                   </div>
                 </div>
               </div>
@@ -258,41 +258,85 @@
                 <p class="text-white/30 text-[10px] uppercase tracking-widest font-semibold">Milestone Management</p>
                 <div
                   v-for="ms in milestones"
-                  :key="ms.phase"
-                  class="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10"
+                  :key="ms.id"
+                  class="rounded-lg bg-white/5 border border-white/10 overflow-hidden"
                 >
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm text-white/80">{{ ms.label }}</span>
-                    <span
-                      v-if="isMilestoneApproved(ms)"
-                      class="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-300"
-                    >Approved</span>
-                    <span
-                      v-else-if="isMilestonePaid(ms)"
-                      class="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300"
-                    >Paid (unverified)</span>
-                    <span
-                      v-else
-                      class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/40"
-                    >Pending</span>
+                  <div class="flex items-center justify-between p-3">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm text-white/80">{{ ms.label }}</span>
+                      <span class="text-purple-400 text-xs font-mono ml-1">{{ ms.percentage }}%</span>
+                      <BaseBadge v-if="isMilestoneApproved(ms)" variant="success" size="sm">Approved</BaseBadge>
+                      <BaseBadge v-else-if="isMilestonePaid(ms)" variant="warning" size="sm">Paid (unverified)</BaseBadge>
+                      <BaseBadge v-else variant="default" size="sm">Pending</BaseBadge>
+                    </div>
+                    <div class="flex gap-1.5">
+                      <BaseButton
+                        v-if="!isMilestonePaid(ms)"
+                        size="sm"
+                        variant="primary"
+                        :disabled="actionLoading"
+                        @click="markMilestonePaid(ms.id)"
+                      >Mark Paid</BaseButton>
+                      <BaseButton
+                        v-if="isMilestonePaid(ms) && !isMilestoneApproved(ms)"
+                        size="sm"
+                        variant="primary"
+                        :disabled="actionLoading"
+                        @click="approveMilestoneAction(ms.id)"
+                      >Approve</BaseButton>
+                      <BaseButton
+                        v-if="isMilestonePaid(ms) || isMilestoneApproved(ms)"
+                        size="sm"
+                        variant="danger"
+                        :disabled="actionLoading"
+                        @click="unmarkMilestone(ms.id)"
+                      >Unmark</BaseButton>
+                    </div>
                   </div>
-                  <div class="flex gap-1.5">
-                    <button
-                      v-if="!isMilestonePaid(ms)"
-                      @click="markMilestonePaid(ms.phase)"
-                      :disabled="actionLoading"
-                      class="px-2.5 py-1 rounded-lg text-xs font-medium bg-green-600/30 text-green-300 hover:bg-green-600/50 border border-green-500/30 transition"
+
+                  <!-- Payment Proofs for this milestone -->
+                  <div v-if="proofsForMilestone(ms.id).length > 0" class="border-t border-white/5 px-3 py-2 space-y-1.5">
+                    <p class="text-white/20 text-[10px] uppercase tracking-widest">Payment Proofs</p>
+                    <div
+                      v-for="proof in proofsForMilestone(ms.id)"
+                      :key="proof.id"
+                      class="flex items-center justify-between p-2 rounded bg-white/[0.03] border border-white/5"
                     >
-                      Mark Paid
-                    </button>
-                    <button
-                      v-if="isMilestonePaid(ms) || isMilestoneApproved(ms)"
-                      @click="unmarkMilestone(ms.phase)"
-                      :disabled="actionLoading"
-                      class="px-2.5 py-1 rounded-lg text-xs font-medium bg-red-500/20 text-red-300 hover:bg-red-500/40 border border-red-500/30 transition"
-                    >
-                      Unmark
-                    </button>
+                      <div class="flex items-center gap-2 min-w-0">
+                        <BaseTooltip :text="proof.fileUrl">
+                          <a
+                            :href="proof.fileUrl"
+                            target="_blank"
+                            class="text-purple-400 hover:text-purple-300 text-xs truncate max-w-[160px] underline underline-offset-2"
+                          >{{ proof.fileName || proof.fileType || 'View File' }}</a>
+                        </BaseTooltip>
+                        <BaseBadge
+                          v-if="proof.status === 'APPROVED'"
+                          variant="success"
+                          size="sm"
+                        >Approved</BaseBadge>
+                        <BaseBadge
+                          v-else-if="proof.status === 'REJECTED'"
+                          variant="danger"
+                          size="sm"
+                        >Rejected</BaseBadge>
+                        <BaseBadge v-else variant="warning" size="sm">Pending</BaseBadge>
+                      </div>
+                      <div v-if="proof.status === 'PENDING'" class="flex gap-1 flex-shrink-0">
+                        <BaseButton
+                          size="sm"
+                          variant="primary"
+                          :disabled="actionLoading"
+                          @click="approveProof(proof.id)"
+                        >✓</BaseButton>
+                        <BaseButton
+                          size="sm"
+                          variant="danger"
+                          :disabled="actionLoading"
+                          @click="rejectProof(proof.id)"
+                        >✕</BaseButton>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -395,6 +439,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import GlowingScrollbar from '@/components/ui/GlowingScrollbar.vue'
+import BaseBadge from '@/components/ui/BaseBadge.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseTooltip from '@/components/ui/BaseTooltip.vue'
 
 interface Props {
   show: boolean
@@ -416,6 +463,18 @@ const { getAccessToken } = useAuth()
 const actionLoading = ref(false)
 const actionError = ref('')
 const showSummary = ref(false)
+const displayProofId = ref<string | null>(null)
+
+const hasCustomMilestones = computed(() => {
+  const ms = props.invoice?.milestones
+  return Array.isArray(ms) && ms.length > 0
+})
+
+const proofsForMilestone = (phase: string) => {
+  const proofs = props.invoice?.paymentProofs
+  if (!Array.isArray(proofs)) return []
+  return proofs.filter((p: any) => p.phase === phase)
+}
 
 // ── Computed ────────────────────────────────────────────────
 const currency = computed(() => props.invoice?.currency || 'USD')
@@ -468,19 +527,30 @@ const statusClass = computed(() => {
 
 const milestones = computed(() => {
   const raw = props.invoice?.milestones
-  if (Array.isArray(raw) && raw.length > 0) return raw
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw.map((m: any) => ({
+      ...m,
+      id: m.id || m.phase,
+    }))
+  }
   return [
-    { phase: 'ADVANCE_60', label: 'Advance Payment', percentage: 60 },
-    { phase: 'FINAL_40', label: 'Final Payment', percentage: 40 },
+    { id: 'ADVANCE_60', phase: 'ADVANCE_60', label: 'Advance Payment', percentage: 60 },
+    { id: 'FINAL_40', phase: 'FINAL_40', label: 'Final Payment', percentage: 40 },
   ]
 })
 
 const isMilestonePaid = (ms: any) => {
+  if (hasCustomMilestones.value) {
+    return !!ms.paidAt
+  }
   const field = ms.phase === 'ADVANCE_60' ? 'advancePaidAt' : ms.phase === 'FINAL_40' ? 'finalPaidAt' : null
   return field ? !!props.invoice?.[field] : false
 }
 
 const isMilestoneApproved = (ms: any) => {
+  if (hasCustomMilestones.value) {
+    return !!ms.approvedAt
+  }
   const field = ms.phase === 'ADVANCE_60' ? 'advanceApprovedAt' : ms.phase === 'FINAL_40' ? 'finalApprovedAt' : null
   return field ? !!props.invoice?.[field] : false
 }
@@ -521,6 +591,14 @@ const updateStatus = async (status: string) => {
   }
 }
 
+const refetchInvoice = async () => {
+  const token = await getAccessToken()
+  const updated = await $fetch(`/api/invoices/${props.invoice.id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  emit('updated', (updated as any).invoice)
+}
+
 const markMilestonePaid = async (phase: string) => {
   actionLoading.value = true
   actionError.value = ''
@@ -531,13 +609,27 @@ const markMilestonePaid = async (phase: string) => {
       headers: { Authorization: `Bearer ${token}` },
       body: { markMilestone: phase },
     })
-    // Refetch invoice to get updated state
-    const updated = await $fetch(`/api/invoices/${props.invoice.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    emit('updated', (updated as any).invoice)
+    await refetchInvoice()
   } catch (err: any) {
     actionError.value = err?.data?.message || err.message || 'Failed to mark milestone.'
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+const approveMilestoneAction = async (phase: string) => {
+  actionLoading.value = true
+  actionError.value = ''
+  try {
+    const token = await getAccessToken()
+    await $fetch(`/api/admin/invoices/${props.invoice.id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+      body: { approveMilestone: phase },
+    })
+    await refetchInvoice()
+  } catch (err: any) {
+    actionError.value = err?.data?.message || err.message || 'Failed to approve milestone.'
   } finally {
     actionLoading.value = false
   }
@@ -553,12 +645,45 @@ const unmarkMilestone = async (phase: string) => {
       headers: { Authorization: `Bearer ${token}` },
       body: { unmarkMilestone: phase },
     })
-    const updated = await $fetch(`/api/invoices/${props.invoice.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    emit('updated', (updated as any).invoice)
+    await refetchInvoice()
   } catch (err: any) {
     actionError.value = err?.data?.message || err.message || 'Failed to unmark milestone.'
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+const approveProof = async (proofId: string) => {
+  actionLoading.value = true
+  actionError.value = ''
+  try {
+    const token = await getAccessToken()
+    await $fetch(`/api/admin/invoices/${props.invoice.id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+      body: { approveProof: 'APPROVED', proofId },
+    })
+    await refetchInvoice()
+  } catch (err: any) {
+    actionError.value = err?.data?.message || err.message || 'Failed to approve proof.'
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+const rejectProof = async (proofId: string) => {
+  actionLoading.value = true
+  actionError.value = ''
+  try {
+    const token = await getAccessToken()
+    await $fetch(`/api/admin/invoices/${props.invoice.id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}` },
+      body: { approveProof: 'REJECTED', proofId },
+    })
+    await refetchInvoice()
+  } catch (err: any) {
+    actionError.value = err?.data?.message || err.message || 'Failed to reject proof.'
   } finally {
     actionLoading.value = false
   }
@@ -615,23 +740,29 @@ const printInvoice = () => {
       <div style="color:#4a4a5a;font-size:12px;white-space:pre-wrap;line-height:1.7;">${processedNotes}</div>
     </div>` : ''
 
-  const milestones = (() => {
+  const printMilestones = (() => {
     const raw = inv.milestones
     if (Array.isArray(raw) && raw.length > 0) return raw
     return [
-      { phase: 'ADVANCE_60', label: 'Advance Payment', percentage: 60 },
-      { phase: 'FINAL_40', label: 'Final Payment', percentage: 40 },
+      { id: 'ADVANCE_60', phase: 'ADVANCE_60', label: 'Advance Payment', percentage: 60 },
+      { id: 'FINAL_40', phase: 'FINAL_40', label: 'Final Payment', percentage: 40 },
     ]
   })()
 
-  const isMsPaid = (ms: any) => ms.phase === 'ADVANCE_60' ? !!inv.advancePaidAt : ms.phase === 'FINAL_40' ? !!inv.finalPaidAt : false
-  const isMsApproved = (ms: any) => ms.phase === 'ADVANCE_60' ? !!inv.advanceApprovedAt : ms.phase === 'FINAL_40' ? !!inv.finalApprovedAt : false
+  const isMsPaid = (ms: any) => {
+    if (Array.isArray(inv.milestones) && inv.milestones.length > 0) return !!ms.paidAt
+    return ms.phase === 'ADVANCE_60' ? !!inv.advancePaidAt : ms.phase === 'FINAL_40' ? !!inv.finalPaidAt : false
+  }
+  const isMsApproved = (ms: any) => {
+    if (Array.isArray(inv.milestones) && inv.milestones.length > 0) return !!ms.approvedAt
+    return ms.phase === 'ADVANCE_60' ? !!inv.advanceApprovedAt : ms.phase === 'FINAL_40' ? !!inv.finalApprovedAt : false
+  }
 
-  const milestonesHtml = inv.status !== 'DRAFT' && inv.status !== 'CANCELLED' && milestones.length > 0 ? `
+  const milestonesHtml = inv.status !== 'DRAFT' && inv.status !== 'CANCELLED' && printMilestones.length > 0 ? `
     <div style="padding:20px 32px;border-top:1px solid #e8e4f0;">
       <div style="font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#9b8fb0;margin-bottom:12px;font-weight:600;">Payment Milestones</div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;">
-        ${milestones.map((ms: any) => {
+        ${printMilestones.map((ms: any) => {
           const msPaid = isMsPaid(ms)
           const msApproved = isMsApproved(ms)
           const borderColor = msApproved ? '#d1fae5' : msPaid ? '#fef3c7' : '#e8e4f0'

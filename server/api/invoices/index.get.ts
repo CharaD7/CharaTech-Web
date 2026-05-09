@@ -5,6 +5,7 @@ export default defineEventHandler(async (event) => {
     const invoices = await prisma.invoice.findMany({
       where: { clientId: user.id },
       orderBy: { createdAt: 'desc' },
+      include: { paymentProofs: { orderBy: { uploadedAt: 'desc' } } },
     })
 
     // Enrich with submission info

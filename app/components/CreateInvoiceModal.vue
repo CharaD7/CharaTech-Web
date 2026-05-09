@@ -265,12 +265,12 @@
                       >
                         {{ formatAmount(item.total) }}
                       </div>
-                      <button
-                        @click="removeItem(i)"
-                        class="w-8 h-8 rounded-lg flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-500/10 transition opacity-0 group-hover:opacity-100"
-                      >
-                        <BaseTooltip text="Remove item">×</BaseTooltip>
-                      </button>
+                      <BaseTooltip text="Remove item">
+                        <button
+                          @click="removeItem(i)"
+                          class="w-8 h-8 rounded-lg flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-500/10 transition opacity-0 group-hover:opacity-100"
+                        >×</button>
+                      </BaseTooltip>
                     </div>
                   </TransitionGroup>
 
@@ -387,6 +387,70 @@
                       label="Payment Terms"
                     />
                   </div>
+                </div>
+              </div>
+
+              <!-- SECTION: Payment Milestones -->
+              <div class="rounded-xl border border-white/8 overflow-hidden" style="background: rgba(255,255,255,0.02);">
+                <div class="px-5 py-3 border-b border-white/5 flex items-center justify-between"
+                  style="background: rgba(168,85,247,0.06);">
+                  <div class="flex items-center gap-2">
+                    <span class="text-purple-400">🏁</span>
+                    <h3 class="text-sm font-semibold text-white/80 uppercase tracking-wider">Payment Milestones</h3>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs" :class="totalMilestonePercent === 100 ? 'text-green-400' : 'text-red-400'">
+                      {{ totalMilestonePercent }}%
+                    </span>
+                    <BaseButton size="sm" variant="secondary" @click="addMilestone" :disabled="milestones.length >= 6">
+                      + Add Phase
+                    </BaseButton>
+                  </div>
+                </div>
+                <div class="p-5 space-y-3">
+                  <TransitionGroup name="item-list" tag="div" class="space-y-2">
+                    <div
+                      v-for="(ms, i) in milestones"
+                      :key="ms.id"
+                      class="flex items-center gap-3 p-3 rounded-lg"
+                      :style="{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }"
+                    >
+                      <div class="flex-1">
+                        <input
+                          v-model="ms.label"
+                          placeholder="Phase label…"
+                          class="w-full px-3 py-2 rounded-lg text-white text-sm placeholder-white/20 outline-none transition-all duration-200"
+                          :style="neuInput"
+                        />
+                      </div>
+                      <div class="w-24">
+                        <div class="flex items-center gap-1">
+                          <input
+                            v-model.number="ms.percentage"
+                            type="number"
+                            min="1"
+                            max="99"
+                            class="w-16 px-3 py-2 rounded-lg text-white text-sm text-center outline-none transition-all duration-200"
+                            :style="neuInput"
+                            @input="() => { if (ms.percentage < 0) ms.percentage = 0; if (ms.percentage > 100) ms.percentage = 100 }"
+                          />
+                          <span class="text-white/40 text-xs">%</span>
+                        </div>
+                      </div>
+                      <BaseBadge variant="info" size="sm">
+                        {{ formatCurrency((total * ms.percentage) / 100) }}
+                      </BaseBadge>
+                      <BaseTooltip v-if="milestones.length > 2" text="Remove phase">
+                        <button
+                          @click="removeMilestone(i)"
+                          class="w-8 h-8 rounded-lg flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-500/10 transition flex-shrink-0"
+                        >×</button>
+                      </BaseTooltip>
+                    </div>
+                  </TransitionGroup>
+                  <p v-if="totalMilestonePercent !== 100" class="text-red-400/70 text-xs">
+                    Milestone percentages must sum to 100% (currently {{ totalMilestonePercent }}%)
+                  </p>
                 </div>
               </div>
 
@@ -631,6 +695,9 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import GlowingScrollbar from '@/components/ui/GlowingScrollbar.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseBadge from '@/components/ui/BaseBadge.vue'
+import BaseTooltip from '@/components/ui/BaseTooltip.vue'
 
 interface LineItem {
   _key: number
@@ -670,19 +737,21 @@ const activeSubmitStatus = ref<'DRAFT' | 'SENT' | null>(null)
 const generateNotes = (projectName?: string, invoiceNumber?: string) => {
   const project = projectName || '[Project Name]'
   const ref = invoiceNumber ? `${project}-${invoiceNumber}` : `${project}—[Invoice Number]`
+  const msLines = milestones.value.map((ms, i) =>
+    `  ${i + 1}. ${ms.label} (${ms.percentage}%): Due upon ${i === 0 ? 'receipt — covers initial setup, resource allocation, and project kickoff' : 'completion of the corresponding phase'}.`
+  ).join('\n')
 
   return (
     'PROJECT AGREEMENT & PAYMENT TERMS\n\n' +
     'PROJECT: ' + project + '\n\n' +
     '1. Payment Structure:\n' +
-    'This invoice represents the 60% advance payment required before project commencement. The remaining 40% will be invoiced upon successful project completion and delivery.\n' +
-    '• Advance Payment (60%): Due upon receipt — covers initial setup, resource allocation, and project kickoff.\n' +
-    '• Final Payment (40%): Due upon project completion and client approval.\n\n' +
+    'This project is divided into the following payment milestones:\n' +
+    msLines + '\n\n' +
     '2. Payment Reference:\n' +
     'Please use the following format as your payment reference for all transactions:\n' +
     'Reference: ' + ref + '\n\n' +
     '3. Project Timeline:\n' +
-    'The project timeline commences upon receipt of the advance payment and is subject to timely feedback and requirement clarifications from the client.\n\n' +
+    'The project timeline commences upon receipt of the first payment and is subject to timely feedback and requirement clarifications from the client.\n\n' +
     '4. Scope of Work:\n' +
     'This invoice covers the deliverables as outlined in the approved requirements document. Any additional features or changes outside the agreed scope will require a separate quotation.\n\n' +
     '5. Revisions & Support:\n' +
@@ -727,6 +796,40 @@ const items = ref<LineItem[]>([
   { _key: ++_keyCounter, description: '', quantity: 1, unitPrice: 0, total: 0 },
 ])
 
+interface MilestoneConfig {
+  id: string
+  label: string
+  percentage: number
+}
+
+let _msCounter = 0
+const milestones = ref<MilestoneConfig[]>([
+  { id: `ms_${++_msCounter}`, label: 'Advance Payment', percentage: 60 },
+  { id: `ms_${++_msCounter}`, label: 'Final Payment', percentage: 40 },
+])
+
+const addMilestone = () => {
+  const count = milestones.value.length
+  const remaining = Math.max(0, 100 - milestones.value.reduce((s, m) => s + m.percentage, 0))
+  const evenSplit = Math.floor(remaining / (count + 1))
+  milestones.value.forEach(m => m.percentage = evenSplit)
+  milestones.value.push({ id: `ms_${++_msCounter}`, label: `Milestone ${count + 1}`, percentage: 100 - evenSplit * count })
+}
+
+const removeMilestone = (index: number) => {
+  if (milestones.value.length <= 2) return
+  milestones.value.splice(index, 1)
+  const total = milestones.value.reduce((s, m) => s + m.percentage, 0)
+  if (total !== 100 && milestones.value.length > 0) {
+    const diff = 100 - total
+    milestones.value[milestones.value.length - 1]!.percentage += diff
+  }
+}
+
+const totalMilestonePercent = computed(() =>
+  milestones.value.reduce((s, m) => s + m.percentage, 0)
+)
+
 // ── Watchers ───────────────────────────────────────────────
 watch(() => props.preselectedSubmission, (sub) => {
   if (sub && !props.editInvoice) {
@@ -753,6 +856,15 @@ watch(() => props.editInvoice, (inv) => {
         quantity: item.quantity || 1,
         unitPrice: item.unitPrice || 0,
         total: item.total || 0,
+      }))
+    }
+    // Load existing milestones
+    const rawMs = inv.milestones
+    if (Array.isArray(rawMs) && rawMs.length > 0) {
+      milestones.value = rawMs.map((ms: any) => ({
+        id: ms.id || ms.phase || `ms_${++_msCounter}`,
+        label: ms.label || 'Milestone',
+        percentage: ms.percentage || 0,
       }))
     }
   }
@@ -976,6 +1088,9 @@ const submitInvoice = async (status: 'DRAFT' | 'SENT') => {
       notes: form.notes || null,
       dueDate: form.dueDate || null,
       status,
+      milestones: milestones.value.map(({ id, label, percentage }) => ({
+        id, label, percentage,
+      })),
     }
 
     const isEditing = !!props.editInvoice
@@ -1010,6 +1125,10 @@ const close = () => {
     form.paymentTerms = 'NET_30'
     form.notes = generateNotes()
     items.value = [{ _key: ++_keyCounter, description: '', quantity: 1, unitPrice: 0, total: 0 }]
+    milestones.value = [
+      { id: `ms_${++_msCounter}`, label: 'Advance Payment', percentage: 60 },
+      { id: `ms_${++_msCounter}`, label: 'Final Payment', percentage: 40 },
+    ]
     formError.value = ''
     isAutoGenerated.value = false
   }, 300)
