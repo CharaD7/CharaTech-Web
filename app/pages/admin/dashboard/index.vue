@@ -892,7 +892,35 @@ const openMessenger = (submission: any) => {
 }
 
 const createInvoice = (submission: any) => {
-  openCreateInvoice(submission)
+  invoicePreselectedSubmission.value = submission || null
+  clearGeneratedInvoice()
+  showInvoiceModal.value = true
+
+  if (submission?.id) {
+    generatingInvoice.value = true
+    generateEstimate(submission).finally(() => {
+      generatingInvoice.value = false
+    })
+  }
+}
+
+const generateEstimate = async (submission: any) => {
+  try {
+    const token = await getAccessToken()
+    if (!token) return
+    const result = await $fetch<{ success: boolean; pricing: any }>('/api/admin/invoices/generate', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: { submissionId: submission.id, currency: 'USD' },
+    }) as any
+    if (result?.pricing?.items) {
+      invoicePreGeneratedItems.value = result.pricing.items
+      invoicePreGeneratedTaxRate.value = result.pricing.suggestedTaxRate
+      invoicePreGeneratedNotes.value = result.pricing.notes
+    }
+  } catch (err: any) {
+    toast.error(err.data?.message || 'Failed to auto-generate estimate')
+  }
 }
 
 const { getAccessToken } = useAuth()

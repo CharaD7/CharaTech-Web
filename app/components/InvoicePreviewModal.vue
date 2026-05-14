@@ -304,11 +304,10 @@
                     >
                       <div class="flex items-center gap-2 min-w-0">
                         <BaseTooltip :text="proof.fileUrl">
-                          <a
-                            :href="proof.fileUrl"
-                            target="_blank"
-                            class="text-purple-400 hover:text-purple-300 text-xs truncate max-w-[160px] underline underline-offset-2"
-                          >{{ proof.fileName || proof.fileType || 'View File' }}</a>
+                          <button
+                            @click="displayProofId = proof.id"
+                            class="text-purple-400 hover:text-purple-300 text-xs truncate max-w-[160px] underline underline-offset-2 text-left"
+                          >{{ proof.fileName || proof.fileType || 'View File' }}</button>
                         </BaseTooltip>
                         <BaseBadge
                           v-if="proof.status === 'APPROVED'"
@@ -434,6 +433,44 @@
       </div>
     </Transition>
   </Teleport>
+
+  <!-- Payment Proof Preview Modal -->
+  <Teleport to="body">
+    <Transition name="modal">
+      <div
+        v-if="displayProofId"
+        class="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+      >
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md" @click="displayProofId = null" />
+        <div
+          class="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden border border-purple-500/20"
+          style="background: linear-gradient(135deg, rgba(12,8,32,0.98) 0%, rgba(22,8,48,0.98) 100%);"
+        >
+          <div class="flex items-center justify-between px-6 py-4 border-b border-purple-500/20" style="background: linear-gradient(90deg, rgba(88,28,135,0.6) 0%, rgba(190,24,93,0.3) 100%);">
+            <h3 class="font-bold text-white">Payment Proof</h3>
+            <button @click="displayProofId = null" class="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition">✕</button>
+          </div>
+          <div class="p-4 overflow-y-auto flex items-center justify-center min-h-[200px] bg-black/40">
+            <img
+              v-if="selectedProof?.fileUrl"
+              :src="selectedProof.fileUrl"
+              :alt="selectedProof.fileName || 'Payment proof'"
+              class="max-w-full max-h-[70vh] rounded-lg object-contain"
+            />
+            <p v-else class="text-white/40">No image available</p>
+          </div>
+          <div class="px-6 py-3 border-t border-white/5 flex items-center justify-between text-xs text-white/50">
+            <span>{{ selectedProof?.fileName || 'Proof file' }}</span>
+            <a
+              :href="selectedProof?.fileUrl"
+              target="_blank"
+              class="text-purple-400 hover:text-purple-300 underline underline-offset-2"
+            >Open in new tab →</a>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -475,6 +512,12 @@ const proofsForMilestone = (phase: string) => {
   if (!Array.isArray(proofs)) return []
   return proofs.filter((p: any) => p.phase === phase)
 }
+
+const selectedProof = computed(() => {
+  const proofs = props.invoice?.paymentProofs
+  if (!Array.isArray(proofs) || !displayProofId.value) return null
+  return proofs.find((p: any) => p.id === displayProofId.value) || null
+})
 
 // ── Computed ────────────────────────────────────────────────
 const currency = computed(() => props.invoice?.currency || 'USD')
